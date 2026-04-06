@@ -4,15 +4,8 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name="user_oauth")
-public class UserOauth {
+public class UserOauth extends User{
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false,unique = true)
-    private User user;
 
     @Column(nullable = false)
     private String provider;
