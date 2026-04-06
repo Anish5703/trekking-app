@@ -1,17 +1,15 @@
 package com.example.trekking_app.dto.auth;
 
-import com.example.trekking_app.dto.global.ApiResponse;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class SignupResponse {
+public class LoginResponse {
 
+    private int userId;
     private String name;
     private String email;
-    private String contact;
+    private String jwtToken;
 
 }

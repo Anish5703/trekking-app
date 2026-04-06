@@ -2,7 +2,7 @@ package com.example.trekking_app.mapper;
 
 import com.example.trekking_app.dto.auth.SignupRequest;
 import com.example.trekking_app.dto.auth.SignupResponse;
-import com.example.trekking_app.dto.global.ApiMessage;
+import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.entity.User;
 
 public class UserMapper {
@@ -15,17 +15,17 @@ public class UserMapper {
       user.setPassword(request.getPassword());
       user.setContact(request.getContact());
       user.setRole(request.getRole());
-      user.setActive(false);
+      user.setEmailVerified(false);
       return user;
     }
 
-    public SignupResponse toSignupResponse(User user, ApiMessage message)
+    public SignupResponse toSignupResponse(User user)
     {
         SignupResponse response = new SignupResponse();
         response.setName(user.getName());
         response.setContact(user.getContact());
         response.setEmail(user.getEmail());
-        response.setMessage()
+        return response;
     }
 
 }

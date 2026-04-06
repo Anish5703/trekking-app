@@ -7,5 +7,6 @@ public enum ErrorType {
     /* Signup Errors */
     EMPTY_FIELD,
     DUPLICATE_EMAIL,
+    EMAIL_NOT_FOUND,
     SIGNUP_FAILED
 }

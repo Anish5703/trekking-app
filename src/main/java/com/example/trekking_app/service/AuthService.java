@@ -2,18 +2,18 @@ package com.example.trekking_app.service;
 
 import com.example.trekking_app.dto.auth.SignupRequest;
 import com.example.trekking_app.dto.auth.SignupResponse;
-import com.example.trekking_app.dto.global.ApiMessage;
-import com.example.trekking_app.entity.Admin;
-import com.example.trekking_app.entity.Customer;
+import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.entity.Token;
 import com.example.trekking_app.entity.User;
 import com.example.trekking_app.exception.auth.DuplicateEmailFoundException;
 import com.example.trekking_app.exception.auth.EmptySignupFieldException;
 import com.example.trekking_app.exception.auth.SignupFailedException;
 import com.example.trekking_app.mapper.UserMapper;
 import com.example.trekking_app.model.Role;
-import com.example.trekking_app.repository.AdminRepository;
-import com.example.trekking_app.repository.CustomerRepository;
+import com.example.trekking_app.repository.TokenRepository;
 import com.example.trekking_app.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,43 +22,47 @@ import org.springframework.stereotype.Service;
 @Service
 public class AuthService {
     private final UserRepository userRepo;
-    private final AdminRepository adminRepo;
-    private final CustomerRepository customerRepo;
+    private final TokenRepository tokenRepo;
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
-
-    public AuthService(UserRepository userRepo ,AdminRepository adminRepo
-            ,CustomerRepository customerRepo,UserMapper userMapper
-            ,BCryptPasswordEncoder passwordEncoder)
+    private final MailService mailService;
+    public AuthService(UserRepository userRepo,TokenRepository tokenRepo,
+                       BCryptPasswordEncoder passwordEncoder,
+                       MailService mailService)
     {
         this.userRepo = userRepo;
-        this.adminRepo = adminRepo;
-        this.customerRepo = customerRepo;
-        this.userMapper = userMapper;
+        this.tokenRepo = tokenRepo;
+        this.userMapper = new UserMapper();
         this.passwordEncoder = passwordEncoder;
+        this.mailService = mailService;
     }
 
-    public SignupResponse signupUser(SignupRequest request)
+
+
+
+    /*
+    * Signup User flow
+    * Validate SignupRequest dto for empty fields and email duplication
+    * Map SignupRequest dto to User entity
+    * Encode raw password
+    * Save user in user specific repository referring the role
+    * Send Confirmation link to the user
+    * Return ApiResponse<SignupResponse> dto
+    */
+
+    @Transactional
+    public ApiResponse<SignupResponse> signupUser(SignupRequest request, HttpServletRequest servletRequest)
     { try {
         this.validateSignupRequest(request);
-        User newUser = null;
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        if (user.getRole().equals(Role.ADMIN)) {
-            Admin admin = (Admin) user;
-            newUser = adminRepo.save(admin);
-        } else if (user.getRole().equals(Role.CUSTOMER)) {
-            Customer customer = (Customer) user;
-            newUser = customerRepo.save(customer);
-        }
+       User newUser = userRepo.save(user);
         if (newUser == null)
-            throw new SignupFailedException("Failed to save new user");
+            throw new SignupFailedException("Failed to save new user : "+newUser.getName());
         else {
-            /*
-            *Logic to send confirmation mail to user
-             */
-            ApiMessage message = new ApiMessage(200, "New user created");
-            return userMapper.toSignupResponse(newUser, message);
+            mailService.sendSignupConfirmationToken(newUser,servletRequest);
+            SignupResponse signupResponse =userMapper.toSignupResponse(newUser);
+            return new ApiResponse<>(signupResponse,"Check mail for confirmation link",201);
         }
     }
     catch(Exception e)
@@ -67,7 +71,66 @@ public class AuthService {
         throw new SignupFailedException("Failed to save new user");
     }
     }
+    /*
+    * Method resend signup confirmation link
+    * Validate if email exists in User Repository and retrieve user
+    * Validate if user is already verified
+    * Delete previously generated token
+    * Send confirmation link
+    * return ApiResponse<SignupResponse> dto
+    */
+    @Transactional
+    public ApiResponse<SignupResponse> resendSignupConfirmation(String email, HttpServletRequest servletRequest)
+    {
+        try
+        {
+            User user = userRepo.findByEmail(email)
+                    .orElseThrow( () -> new SignupFailedException("Email not registered fill the signup page"));
+            if(user.isEmailVerified())
+                throw new SignupFailedException("Email is already verified go to login page");
+            tokenRepo.deleteByUserEmail(email);
+            mailService.sendSignupConfirmationToken(user,servletRequest);
+            String message = "Check mail for confirmation link";
+            SignupResponse signupResponse = userMapper.toSignupResponse(user);
+            return new ApiResponse<>(signupResponse,message,200);
+        }
+        catch(Exception e)
+        {
+            throw new SignupFailedException("Failed to send confirmation link");
+        }
+    }
 
+    /*
+    * Method to validate signup confirmation token
+    * Validate if token exists in the repository
+    * Retrieve user from token
+    * Set user field emailVerified to true
+    * Save updated user in the repository
+    * Return ApiResponse<SignupResponse> dto
+     */
+ @Transactional
+    public ApiResponse<SignupResponse> validateSignupConfirmationToken(String tokenName)
+    {
+     try
+     {
+         Token token = tokenRepo.findByTokenName(tokenName)
+                 .orElseThrow(() -> new SignupFailedException("Invalid signup token"));
+         User user = token.getUser();
+         user.setEmailVerified(true);
+         userRepo.save(user);
+         SignupResponse signupResponse = userMapper.toSignupResponse(user);
+         String message = "Email verified go to login page";
+         return new ApiResponse<>(signupResponse,message,200);
+     }
+     catch(Exception e)
+     {
+         throw new SignupFailedException("Failed to validate signup");
+     }
+    }
+    /*
+    * Method for validating SignupRequest dto for empty fields and duplicate email
+    * throws exception if violates any terms else returns void
+     */
     public void validateSignupRequest(SignupRequest request)
     {
         try {

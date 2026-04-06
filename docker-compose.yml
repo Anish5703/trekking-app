@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:15
+    container_name: postgresql-trekking-app
+    restart: no
+    stop_grace_period: 30s
+    stop_signal: SIGINT
+    environment:
+      POSTGRES_DB: trekking-app-db
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    container_name: trekking-app
+    depends_on:
+      - db
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+
+volumes:
+  pgdata:

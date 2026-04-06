@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 @Table(name="user_tbl")
 @Inheritance(strategy = InheritanceType.JOINED)
 @Entity
-@Data
 @NoArgsConstructor
+@Data
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,24 +24,25 @@ public class User {
     @Email
     @Column(unique = true,nullable = false)
     private String email;
-    @Column(nullable = false)
     private String password;
     private String contact;
     @Enumerated(EnumType.STRING)
     private Role role;
-    private boolean isActive;
+    private boolean emailVerified = false;
     @CreationTimestamp
     private LocalDateTime timeStamp;
 
+
     public User(String name, String email, String password, String contact, Role role)
     {
-        if(name==null || email == null || password == null )
+        if(name==null || email == null)
             throw new EmptySignupFieldException("User fields cannot be empty");
         this.name= name;
         this.email = email;
         this.password = password;
         this.contact = contact;
         this.role = role;
+
 
     }
 }

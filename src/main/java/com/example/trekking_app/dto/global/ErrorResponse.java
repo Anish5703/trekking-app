@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Data
 public class ErrorResponse {
-
     private ErrorType error;
-    private ApiMessage message;
+    private String details;
 }
