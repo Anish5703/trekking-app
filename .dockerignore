@@ -1,0 +1,41 @@
+# Build outputs
+target/
+build/
+out/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Git
+.git/
+.gitignore
+
+# Maven wrapper (optional - OK to ignore for your setup)
+.mvn/
+mvnw
+mvnw.cmd
+
+# OS/System files
+.DS_Store
+Thumbs.db
+
+# Logs & archives
+*.log
+*.zip
+*.tar.gz
+
+# Local DB / temp files
+*.db
+
+# Environment variables (IMPORTANT)
+.env
+
+# Future frontend
+node_modules/
+
+# Optional
+src/test/

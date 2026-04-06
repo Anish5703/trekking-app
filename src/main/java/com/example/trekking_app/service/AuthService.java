@@ -1,0 +1,176 @@
+package com.example.trekking_app.service;
+
+import com.example.trekking_app.dto.auth.LoginRequest;
+import com.example.trekking_app.dto.auth.LoginResponse;
+import com.example.trekking_app.dto.auth.SignupRequest;
+import com.example.trekking_app.dto.auth.SignupResponse;
+import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.entity.Token;
+import com.example.trekking_app.entity.User;
+import com.example.trekking_app.exception.auth.*;
+import com.example.trekking_app.mapper.UserMapper;
+import com.example.trekking_app.repository.TokenRepository;
+import com.example.trekking_app.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+
+@Slf4j
+@Service
+public class AuthService {
+    private final UserRepository userRepo;
+    private final TokenRepository tokenRepo;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
+    private final MailService mailService;
+    private final AuthenticationManager authManager;
+    private final JwtService jwtService;
+    public AuthService(UserRepository userRepo,TokenRepository tokenRepo,
+                       BCryptPasswordEncoder passwordEncoder,
+                       MailService mailService,AuthenticationManager authManager,
+                       JwtService jwtService)
+    {
+        this.userRepo = userRepo;
+        this.tokenRepo = tokenRepo;
+        this.userMapper = new UserMapper();
+        this.passwordEncoder = passwordEncoder;
+        this.mailService = mailService;
+        this.authManager = authManager;
+        this.jwtService = jwtService;
+    }
+
+
+    /*
+    * Signup User flow
+    * Validate SignupRequest dto for empty fields and email duplication
+    * Map SignupRequest dto to User entity
+    * Encode raw password
+    * Save user in user specific repository referring the role
+    * Send Confirmation link to the user
+    * Return ApiResponse<SignupResponse> dto
+    */
+
+    @Transactional
+    public ApiResponse<SignupResponse> signupUser(SignupRequest request, HttpServletRequest servletRequest)
+    { try {
+        this.validateSignupRequest(request);
+        User user = userMapper.toEntity(request);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+       User newUser = userRepo.save(user);
+        if (newUser == null)
+            throw new SignupFailedException("Failed to save new user : "+newUser.getName());
+        else {
+            mailService.sendSignupConfirmationToken(newUser,servletRequest);
+            SignupResponse signupResponse =userMapper.toSignupResponse(newUser);
+            return new ApiResponse<>(signupResponse,"Check mail for confirmation link",201);
+        }
+    }
+    catch(Exception e)
+    {
+        log.error("Database Exception : {}",e.getLocalizedMessage());
+        throw new SignupFailedException("Failed to save new user");
+    }
+    }
+    /*
+    * Method resend signup confirmation link
+    * Validate if email exists in User Repository and retrieve user
+    * Validate if user is already verified
+    * Delete previously generated token
+    * Send confirmation link
+    * return ApiResponse<SignupResponse> dto
+    */
+    @Transactional
+    public ApiResponse<SignupResponse> resendSignupConfirmation(String email, HttpServletRequest servletRequest)
+    {
+        try
+        {
+            User user = userRepo.findByEmail(email)
+                    .orElseThrow( () -> new SignupFailedException("Email not registered fill the signup page"));
+            if(user.isEmailVerified())
+                throw new SignupFailedException("Email is already verified go to login page");
+            tokenRepo.deleteByUserEmail(email);
+            mailService.sendSignupConfirmationToken(user,servletRequest);
+            String message = "Check mail for confirmation link";
+            SignupResponse signupResponse = userMapper.toSignupResponse(user);
+            return new ApiResponse<>(signupResponse,message,200);
+        }
+        catch(Exception e)
+        {
+            throw new SignupFailedException("Failed to send confirmation link");
+        }
+    }
+
+    /*
+    * Method to validate signup confirmation token
+    * Validate if token exists in the repository
+    * Retrieve user from token
+    * Set user field emailVerified to true
+    * Save updated user in the repository
+    * Return ApiResponse<SignupResponse> dto
+     */
+ @Transactional
+    public ApiResponse<SignupResponse> validateSignupConfirmationToken(String tokenName)
+    {
+     try
+     {
+         Token token = tokenRepo.findByTokenName(tokenName)
+                 .orElseThrow(() -> new SignupFailedException("Invalid signup token"));
+         User user = token.getUser();
+         user.setEmailVerified(true);
+         userRepo.save(user);
+         SignupResponse signupResponse = userMapper.toSignupResponse(user);
+         String message = "Email verified go to login page";
+         return new ApiResponse<>(signupResponse,message,200);
+     }
+     catch(Exception e)
+     {
+         throw new SignupFailedException("Failed to validate signup");
+     }
+    }
+    /*
+    * Method for validating SignupRequest dto for empty fields and duplicate email
+    * throws exception if violates any terms else returns void
+     */
+    public void validateSignupRequest(SignupRequest request)
+    {
+        try {
+            if (request.getName().isEmpty() || request.getEmail().isEmpty() || request.getPassword().isEmpty())
+                throw new EmptySignupFieldException("Signup fields cannot be empty");
+
+            if (userRepo.existsByEmail(request.getEmail())) {
+                log.error("User with email {} already exists", request.getEmail());
+                throw new DuplicateEmailFoundException("User with email already exists");
+            }
+        }
+        catch(Exception e)
+        {
+            throw new SignupFailedException("Failed to save new user");
+        }
+    }
+
+    public ApiResponse<LoginResponse> loginUser(LoginRequest request)
+    {
+        try{
+            Authentication auth = authManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(),request.getPassword()));
+            User user = userRepo.findByEmail(request.getEmail())
+                    .orElseThrow(
+                            () -> new UserNotFoundException("Email not found")
+                    );
+            String message = "Login Successful";
+            String jwtToken = jwtService.generateToken(request.getEmail());
+            LoginResponse loginResponse = userMapper.toLoginResponse(user);
+            loginResponse.setJwtToken(jwtToken);
+            return new ApiResponse<>(loginResponse,message,200);
+        }
+        catch(AuthenticationException ex)
+        {
+            throw new LoginFailedException("Credentials didn't matched");
+        }
+    }
+}
