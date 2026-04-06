@@ -130,7 +130,7 @@ public class AuthService {
      }
      catch(Exception e)
      {
-         throw new SignupFailedException("Failed to validate signup");
+         throw new SignupFailedException("Failed to validate signup token");
      }
     }
     /*
