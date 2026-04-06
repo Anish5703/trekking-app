@@ -4,12 +4,13 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name="user_oauth")
-public class UserOauth extends User{
+public class OauthUser extends User{
 
 
     @Column(nullable = false)
     private String provider;
 
-    @Column(nullable = false,unique = true)
-    private String token;
+    public String getProvider(){return provider;}
+
+    public void setProvider(String provider){ this.provider = provider;}
 }
