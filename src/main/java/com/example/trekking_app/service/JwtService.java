@@ -21,12 +21,12 @@ public class JwtService {
     private String secretKey;
 
 
-    public String generateToken(String username) {
+    public String generateToken(String email) {
         Map<String, Object> claims = new HashMap<>();
         return Jwts.builder()
                 .claims()
                 .add(claims)
-                .subject(username)
+                .subject(email)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 10*1000 * 60 * 30))
                 .and()

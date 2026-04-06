@@ -2,9 +2,8 @@ package com.example.trekking_app.exception;
 
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.global.ErrorResponse;
-import com.example.trekking_app.exception.auth.DuplicateEmailFoundException;
-import com.example.trekking_app.exception.auth.EmptySignupFieldException;
-import com.example.trekking_app.exception.auth.SignupFailedException;
+import com.example.trekking_app.exception.auth.*;
+import com.example.trekking_app.exception.user.DeleteUserFailedException;
 import com.example.trekking_app.model.ErrorType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -67,4 +66,30 @@ public class GlobalExceptionHandler {
 
     }
 
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleUserNotFound(UserNotFoundException ex)
+    {
+        log.error("Email not registered : {}",ex.getLocalizedMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.EMAIL_NOT_FOUND,ex.getMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(LoginFailedException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleLoginFailed(LoginFailedException ex)
+    {
+        log.error("Login Failed : {}",ex.getLocalizedMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.LOGIN_FAILED,ex.getMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(DeleteUserFailedException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleDeleteUserFailed(DeleteUserFailedException ex)
+    {
+        log.error("Delete User Failed : {}",ex.getLocalizedMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.DELETE_USER_FAILED,ex.getMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        return ResponseEntity.badRequest().body(response);
+    }
 }

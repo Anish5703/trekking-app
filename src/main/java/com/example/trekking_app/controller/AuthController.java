@@ -1,5 +1,7 @@
 package com.example.trekking_app.controller;
 
+import com.example.trekking_app.dto.auth.LoginRequest;
+import com.example.trekking_app.dto.auth.LoginResponse;
 import com.example.trekking_app.dto.auth.SignupRequest;
 import com.example.trekking_app.dto.auth.SignupResponse;
 import com.example.trekking_app.dto.global.ApiResponse;
@@ -22,12 +24,12 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<SignupResponse>> handleSignupUser(@Valid @RequestBody SignupRequest signupRequest,
+    public ResponseEntity<ApiResponse<SignupResponse>> handleUserSignup(@Valid @RequestBody SignupRequest signupRequest,
                                                                         HttpServletRequest servletRequest) {
         ApiResponse<SignupResponse> response = authService.signupUser(signupRequest, servletRequest);
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).headers(headers).body(response);
     }
 
     @GetMapping("/signup/confirmation")
@@ -35,7 +37,7 @@ public class AuthController {
         ApiResponse<SignupResponse> response = authService.validateSignupConfirmationToken(token);
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type","application/json");
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+        return ResponseEntity.status(HttpStatus.OK).headers(headers).body(response);
     }
 
     @PutMapping("/signup/resend")
@@ -45,9 +47,16 @@ public class AuthController {
         ApiResponse<SignupResponse> response = authService.resendSignupConfirmation(email, servletRequest);
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type","application/json");
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+        return ResponseEntity.status(HttpStatus.OK).headers(headers).body(response);
     }
 
-
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponse>> handleUserLogin(@Valid @RequestBody LoginRequest loginRequest)
+    {
+        ApiResponse<LoginResponse> response = authService.loginUser(loginRequest);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Content-Type","application/json");
+        return ResponseEntity.status(HttpStatus.OK).headers(headers).body(response);
+    }
 
 }

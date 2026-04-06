@@ -1,20 +1,23 @@
 package com.example.trekking_app.service;
 
+import com.example.trekking_app.dto.auth.LoginRequest;
+import com.example.trekking_app.dto.auth.LoginResponse;
 import com.example.trekking_app.dto.auth.SignupRequest;
 import com.example.trekking_app.dto.auth.SignupResponse;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.entity.Token;
 import com.example.trekking_app.entity.User;
-import com.example.trekking_app.exception.auth.DuplicateEmailFoundException;
-import com.example.trekking_app.exception.auth.EmptySignupFieldException;
-import com.example.trekking_app.exception.auth.SignupFailedException;
+import com.example.trekking_app.exception.auth.*;
 import com.example.trekking_app.mapper.UserMapper;
-import com.example.trekking_app.model.Role;
 import com.example.trekking_app.repository.TokenRepository;
 import com.example.trekking_app.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -26,18 +29,21 @@ public class AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
     private final MailService mailService;
+    private final AuthenticationManager authManager;
+    private final JwtService jwtService;
     public AuthService(UserRepository userRepo,TokenRepository tokenRepo,
                        BCryptPasswordEncoder passwordEncoder,
-                       MailService mailService)
+                       MailService mailService,AuthenticationManager authManager,
+                       JwtService jwtService)
     {
         this.userRepo = userRepo;
         this.tokenRepo = tokenRepo;
         this.userMapper = new UserMapper();
         this.passwordEncoder = passwordEncoder;
         this.mailService = mailService;
+        this.authManager = authManager;
+        this.jwtService = jwtService;
     }
-
-
 
 
     /*
@@ -145,6 +151,26 @@ public class AuthService {
         catch(Exception e)
         {
             throw new SignupFailedException("Failed to save new user");
+        }
+    }
+
+    public ApiResponse<LoginResponse> loginUser(LoginRequest request)
+    {
+        try{
+            Authentication auth = authManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(),request.getPassword()));
+            User user = userRepo.findByEmail(request.getEmail())
+                    .orElseThrow(
+                            () -> new UserNotFoundException("Email not found")
+                    );
+            String message = "Login Successful";
+            String jwtToken = jwtService.generateToken(request.getEmail());
+            LoginResponse loginResponse = userMapper.toLoginResponse(user);
+            loginResponse.setJwtToken(jwtToken);
+            return new ApiResponse<>(loginResponse,message,200);
+        }
+        catch(AuthenticationException ex)
+        {
+            throw new LoginFailedException("Credentials didn't matched");
         }
     }
 }
