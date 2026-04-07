@@ -1,12 +1,10 @@
 package com.example.trekking_app.mapper;
 
 import com.example.trekking_app.dto.oauth.OauthSignupRequest;
+import com.example.trekking_app.dto.oauth.OauthLoginResponse;
 import com.example.trekking_app.entity.OauthUser;
 import com.example.trekking_app.model.Role;
 import org.springframework.security.crypto.keygen.KeyGenerators;
-
-import javax.crypto.KeyGenerator;
-import java.util.random.RandomGenerator;
 
 public class OauthUserMapper {
 
@@ -25,9 +23,20 @@ public class OauthUserMapper {
         oauthUser.setEmail(oauthSignupRequest.getEmail());
         oauthUser.setRole(Role.CUSTOMER);
         oauthUser.setContact(null);
-        oauthUser.setProvider(oauthUser.getProvider());
+        oauthUser.setProvider(oauthSignupRequest.getProvider());
         oauthUser.setPassword(KeyGenerators.string().generateKey());
         oauthUser.setEmailVerified(true);
         return oauthUser;
+    }
+
+    public OauthLoginResponse toOauthUserDetails(OauthUser oauthUser)
+    {
+        OauthLoginResponse oauthLoginResponse = new OauthLoginResponse();
+        oauthLoginResponse.setId(oauthUser.getId());
+        oauthLoginResponse.setName(oauthUser.getName());
+        oauthLoginResponse.setEmail(oauthUser.getEmail());
+        oauthLoginResponse.setRole(oauthUser.getRole());
+        oauthLoginResponse.setProvider(oauthUser.getProvider());
+        return oauthLoginResponse;
     }
 }

@@ -1,30 +1,28 @@
 package com.example.trekking_app.security;
 
 import com.example.trekking_app.dto.oauth.OauthSignupRequest;
-import com.example.trekking_app.entity.OauthUser;
-import com.example.trekking_app.entity.User;
-import com.example.trekking_app.mapper.OauthUserMapper;
-import com.example.trekking_app.repository.OauthUserRepository;
+import com.example.trekking_app.exception.auth.LoginFailedException;
 import com.example.trekking_app.repository.UserRepository;
 import com.example.trekking_app.service.JwtService;
 import com.example.trekking_app.service.OauthService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.Optional;
 
+@Component
 public class CustomOauth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final OauthService oauthService;
     private final UserRepository userRepo;
     private final JwtService jwtService;
-    private final OauthUserMapper oauthUserMapper;
     private final String frontendUrl;
 
 
@@ -34,17 +32,19 @@ public class CustomOauth2SuccessHandler implements AuthenticationSuccessHandler 
         this.oauthService =  oauthService;
         this.userRepo = userRepo;
         this.jwtService = jwtService;
-        this.oauthUserMapper = new OauthUserMapper();
-        this.frontendUrl = "http;//localhost:8080/home";
+        this.frontendUrl = "/api/oauth/login";
     }
 
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
 
         OAuth2AuthenticationToken oAuth2AuthenticationToken = (OAuth2AuthenticationToken) authentication;
         OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
-
+        if(oauth2User == null)
+        {
+            throw new LoginFailedException("Failed to authenticate user");
+        }
         String email = oauth2User.getAttribute("email");
         String name = oauth2User.getAttribute("name");
         String provider = oAuth2AuthenticationToken.getAuthorizedClientRegistrationId();

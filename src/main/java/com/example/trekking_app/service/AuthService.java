@@ -5,10 +5,12 @@ import com.example.trekking_app.dto.auth.LoginResponse;
 import com.example.trekking_app.dto.auth.SignupRequest;
 import com.example.trekking_app.dto.auth.SignupResponse;
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.entity.OauthUser;
 import com.example.trekking_app.entity.Token;
 import com.example.trekking_app.entity.User;
 import com.example.trekking_app.exception.auth.*;
 import com.example.trekking_app.mapper.UserMapper;
+import com.example.trekking_app.repository.OauthUserRepository;
 import com.example.trekking_app.repository.TokenRepository;
 import com.example.trekking_app.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +23,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Slf4j
 @Service
 public class AuthService {
@@ -31,10 +35,11 @@ public class AuthService {
     private final MailService mailService;
     private final AuthenticationManager authManager;
     private final JwtService jwtService;
+    private final OauthUserRepository oauthUserRepo;
     public AuthService(UserRepository userRepo,TokenRepository tokenRepo,
                        BCryptPasswordEncoder passwordEncoder,
                        MailService mailService,AuthenticationManager authManager,
-                       JwtService jwtService)
+                       JwtService jwtService,OauthUserRepository oauthUserRepo)
     {
         this.userRepo = userRepo;
         this.tokenRepo = tokenRepo;
@@ -43,6 +48,7 @@ public class AuthService {
         this.mailService = mailService;
         this.authManager = authManager;
         this.jwtService = jwtService;
+        this.oauthUserRepo = oauthUserRepo;
     }
 
 
@@ -157,11 +163,18 @@ public class AuthService {
     public ApiResponse<LoginResponse> loginUser(LoginRequest request)
     {
         try{
-            Authentication auth = authManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(),request.getPassword()));
             User user = userRepo.findByEmail(request.getEmail())
                     .orElseThrow(
                             () -> new UserNotFoundException("Email not found")
                     );
+            if(!user.isEmailVerified())
+                throw new LoginFailedException("Email not verified");
+            if(oauthUserRepo.existsByEmail(request.getEmail()))
+            {
+                Optional<OauthUser> oauthUser = oauthUserRepo.findByEmail(request.getEmail());
+                if(oauthUser.isPresent()) throw new LoginFailedException("Login with "+oauthUser.get().getProvider());
+            }
+            Authentication auth = authManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(),request.getPassword()));
             String message = "Login Successful";
             String jwtToken = jwtService.generateToken(request.getEmail());
             LoginResponse loginResponse = userMapper.toLoginResponse(user);
