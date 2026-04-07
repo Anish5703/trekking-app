@@ -160,6 +160,17 @@ public class AuthService {
         }
     }
 
+  /*
+  * Method for user login
+  * Validate if email is registered
+  * Validate if email is verified
+  * Check if user is created using oauth signin
+  * Authenticate login credentials
+  * Generate jwt token
+  * Prepare LoginResponse
+  * Return ApiResponse<LoginResponse> dto
+   */
+    @Transactional
     public ApiResponse<LoginResponse> loginUser(LoginRequest request)
     {
         try{

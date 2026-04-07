@@ -34,6 +34,13 @@ public class OauthService {
         this.jwtService = jwtService;
     }
 
+    /*
+    * Method set jwt token in cookie and set Authorization response header
+    * Create Cookie and set attributes
+    * Add Cookie to the response
+    * Add Header Authorization with jwt token eg: "Bearer $jwtToken"
+    * return response;
+     */
 
     public HttpServletResponse setJwtCookieAndHeader(HttpServletRequest servletRequest, HttpServletResponse servletResponse, String jwtToken) {
         boolean isProduction = !servletRequest.getServerName().equals("localhost");
@@ -59,6 +66,17 @@ public class OauthService {
             throw new SignupFailedException("Failed to signup user");
         }
     }
+
+    /*
+    * Method to login user using oauth
+    * Fetch UserPrincipal from authentication object
+    * Validate if UserPrincipal is present
+    * Fetch email from UserPrincipal
+    * Validate if email exists
+    * Fetch OauthUser from OauthUserRepository
+    * Prepare OauthLoginResponse
+    * Return ApiResponse<OauthLoginResponse>
+     */
 
     public ApiResponse<OauthLoginResponse> getOauthLogin(Authentication authentication) {
         try {
