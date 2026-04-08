@@ -61,7 +61,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<ErrorResponse>> handleEmailNotFound(UsernameNotFoundException ex)
     {
         log.error("User email not found : {}",ex.getLocalizedMessage());
-        ErrorResponse data = new ErrorResponse(ErrorType.EMAIL_NOT_FOUND,ex.getMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.EMAIL_NOT_FOUND,ex.getLocalizedMessage());
         ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
         return ResponseEntity.badRequest().body(response);
 

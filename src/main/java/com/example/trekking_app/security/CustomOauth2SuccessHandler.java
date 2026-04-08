@@ -23,7 +23,7 @@ public class CustomOauth2SuccessHandler implements AuthenticationSuccessHandler 
     private final OauthService oauthService;
     private final UserRepository userRepo;
     private final JwtService jwtService;
-    private final String frontendUrl;
+    private final String redirectUrl;
 
 
     public CustomOauth2SuccessHandler(OauthService oauthService,UserRepository userRepo,
@@ -32,34 +32,39 @@ public class CustomOauth2SuccessHandler implements AuthenticationSuccessHandler 
         this.oauthService =  oauthService;
         this.userRepo = userRepo;
         this.jwtService = jwtService;
-        this.frontendUrl = "/api/oauth/login";
+        this.redirectUrl = "/api/oauth/login";
     }
 
 
     @Override
     public void onAuthenticationSuccess(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
 
-        OAuth2AuthenticationToken oAuth2AuthenticationToken = (OAuth2AuthenticationToken) authentication;
-        OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
-        if(oauth2User == null)
-        {
-            throw new LoginFailedException("Failed to authenticate user");
-        }
-        String email = oauth2User.getAttribute("email");
-        String name = oauth2User.getAttribute("name");
-        String provider = oAuth2AuthenticationToken.getAuthorizedClientRegistrationId();
 
-        String jwtToken = jwtService.generateToken(email);
-        //Check if email is already registered
-        if(userRepo.existsByEmail(email))
-          response = oauthService.setJwtCookieAndHeader(request,response,jwtToken);
+            OAuth2AuthenticationToken oAuth2AuthenticationToken = (OAuth2AuthenticationToken) authentication;
+            OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
+            if (oauth2User == null) {
+                throw new LoginFailedException("Failed to authenticate user");
+            }
 
-        else
-        {
-            OauthSignupRequest signupRequest = new OauthSignupRequest(email,provider,name);
-            oauthService.signupUser(signupRequest);
-            response = oauthService.setJwtCookieAndHeader(request,response,jwtToken);
+            String email = oauth2User.getAttribute("email");
+            String name = oauth2User.getAttribute("name");
+            String provider = oAuth2AuthenticationToken.getAuthorizedClientRegistrationId();
+            if (email == null)
+                throw new LoginFailedException("Failed to fetch email from " + provider);
+            if (name == null)
+                name = email.split("@")[0];
+
+            String jwtToken = jwtService.generateToken(email);
+            //Check if email is already registered
+            if (userRepo.existsByEmail(email))
+                response = oauthService.setJwtCookieAndHeader(request, response, jwtToken);
+
+            else {
+                OauthSignupRequest signupRequest = new OauthSignupRequest(email, provider, name);
+                oauthService.signupUser(signupRequest);
+                response = oauthService.setJwtCookieAndHeader(request, response, jwtToken);
+            }
+            response.sendRedirect(redirectUrl);
         }
-        response.sendRedirect(frontendUrl);
-    }
+
 }
