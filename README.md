@@ -4,4 +4,5 @@ Run docker compose up --build to start the backend application
 
 Server_Base_Url : http://localhost:8081/
 
-Google Oauth Signin : http://localhost:8081/oauth2/authorization/google
+Google Oauth Signin/Login : http://localhost:8081/oauth2/authorization/google
+Facebook Oauth Signin/Login : http://localhost:8081/oauth2/authorization/facebook
