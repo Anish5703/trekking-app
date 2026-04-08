@@ -14,6 +14,7 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 
@@ -24,22 +25,24 @@ public class CustomOauth2SuccessHandler implements AuthenticationSuccessHandler 
     private final UserRepository userRepo;
     private final JwtService jwtService;
     private final String redirectUrl;
+    private final HandlerExceptionResolver handlerExceptionResolver;
 
 
     public CustomOauth2SuccessHandler(OauthService oauthService,UserRepository userRepo,
-                                        JwtService jwtService)
+                                        JwtService jwtService,HandlerExceptionResolver handlerExceptionResolver)
     {
         this.oauthService =  oauthService;
         this.userRepo = userRepo;
         this.jwtService = jwtService;
         this.redirectUrl = "/api/oauth/login";
+        this.handlerExceptionResolver = handlerExceptionResolver;
     }
 
 
     @Override
     public void onAuthenticationSuccess(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
 
-
+        try {
             OAuth2AuthenticationToken oAuth2AuthenticationToken = (OAuth2AuthenticationToken) authentication;
             OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
             if (oauth2User == null) {
@@ -48,23 +51,26 @@ public class CustomOauth2SuccessHandler implements AuthenticationSuccessHandler 
 
             String email = oauth2User.getAttribute("email");
             String name = oauth2User.getAttribute("name");
-            String provider = oAuth2AuthenticationToken.getAuthorizedClientRegistrationId();
+            String provider = oAuth2AuthenticationToken.getAuthorizedClientRegistrationId().toUpperCase();
             if (email == null)
                 throw new LoginFailedException("Failed to fetch email from " + provider);
             if (name == null)
                 name = email.split("@")[0];
 
-            String jwtToken = jwtService.generateToken(email);
-            //Check if email is already registered
-            if (userRepo.existsByEmail(email))
-                response = oauthService.setJwtCookieAndHeader(request, response, jwtToken);
-
-            else {
+            //if user email is not registered follow signup
+            if (!userRepo.existsByEmail(email)) {
                 OauthSignupRequest signupRequest = new OauthSignupRequest(email, provider, name);
                 oauthService.signupUser(signupRequest);
-                response = oauthService.setJwtCookieAndHeader(request, response, jwtToken);
             }
+            String jwtToken = jwtService.generateToken(email);
+            response = oauthService.setJwtCookieAndHeader(request, response, jwtToken);
+
             response.sendRedirect(redirectUrl);
         }
+        catch(LoginFailedException e)
+        {
+            handlerExceptionResolver.resolveException(request,response,null,e);
+        }
+    }
 
 }
