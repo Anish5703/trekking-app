@@ -149,9 +149,15 @@ public class AuthService {
             if (request.getName().isEmpty() || request.getEmail().isEmpty() || request.getPassword().isEmpty())
                 throw new EmptySignupFieldException("Signup fields cannot be empty");
 
-            if (userRepo.existsByEmail(request.getEmail())) {
+            if (userRepo.existsByEmail(request.getEmail()))
+            {
+                Optional<User> user = userRepo.findByEmail(request.getEmail());
+
+                if(user.isPresent() && !user.get().isEmailVerified())
+                    throw new SignupFailedException("Email already exists but not verified ! Check inbox for confirmation link");
+
                 log.error("User with email {} already exists", request.getEmail());
-                throw new DuplicateEmailFoundException("User with email already exists");
+                throw new DuplicateEmailFoundException("Email already exists");
             }
         }
         catch(Exception e)
