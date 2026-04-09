@@ -65,7 +65,7 @@ public class AuthService {
     @Transactional
     public ApiResponse<SignupResponse> signupUser(SignupRequest request, HttpServletRequest servletRequest)
     { try {
-        this.validateSignupRequest(request);
+        this.validateSignupRequest(request,servletRequest);
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
        User newUser = userRepo.save(user);
@@ -143,7 +143,7 @@ public class AuthService {
     * Method for validating SignupRequest dto for empty fields and duplicate email
     * throws exception if violates any terms else returns void
      */
-    public void validateSignupRequest(SignupRequest request)
+    public void validateSignupRequest(SignupRequest request,HttpServletRequest servletRequest)
     {
         try {
             if (request.getName().isEmpty() || request.getEmail().isEmpty() || request.getPassword().isEmpty())
@@ -154,8 +154,7 @@ public class AuthService {
                 Optional<User> user = userRepo.findByEmail(request.getEmail());
 
                 if(user.isPresent() && !user.get().isEmailVerified())
-                    throw new SignupFailedException("Email already exists but not verified ! Check inbox for confirmation link");
-
+                  resendSignupConfirmation(user.get().getEmail(), servletRequest);
                 log.error("User with email {} already exists", request.getEmail());
                 throw new DuplicateEmailFoundException("Email already exists");
             }

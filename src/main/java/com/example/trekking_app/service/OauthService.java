@@ -39,7 +39,7 @@ public class OauthService {
     * Create Cookie and set attributes
     * Add Cookie to the response
     * Add Header Authorization with jwt token eg: "Bearer $jwtToken"
-    * return response;
+    * Return response;
      */
 
     public HttpServletResponse setJwtCookieAndHeader(HttpServletRequest servletRequest, HttpServletResponse servletResponse, String jwtToken) {
@@ -53,6 +53,13 @@ public class OauthService {
         servletResponse.addHeader("Authorization", String.format("Bearer %s", jwtToken));
         return servletResponse;
     }
+
+    /*
+    * Method to signup user using oauth
+    * Validate if email already exists
+    * Prepare OauthUser
+    * Save OauthUser to the OauthUserRepository
+     */
 
     @Transactional
     public void signupUser(OauthSignupRequest signupRequest) {

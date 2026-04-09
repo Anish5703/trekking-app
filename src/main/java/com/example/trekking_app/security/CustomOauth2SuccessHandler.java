@@ -37,7 +37,19 @@ public class CustomOauth2SuccessHandler implements AuthenticationSuccessHandler 
         this.redirectUrl = "/api/oauth/login";
         this.handlerExceptionResolver = handlerExceptionResolver;
     }
-
+/*
+* Method that is invoked after successful OAuthentication
+* Retrieve Principal from Authentication and explicitly cast it to OAuth2User
+* Validate of OAuth2User is not null
+* Retrieve attributes "email" and "name" from OAuth2User
+* Explicitly cast Authentication to OAuth2AuthenticationToken
+* Retrieve oauth provider name using OAuth2Authentication method
+* Validate if email and name is not null
+* Validate if email already exists .If not signup user.
+* Generate jwt token using email
+* Set Jwt Cookie and Authorization Header
+* Redirect to oauth login url
+ */
 
     @Override
     public void onAuthenticationSuccess(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, Authentication authentication) throws IOException, ServletException {

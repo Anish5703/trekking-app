@@ -63,7 +63,7 @@ public void sendHtmlMail(String to,String subject,String htmlContent) throws Mes
         Token token = new Token(tokenName,user);
         tokenRepo.save(token);
 
-        //Concating url and token
+        //Concatenating url and token
         String confirmationLink = getConfirmationUrl(servletRequest)+token.getTokenName();
 
         //sending confirmation mail to the user
