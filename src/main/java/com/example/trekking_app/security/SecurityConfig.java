@@ -32,13 +32,19 @@ public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
 
+    private final CustomOauth2SuccessHandler oauth2SuccessHandler;
+    private final CustomOauth2FailureHandler oauth2FailureHandler;
+
 
     private final Logger log;
 
-    public SecurityConfig(MyUserDetailsService userDetailsService,JwtFilter jwtFilter)
+    public SecurityConfig(MyUserDetailsService userDetailsService,JwtFilter jwtFilter,
+                          CustomOauth2SuccessHandler oauth2SuccessHandler,CustomOauth2FailureHandler oauth2FailureHandler )
     {
         this.userDetailsService = userDetailsService;
         this.jwtFilter = jwtFilter;
+        this.oauth2SuccessHandler = oauth2SuccessHandler;
+        this.oauth2FailureHandler = oauth2FailureHandler;
         log = LoggerFactory.getLogger(SecurityConfig.class);
 
     }
@@ -54,6 +60,11 @@ public class SecurityConfig {
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
+                .oauth2Login(oauth2 ->
+                        oauth2
+                                .successHandler(oauth2SuccessHandler)
+                                .failureHandler(oauth2FailureHandler)
+                )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(unauthorizedEntryPoint()) )
                 .sessionManagement(session->session
@@ -114,10 +125,8 @@ public class SecurityConfig {
            "/api/auth/**",
           "/api/auth/signup/**",
           "/api/home",
-          "/api/oauth/register",
           "/oauth2/authorization/**",
           "/login/oauth2/**",
-          "/api/oauth/**",
           "/v3/api-docs/**",
           "/swagger-ui/**",
           "/swagger-ui.html",

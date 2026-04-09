@@ -17,15 +17,13 @@ public class AdminController {
 
     private final AdminService adminService;
 
-    public AdminController(AdminService adminService)
-    {
+    public AdminController(AdminService adminService) {
         this.adminService = adminService;
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/list/user")
-    public ResponseEntity<ApiResponse<List<UserDetails>>> handleGetUserList()
-    {
+    public ResponseEntity<ApiResponse<List<UserDetails>>> handleGetUserList() {
         ApiResponse<List<UserDetails>> response = adminService.getUserList();
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");
@@ -34,8 +32,7 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/delete/user")
-    public ResponseEntity<ApiResponse<UserDetails>> handleDeleteUser(@RequestParam(name="id")int id)
-    {
+    public ResponseEntity<ApiResponse<UserDetails>> handleDeleteUser(@RequestParam(name = "id") int id) {
         ApiResponse<UserDetails> response = adminService.deleteUser(id);
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");

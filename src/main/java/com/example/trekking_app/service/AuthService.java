@@ -5,10 +5,12 @@ import com.example.trekking_app.dto.auth.LoginResponse;
 import com.example.trekking_app.dto.auth.SignupRequest;
 import com.example.trekking_app.dto.auth.SignupResponse;
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.entity.OauthUser;
 import com.example.trekking_app.entity.Token;
 import com.example.trekking_app.entity.User;
 import com.example.trekking_app.exception.auth.*;
 import com.example.trekking_app.mapper.UserMapper;
+import com.example.trekking_app.repository.OauthUserRepository;
 import com.example.trekking_app.repository.TokenRepository;
 import com.example.trekking_app.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +23,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Slf4j
 @Service
 public class AuthService {
@@ -31,10 +35,11 @@ public class AuthService {
     private final MailService mailService;
     private final AuthenticationManager authManager;
     private final JwtService jwtService;
+    private final OauthUserRepository oauthUserRepo;
     public AuthService(UserRepository userRepo,TokenRepository tokenRepo,
                        BCryptPasswordEncoder passwordEncoder,
                        MailService mailService,AuthenticationManager authManager,
-                       JwtService jwtService)
+                       JwtService jwtService,OauthUserRepository oauthUserRepo)
     {
         this.userRepo = userRepo;
         this.tokenRepo = tokenRepo;
@@ -43,6 +48,7 @@ public class AuthService {
         this.mailService = mailService;
         this.authManager = authManager;
         this.jwtService = jwtService;
+        this.oauthUserRepo = oauthUserRepo;
     }
 
 
@@ -59,7 +65,7 @@ public class AuthService {
     @Transactional
     public ApiResponse<SignupResponse> signupUser(SignupRequest request, HttpServletRequest servletRequest)
     { try {
-        this.validateSignupRequest(request);
+        this.validateSignupRequest(request,servletRequest);
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
        User newUser = userRepo.save(user);
@@ -130,22 +136,27 @@ public class AuthService {
      }
      catch(Exception e)
      {
-         throw new SignupFailedException("Failed to validate signup");
+         throw new SignupFailedException("Failed to validate signup token");
      }
     }
     /*
     * Method for validating SignupRequest dto for empty fields and duplicate email
     * throws exception if violates any terms else returns void
      */
-    public void validateSignupRequest(SignupRequest request)
+    public void validateSignupRequest(SignupRequest request,HttpServletRequest servletRequest)
     {
         try {
             if (request.getName().isEmpty() || request.getEmail().isEmpty() || request.getPassword().isEmpty())
                 throw new EmptySignupFieldException("Signup fields cannot be empty");
 
-            if (userRepo.existsByEmail(request.getEmail())) {
+            if (userRepo.existsByEmail(request.getEmail()))
+            {
+                Optional<User> user = userRepo.findByEmail(request.getEmail());
+
+                if(user.isPresent() && !user.get().isEmailVerified())
+                  resendSignupConfirmation(user.get().getEmail(), servletRequest);
                 log.error("User with email {} already exists", request.getEmail());
-                throw new DuplicateEmailFoundException("User with email already exists");
+                throw new DuplicateEmailFoundException("Email already exists");
             }
         }
         catch(Exception e)
@@ -154,14 +165,32 @@ public class AuthService {
         }
     }
 
+  /*
+  * Method for user login
+  * Validate if email is registered
+  * Validate if email is verified
+  * Check if user is created using oauth signin
+  * Authenticate login credentials
+  * Generate jwt token
+  * Prepare LoginResponse
+  * Return ApiResponse<LoginResponse> dto
+   */
+    @Transactional
     public ApiResponse<LoginResponse> loginUser(LoginRequest request)
     {
         try{
-            Authentication auth = authManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(),request.getPassword()));
             User user = userRepo.findByEmail(request.getEmail())
                     .orElseThrow(
                             () -> new UserNotFoundException("Email not found")
                     );
+            if(!user.isEmailVerified())
+                throw new LoginFailedException("Email not verified");
+            if(oauthUserRepo.existsByEmail(request.getEmail()))
+            {
+                Optional<OauthUser> oauthUser = oauthUserRepo.findByEmail(request.getEmail());
+                if(oauthUser.isPresent()) throw new LoginFailedException("Login with "+oauthUser.get().getProvider());
+            }
+            Authentication auth = authManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(),request.getPassword()));
             String message = "Login Successful";
             String jwtToken = jwtService.generateToken(request.getEmail());
             LoginResponse loginResponse = userMapper.toLoginResponse(user);

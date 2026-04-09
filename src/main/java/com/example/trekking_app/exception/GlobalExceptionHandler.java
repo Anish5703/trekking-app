@@ -5,6 +5,7 @@ import com.example.trekking_app.dto.global.ErrorResponse;
 import com.example.trekking_app.exception.auth.*;
 import com.example.trekking_app.exception.user.DeleteUserFailedException;
 import com.example.trekking_app.model.ErrorType;
+import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -60,7 +61,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<ErrorResponse>> handleEmailNotFound(UsernameNotFoundException ex)
     {
         log.error("User email not found : {}",ex.getLocalizedMessage());
-        ErrorResponse data = new ErrorResponse(ErrorType.EMAIL_NOT_FOUND,ex.getMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.EMAIL_NOT_FOUND,ex.getLocalizedMessage());
         ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
         return ResponseEntity.badRequest().body(response);
 
@@ -89,6 +90,15 @@ public class GlobalExceptionHandler {
     {
         log.error("Delete User Failed : {}",ex.getLocalizedMessage());
         ErrorResponse data = new ErrorResponse(ErrorType.DELETE_USER_FAILED,ex.getMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler({JwtException.class,SignatureException.class , ExpiredJwtException.class, ClaimJwtException.class, MalformedJwtException.class})
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleJwtException(Exception ex)
+    {
+        log.error("JwtException : {}",ex.getLocalizedMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.LOGIN_FAILED,ex.getMessage());
         ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
         return ResponseEntity.badRequest().body(response);
     }

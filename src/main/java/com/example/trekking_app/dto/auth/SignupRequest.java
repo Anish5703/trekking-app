@@ -1,6 +1,7 @@
 package com.example.trekking_app.dto.auth;
 
 import com.example.trekking_app.model.Role;
+import io.swagger.v3.oas.annotations.media.SchemaProperties;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
