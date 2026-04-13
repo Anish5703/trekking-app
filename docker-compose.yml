@@ -16,6 +16,23 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  pgAdmin:
+    image: dpage/pgadmin4
+    container_name: paathshala-pgadmin
+    logging:
+      driver: "none"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@pgadmin4.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: 50
+      GUNICORN_ACCESS_LOGFILE: /dev/null
+    ports:
+      - "8082:80"
+      # pgAdmin accessible on localhost:8082
+          #username = myuser  , password = mypassword
+    depends_on:
+      - db
+
   app:
     build: .
     container_name: trekking-app

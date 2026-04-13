@@ -34,7 +34,7 @@ public class CustomOauth2SuccessHandler implements AuthenticationSuccessHandler 
         this.oauthService =  oauthService;
         this.userRepo = userRepo;
         this.jwtService = jwtService;
-        this.redirectUrl = "/api/oauth/login";
+        this.redirectUrl = "/api/v1/oauth/login";
         this.handlerExceptionResolver = handlerExceptionResolver;
     }
 /*
