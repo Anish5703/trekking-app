@@ -21,21 +21,20 @@ indexes = {
 })
 @NoArgsConstructor
 @Data
-@AllArgsConstructor
 public class Route {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(nullable = false)
+    @Column(nullable = false,length = 255)
     private String title;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id",nullable = false)
     private User user;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT",length=1000)
     private String description;
 
     @Column(name = "route_geometry",columnDefinition = "geometry(LineString, 4326)")
@@ -51,10 +50,10 @@ public class Route {
     @Enumerated(EnumType.STRING)
     private DifficultyLevel difficultyLevel;
 
-    @Column(length=100)
+    @Column(length=100,nullable = false)
     private String region;
 
-    @Column(length=100)
+    @Column(length=100,nullable = false)
     private String district;
 
     @OneToMany(mappedBy = "route", cascade = CascadeType.ALL , orphanRemoval = true)

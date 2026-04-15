@@ -2,7 +2,7 @@ package com.example.trekking_app.model;
 
 public enum DifficultyLevel {
     EASY,
-    MEDIUM,
+    MODERATE,
     HARD,
-    INTENSE
+    EXPERT
 }
