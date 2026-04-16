@@ -41,14 +41,14 @@ public class POI extends BaseEntity{
     @Column(nullable = false)
     private Double longitude;
 
-    @Column
+    @Column(nullable = false)
     private Double elevation;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private POIType type;
 
-    @Column(nullable = true,length = 1000)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @OneToMany(mappedBy = "poi" , cascade = CascadeType.ALL , orphanRemoval = true,fetch = FetchType.LAZY)
