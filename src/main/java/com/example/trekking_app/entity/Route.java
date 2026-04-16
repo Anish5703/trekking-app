@@ -2,14 +2,10 @@ package com.example.trekking_app.entity;
 
 import com.example.trekking_app.model.DifficultyLevel;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import lombok.*;
+
 import org.locationtech.jts.geom.LineString;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,12 +16,15 @@ indexes = {
         @Index(name="idx_routes_user" , columnList = "user_id")
 })
 @NoArgsConstructor
-@Data
-public class Route {
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder
+public class Route extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     @Column(nullable = false,length = 255)
     private String title;
@@ -34,17 +33,17 @@ public class Route {
     @JoinColumn(name="user_id",nullable = false)
     private User user;
 
-    @Column(columnDefinition = "TEXT",length=1000)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "route_geometry",columnDefinition = "geometry(LineString, 4326)")
     private LineString routeGeometry;
 
     @Column(name="max_elevation")
-    private double maxElevation;
+    private Double maxElevation;
 
     @Column(name="estimated_days")
-    private int estimatedDays;
+    private Integer estimatedDays;
 
     @Column(name="difficulty_level",length=20)
     @Enumerated(EnumType.STRING)
@@ -72,15 +71,10 @@ public class Route {
     @OneToMany(mappedBy = "route", cascade = CascadeType.ALL , orphanRemoval = true)
     private List<Image> images = new ArrayList<>();
 
-   @OneToMany(mappedBy = "route" , cascade = CascadeType.ALL , orphanRemoval = true)
+   @OneToOne(mappedBy = "route" , cascade = CascadeType.ALL , orphanRemoval = true)
    private List<OfflineRegion> offlineRegions = new ArrayList<>();
 
-    @Column(nullable = false,updatable = false)
-    @CreationTimestamp
-    private LocalDateTime timeStamp;
 
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
 
 
 
