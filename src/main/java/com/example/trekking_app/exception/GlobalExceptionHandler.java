@@ -3,6 +3,8 @@ package com.example.trekking_app.exception;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.global.ErrorResponse;
 import com.example.trekking_app.exception.auth.*;
+import com.example.trekking_app.exception.route.CreateRouteFailedException;
+import com.example.trekking_app.exception.route.RouteNotFoundException;
 import com.example.trekking_app.exception.user.DeleteUserFailedException;
 import com.example.trekking_app.model.ErrorType;
 import io.jsonwebtoken.*;
@@ -94,6 +96,24 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(CreateRouteFailedException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleCreateRouteFailed(CreateRouteFailedException ex)
+    {
+        log.error("Create Route Failed : {}",ex.getLocalizedMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.CREATE_ROUTE_FAILED,ex.getMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(RouteNotFoundException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleRouteNotFound(RouteNotFoundException ex)
+    {
+        log.error("Route Not found : {}",ex.getLocalizedMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.ROUTE_NOT_FOUND,ex.getMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        return ResponseEntity.badRequest().body(response);
+    }
+
     @ExceptionHandler({JwtException.class,SignatureException.class , ExpiredJwtException.class, ClaimJwtException.class, MalformedJwtException.class})
     public ResponseEntity<ApiResponse<ErrorResponse>> handleJwtException(Exception ex)
     {
@@ -102,4 +122,6 @@ public class GlobalExceptionHandler {
         ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
         return ResponseEntity.badRequest().body(response);
     }
+
+
 }
