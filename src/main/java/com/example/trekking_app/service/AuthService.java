@@ -13,6 +13,7 @@ import com.example.trekking_app.mapper.UserMapper;
 import com.example.trekking_app.repository.OauthUserRepository;
 import com.example.trekking_app.repository.TokenRepository;
 import com.example.trekking_app.repository.UserRepository;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -72,7 +73,7 @@ public class AuthService {
         if (newUser == null)
             throw new SignupFailedException("Failed to save new user : "+newUser.getName());
         else {
-            mailService.sendSignupConfirmationToken(newUser,servletRequest);
+            sendSignupConfirmationToken(newUser,servletRequest);
             SignupResponse signupResponse =userMapper.toSignupResponse(newUser);
             return new ApiResponse<>(signupResponse,"Check mail for confirmation link",201);
         }
@@ -101,7 +102,7 @@ public class AuthService {
             if(user.isEmailVerified())
                 throw new SignupFailedException("Email is already verified go to login page");
             tokenRepo.deleteByUserEmail(email);
-            mailService.sendSignupConfirmationToken(user,servletRequest);
+            sendSignupConfirmationToken(user,servletRequest);
             String message = "Check mail for confirmation link";
             SignupResponse signupResponse = userMapper.toSignupResponse(user);
             return new ApiResponse<>(signupResponse,message,200);
@@ -201,5 +202,22 @@ public class AuthService {
         {
             throw new LoginFailedException("Credentials didn't matched");
         }
+    }
+
+    //Method to send registration confirmation token
+    public void sendSignupConfirmationToken(User user, HttpServletRequest servletRequest) throws MessagingException
+    {
+        //generating token and storing it to the repo with username
+        String tokenName = mailService.generateToken();
+        log.info("Generated token {} for user {}",tokenName,user);
+        Token token = new Token(tokenName,user);
+        tokenRepo.save(token);
+
+        //Concatenating url and token
+        String confirmationLink = mailService.getConfirmationUrl(servletRequest)+token.getTokenName();
+
+        //sending confirmation mail to the user
+        String htmlContent = mailService.buildConfirmationEmail(user.getName(),confirmationLink);
+        mailService.sendHtmlMail(user.getEmail(),"Confirmation Mail",htmlContent);
     }
 }

@@ -54,22 +54,7 @@ public void sendHtmlMail(String to,String subject,String htmlContent) throws Mes
     """, username, confirmationLink);
     }
 
-    //Method to send registration confirmation token
-    public void sendSignupConfirmationToken(User user, HttpServletRequest servletRequest) throws MessagingException
-    {
-        //generating token and storing it to the repo with username
-        String tokenName = generateToken();
-        log.info("Generated token {} for user {}",tokenName,user);
-        Token token = new Token(tokenName,user);
-        tokenRepo.save(token);
 
-        //Concatenating url and token
-        String confirmationLink = getConfirmationUrl(servletRequest)+token.getTokenName();
-
-        //sending confirmation mail to the user
-        String htmlContent = buildConfirmationEmail(user.getName(),confirmationLink);
-        sendHtmlMail(user.getEmail(),"Confirmation Mail",htmlContent);
-    }
 
 
     //Method to generate confirmation URL excluding token
