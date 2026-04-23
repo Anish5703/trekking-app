@@ -4,6 +4,7 @@ import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.GpxImportResponse;
 import com.example.trekking_app.dto.route.RouteRequest;
 import com.example.trekking_app.dto.route.RouteResponse;
+import com.example.trekking_app.model.UserPrincipal;
 import com.example.trekking_app.service.GpxParserService;
 import com.example.trekking_app.service.RouteService;
 import jakarta.validation.Valid;
@@ -27,19 +28,19 @@ public class AdminRouteController {
         this.gpxParserService = gpxParserService;
     }
 
-    @PreAuthorize(("hasRole(ADMIN)"))
+    @PreAuthorize(("hasRole('ADMIN')"))
     @PostMapping
     public ResponseEntity<ApiResponse<RouteResponse>> handleCreateRoute(@Valid @RequestBody RouteRequest routeRequest,
-                                                                        @AuthenticationPrincipal int userId)
+                                                                        @AuthenticationPrincipal UserPrincipal user)
     {
-        ApiResponse<RouteResponse> response = routeService.createRoute(routeRequest, userId);
+        ApiResponse<RouteResponse> response = routeService.createRoute(routeRequest, user.getId());
         return ResponseEntity.status(201).body(response);
     }
 
     @PreAuthorize("hasRole('ADMIN)")
     @PostMapping("/import/gpx")
     public ResponseEntity<ApiResponse<GpxImportResponse>> handleGpxImport(MultipartFile file,
-                                                                          @RequestParam int routeId) {
+                                                                          @RequestParam Integer routeId) {
         ApiResponse<GpxImportResponse> response = gpxParserService.importGpx(file,routeId);
         return ResponseEntity.status(201).body(response);
     }

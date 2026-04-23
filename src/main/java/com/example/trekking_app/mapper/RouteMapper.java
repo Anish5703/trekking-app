@@ -12,7 +12,7 @@ public class RouteMapper {
     public Route toEntity(@NonNull RouteRequest routeRequest, User user , Destination destination)
     {
         return   Route.builder()
-                .name(routeRequest.getTitle())
+                .name(routeRequest.getName())
                 .destination(destination)
                 .description(routeRequest.getDescription())
                 .difficultyLevel(routeRequest.getDifficultyLevel())

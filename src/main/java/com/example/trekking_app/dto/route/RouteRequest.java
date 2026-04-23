@@ -18,7 +18,7 @@ public class RouteRequest {
     @NotBlank(message = "route title cannot be null")
     @Size(min = 5 , message = "route title is too short")
     @Size(max = 100 , message = "route title is too long")
-    private String title;
+    private String name;
 
     @NotNull(message = "route destination is required")
     private int destinationId;
@@ -32,10 +32,5 @@ public class RouteRequest {
     @NotNull(message = "route estimated days required")
     private Integer estimatedDays;
 
-    @NotBlank(message = "route region required")
-    private String region;
-
-    @NotBlank(message = "route district required")
-    private String district;
 
 }
