@@ -19,11 +19,15 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,9 +56,15 @@ public class GpxParserService {
 
          try
          {
-             InputStream is = file.getInputStream();
-              Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
-              doc.getDocumentElement().normalize();
+             String xml = new String(file.getBytes(), StandardCharsets.UTF_8)
+                     .replaceFirst("^\\uFEFF", "")  // remove BOM
+                     .trim();                      // remove leading space (YOUR ISSUE)
+
+             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+             DocumentBuilder documentBuilder = factory.newDocumentBuilder();
+
+             Document doc = documentBuilder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+             doc.getDocumentElement().normalize();
 
              NodeList wptNodes = doc.getElementsByTagName("wpt");
              List<TrackPoint> trackPoints = new ArrayList<>();
@@ -63,19 +73,37 @@ public class GpxParserService {
              double maxEle = Double.MIN_VALUE;
              double minEle = Double.MAX_VALUE;
 
-             int sequenceOrder;
-             LocalDateTime timeStamp;
+             int sequenceOrder = 0;
+             LocalDateTime timeStamp = null;
              double latitude , longitude , elevation = 0 ;
 
              int wptNodesLength = wptNodes.getLength();
              for(int i=0; i<wptNodesLength ; i++)
              {
                  Element wpt = (Element) wptNodes.item(i);
+
+                 if(wpt.getAttribute("lat").isEmpty() || wpt.getAttribute("lon").isEmpty() )
+                     throw new FileParsingFailedException("Unsupported file");
+
                   latitude = Double.parseDouble(wpt.getAttribute("lat"));
                   longitude = Double.parseDouble(wpt.getAttribute("lon"));
-                  elevation = Double.parseDouble(wpt.getAttribute("ele"));
-                  sequenceOrder = Integer.parseInt(wpt.getAttribute("name"));
-                  timeStamp = LocalDateTime.parse(wpt.getAttribute("time"));
+
+                 NodeList eleNodes = wpt.getElementsByTagName("ele");
+                 if (eleNodes.getLength() > 0) {
+                     elevation = Double.parseDouble(eleNodes.item(0).getTextContent());
+                     minEle = Math.min(minEle, elevation);
+                     maxEle = Math.max(maxEle, elevation);
+                 }
+                 NodeList timeNodes = wpt.getElementsByTagName("time");
+                 if (timeNodes.getLength() > 0) {
+                     timeStamp = ZonedDateTime.parse(timeNodes.item(0).getTextContent()).toLocalDateTime();
+                 }
+                 sequenceOrder = i + 1;
+                 NodeList nameNodes = wpt.getElementsByTagName("name");
+                 if (nameNodes.getLength() > 0) {
+                     try { sequenceOrder = Integer.parseInt(nameNodes.item(0).getTextContent().trim()); }
+                     catch (NumberFormatException ignored) {}
+                 }
 
                  minEle = Math.min(minEle , elevation);
                  maxEle = Math.max(maxEle , elevation);

@@ -8,6 +8,7 @@ import com.example.trekking_app.model.UserPrincipal;
 import com.example.trekking_app.service.GpxParserService;
 import com.example.trekking_app.service.RouteService;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,7 +29,8 @@ public class AdminRouteController {
         this.gpxParserService = gpxParserService;
     }
 
-    @PreAuthorize(("hasRole('ADMIN')"))
+
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<RouteResponse>> handleCreateRoute(@Valid @RequestBody RouteRequest routeRequest,
                                                                         @AuthenticationPrincipal UserPrincipal user)
@@ -37,13 +39,16 @@ public class AdminRouteController {
         return ResponseEntity.status(201).body(response);
     }
 
-    @PreAuthorize("hasRole('ADMIN)")
-    @PostMapping("/import/gpx")
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping(value = "/import/gpx" , consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<GpxImportResponse>> handleGpxImport(MultipartFile file,
                                                                           @RequestParam Integer routeId) {
         ApiResponse<GpxImportResponse> response = gpxParserService.importGpx(file,routeId);
         return ResponseEntity.status(201).body(response);
     }
+
+
 
 
 }

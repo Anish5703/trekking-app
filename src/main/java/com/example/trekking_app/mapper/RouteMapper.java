@@ -26,7 +26,8 @@ public class RouteMapper {
     {
          return RouteResponse.builder()
                  .id(route.getId())
-                 .title(route.getName())
+                 .name(route.getName())
+                 .destinationId(route.getDestination().getId())
                  .description(route.getDescription())
                  .difficultyLevel(route.getDifficultyLevel())
                  .userId(route.getUser().getId())

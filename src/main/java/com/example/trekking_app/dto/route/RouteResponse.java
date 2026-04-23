@@ -1,6 +1,5 @@
 package com.example.trekking_app.dto.route;
 
-import com.example.trekking_app.dto.user.UserDetails;
 import com.example.trekking_app.model.DifficultyLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,13 +15,11 @@ import java.time.LocalDateTime;
 public class RouteResponse {
 
     private Integer id;
-    private String title;
+    private String name;
     private int destinationId;
     private String description;
     private DifficultyLevel difficultyLevel;
     private int  userId;
     private Integer estimatedDays;
-    private String district;
-    private String region;
     private LocalDateTime timeStamp;
 }
