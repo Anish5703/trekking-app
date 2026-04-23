@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.locationtech.jts.geom.Point;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "track_points" , indexes = {
         @Index(name  = "idx_track_points_route_seq" , columnList = "route_id , sequence_order"),
@@ -30,10 +32,15 @@ public class TrackPoint extends BaseEntity{
     @Column(nullable = false)
     private Double longitude;
 
+    @Column
+    private Double elevation;
+
     @Column(name = "sequence_order",nullable = false)
     private Integer sequenceOrder;
 
     @Column(name = "geom" , columnDefinition = "geometry(Point, 4326)")
     private Point geom;
 
+    @Column(name = "time_stamp")
+    private LocalDateTime timeStamp;
 }

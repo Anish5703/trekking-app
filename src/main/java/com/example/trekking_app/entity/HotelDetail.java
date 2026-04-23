@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Getter
 @Setter
-@Builder
 public class HotelDetail extends POI{
 
     @Column(length = 500)

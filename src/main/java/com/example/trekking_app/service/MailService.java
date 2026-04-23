@@ -60,7 +60,7 @@ public void sendHtmlMail(String to,String subject,String htmlContent) throws Mes
     //Method to generate confirmation URL excluding token
     public String getConfirmationUrl(HttpServletRequest request)
     {
-        return  "http://"+request.getServerName()+":"+request.getServerPort()+"/api/auth/signup/confirmation?token=";
+        return  "http://"+request.getServerName()+":"+request.getServerPort()+"/api/v1/auth/signup/confirmation?token=";
     }
 
     //Method to generate random token

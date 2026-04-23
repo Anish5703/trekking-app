@@ -1,33 +1,48 @@
 package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.route.GpxImportResponse;
 import com.example.trekking_app.dto.route.RouteRequest;
 import com.example.trekking_app.dto.route.RouteResponse;
+import com.example.trekking_app.service.GpxParserService;
 import com.example.trekking_app.service.RouteService;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 
 @RestController
-@RequestMapping("/api/v1/admin/routes")
+@RequestMapping("/api/v1/admin/route")
 public class AdminRouteController {
 
-    private RouteService routeService;
+    private final RouteService routeService;
+    private final GpxParserService gpxParserService;
 
-    public AdminRouteController(RouteService routeService)
+    public AdminRouteController(RouteService routeService , GpxParserService gpxParserService)
     {
         this.routeService = routeService;
+        this.gpxParserService = gpxParserService;
     }
 
-    @PostMapping("/add")
     @PreAuthorize(("hasRole(ADMIN)"))
+    @PostMapping
     public ResponseEntity<ApiResponse<RouteResponse>> handleCreateRoute(@Valid @RequestBody RouteRequest routeRequest,
-                                                                        @AuthenticationPrincipal int userId
-    ) {
+                                                                        @AuthenticationPrincipal int userId)
+    {
         ApiResponse<RouteResponse> response = routeService.createRoute(routeRequest, userId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(201).body(response);
     }
+
+    @PreAuthorize("hasRole('ADMIN)")
+    @PostMapping("/import/gpx")
+    public ResponseEntity<ApiResponse<GpxImportResponse>> handleGpxImport(MultipartFile file,
+                                                                          @RequestParam int routeId) {
+        ApiResponse<GpxImportResponse> response = gpxParserService.importGpx(file,routeId);
+        return ResponseEntity.status(201).body(response);
+    }
+
+
 }

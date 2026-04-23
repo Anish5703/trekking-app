@@ -20,6 +20,9 @@ public class RouteRequest {
     @Size(max = 100 , message = "route title is too long")
     private String title;
 
+    @NotNull(message = "route destination is required")
+    private int destinationId;
+
     @NotBlank(message = "route description cannot be null")
     private String description;
 

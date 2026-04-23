@@ -12,7 +12,7 @@ import java.util.List;
 @Entity
 @Table(name="routes",
 indexes = {
-        @Index(name="idx_routes_title",columnList = "title"),
+        @Index(name="idx_routes_name",columnList = "name"),
         @Index(name="idx_routes_user" , columnList = "user_id")
 })
 @NoArgsConstructor
@@ -27,11 +27,15 @@ public class Route extends BaseEntity{
     private Integer id;
 
     @Column(nullable = false,length = 100)
-    private String title;
+    private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id",nullable = false)
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "destination_id" , nullable = false)
+    private Destination destination;
 
     @Column(columnDefinition = "TEXT")
     private String description;
@@ -42,18 +46,20 @@ public class Route extends BaseEntity{
     @Column(name="max_elevation")
     private Double maxElevation;
 
+    @Column(name = "min_elevation")
+    private Double minElevation;
+
     @Column(name="estimated_days")
     private Integer estimatedDays;
+
+    // distance in km
+    @Column
+    private double distance;
 
     @Column(name="difficulty_level",length=20)
     @Enumerated(EnumType.STRING)
     private DifficultyLevel difficultyLevel;
 
-    @Column(length=100,nullable = false)
-    private String region;
-
-    @Column(length=100,nullable = false)
-    private String district;
 
     @OneToMany(mappedBy = "route", cascade = CascadeType.ALL , orphanRemoval = true)
     @OrderBy("sequenceOrder ASC")
@@ -71,7 +77,7 @@ public class Route extends BaseEntity{
     @OneToMany(mappedBy = "route", cascade = CascadeType.ALL , orphanRemoval = true)
     private List<Image> images = new ArrayList<>();
 
-   @OneToOne(mappedBy = "route" , cascade = CascadeType.ALL , orphanRemoval = true)
+   @OneToOne(mappedBy = "route" , cascade = CascadeType.ALL , orphanRemoval = true )
    private List<OfflineRegion> offlineRegions = new ArrayList<>();
 
 

@@ -40,7 +40,7 @@ public class WayPoint {
     @Column(name="sequence_order" , nullable = false)
     private Integer sequenceOrder;
 
-    @OneToMany(mappedBy = "waypoint" ,cascade = CascadeType.ALL,orphanRemoval = true)
+    @OneToMany(mappedBy = "wayPoint" ,cascade = CascadeType.ALL,orphanRemoval = true ,fetch = FetchType.LAZY)
     private List<POI> pois = new ArrayList<>();
 
     @CreationTimestamp

@@ -13,6 +13,7 @@ import java.util.List;
         @Index(name = "idx_poi_type" , columnList = "route_id , type" ),
         @Index(name = "idx_poi_lat_lon" , columnList = "latitude , longitude")
 })
+@Inheritance(strategy = InheritanceType.JOINED)
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -44,7 +45,7 @@ public class POI extends BaseEntity{
     @Column(nullable = false)
     private Double elevation;
 
-    @Column(nullable = false)
+    @Column(name = "type")
     @Enumerated(EnumType.STRING)
     private POIType type;
 

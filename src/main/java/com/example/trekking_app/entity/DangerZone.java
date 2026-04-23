@@ -33,7 +33,6 @@ public class DangerZone extends BaseEntity{
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false,length = 20)
     private AlertSeverity severity;
 
     @Column(name = "center_latitude" , nullable = false)
@@ -46,7 +45,7 @@ public class DangerZone extends BaseEntity{
     @Builder.Default
     private Double radiusMeter = 500.0;
 
-    @Column(name = "zone_geometry" ,columnDefinition = "geometry(Geometry , 426)")
+    @Column(name = "zone_geometry" ,columnDefinition = "geometry(Geometry , 4326)")
   private Geometry geom;
 
 

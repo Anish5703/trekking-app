@@ -25,7 +25,7 @@ public class OfflineRegion extends BaseEntity{
     private Route route;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false , length = 20)
+    @Column(name = "status", length = 20)
     private OfflineRegionStatus status;
 
     @Column(name = "max_latitude" , nullable = false)
