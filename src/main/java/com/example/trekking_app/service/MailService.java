@@ -7,6 +7,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -20,6 +21,9 @@ public class MailService {
 
 private final JavaMailSender mailSender;
 private final TokenRepository tokenRepo;
+
+@Value("${signup-confirmation-url}")
+private String signupConfirmationUrl;
 
 public MailService(JavaMailSender mailSender,TokenRepository tokenRepo)
 {
@@ -54,28 +58,13 @@ public void sendHtmlMail(String to,String subject,String htmlContent) throws Mes
     """, username, confirmationLink);
     }
 
-    //Method to send registration confirmation token
-    public void sendSignupConfirmationToken(User user, HttpServletRequest servletRequest) throws MessagingException
-    {
-        //generating token and storing it to the repo with username
-        String tokenName = generateToken();
-        log.info("Generated token {} for user {}",tokenName,user);
-        Token token = new Token(tokenName,user);
-        tokenRepo.save(token);
 
-        //Concatenating url and token
-        String confirmationLink = getConfirmationUrl(servletRequest)+token.getTokenName();
-
-        //sending confirmation mail to the user
-        String htmlContent = buildConfirmationEmail(user.getName(),confirmationLink);
-        sendHtmlMail(user.getEmail(),"Confirmation Mail",htmlContent);
-    }
 
 
     //Method to generate confirmation URL excluding token
     public String getConfirmationUrl(HttpServletRequest request)
     {
-        return  "http://"+request.getServerName()+":"+request.getServerPort()+"/api/auth/signup/confirmation?token=";
+        return  signupConfirmationUrl;
     }
 
     //Method to generate random token

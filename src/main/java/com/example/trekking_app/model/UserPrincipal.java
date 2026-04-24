@@ -38,5 +38,7 @@ public class UserPrincipal implements UserDetails {
     @Override
     public boolean isEnabled(){return user.isEmailVerified();}
 
+    public int getId(){return user.getId();}
+
 
 }

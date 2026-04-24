@@ -2,8 +2,10 @@ package com.example.trekking_app.entity;
 
 import jakarta.persistence.*;
 
+
 @Entity
-@Table(name="user_oauth")
+@Table(name="oauth_users")
+
 public class OauthUser extends User{
 
 

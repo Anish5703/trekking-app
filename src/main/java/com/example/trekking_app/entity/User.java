@@ -10,7 +10,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
-@Table(name="user_tbl")
+@Table(name="users")
 @Inheritance(strategy = InheritanceType.JOINED)
 @Entity
 @NoArgsConstructor
