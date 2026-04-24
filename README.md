@@ -14,6 +14,7 @@ Base_Url : http://localhost:8080 or  http://localhost:3000
 Swagger Api docs url : http://localhost:8081/swagger-ui/index.html#
 
 #Local Authentication Flow
+
 1.User signup with email.
 2.Confirmation link is send to user email inbox.
 3.User clicks the link and email gets verified.
@@ -23,6 +24,7 @@ Swagger Api docs url : http://localhost:8081/swagger-ui/index.html#
 7.Retrieve jwt token and add it in  Authorization header  i.e : Bearer <jwtToken>  for every request
 
 #OAuthentication Flow 
+
 1. User signup through provider (google/facebook).
 2. First time oauth login gets user signup otherwise login.
 3. Recieves login response including jwt token.
