@@ -79,14 +79,14 @@ public class DestinationService {
     }
 
     @Transactional
-    public ApiResponse<Integer> deleteDestination(int destinationId)
+    public ApiResponse<Void> deleteDestination(int destinationId)
     {
 
             boolean isExists = destinationRepo.existsById(destinationId);
             if(!isExists) throw new ResourceNotFoundException("destination","id",destinationId);
             try{
                 destinationRepo.deleteById(destinationId);
-            return new ApiResponse<>(destinationId,"destination deleted",200);
+            return new ApiResponse<>(null,"destination deleted",200);
         }
         catch (Exception e)
         {

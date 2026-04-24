@@ -100,9 +100,9 @@ public class AuthService {
                     .orElseThrow( () -> new UserNotFoundException("Email not registered fill the signup form"));
             if(user.isEmailVerified())
                 throw new EmailAlreadyVerifiedException("Email is already verified.You can go to login page");
-            tokenRepo.deleteByUserEmail(email);
             try{
-            sendSignupConfirmationToken(user,servletRequest);
+                tokenRepo.deleteByUserEmail(email);
+                sendSignupConfirmationToken(user,servletRequest);
             String message = "Check mail for confirmation link";
             SignupResponse signupResponse = userMapper.toSignupResponse(user);
             return new ApiResponse<>(signupResponse,message,200);
@@ -146,24 +146,24 @@ public class AuthService {
      */
     public void validateSignupRequest(SignupRequest request,HttpServletRequest servletRequest)
     {
-        try {
+
             if (request.getName().isEmpty() || request.getEmail().isEmpty() || request.getPassword().isEmpty())
                 throw new EmptySignupFieldException("Signup fields cannot be empty");
-
             if (userRepo.existsByEmail(request.getEmail()))
             {
                 Optional<User> user = userRepo.findByEmail(request.getEmail());
 
-                if(user.isPresent() && !user.get().isEmailVerified())
-                  resendSignupConfirmation(user.get().getEmail(), servletRequest);
+                if(user.isPresent())
+                {
+                    if (!user.get().isEmailVerified())
+                    {
+                        resendSignupConfirmation(user.get().getEmail(), servletRequest);
+                    }
+
                 log.error("User with email {} already exists", request.getEmail());
                 throw new DuplicateEmailFoundException("Email already exists");
             }
-        }
-        catch(Exception e)
-        {
-            throw new SignupFailedException("Failed to save new user");
-        }
+    }
     }
 
   /*

@@ -5,5 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> {
 
-    void deleteByRouteId(int routeId);
+
+     void deleteAllByRoute_Id(int routeId);
+     boolean existsByRoute_Id(int routeId);
 }

@@ -77,9 +77,9 @@ public class AdminDestinationController {
             })
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping
-    public ResponseEntity<ApiResponse<Integer>> handleDeleteDestination(@RequestParam int destinationId)
+    public ResponseEntity<ApiResponse<Void>> handleDeleteDestination(@RequestParam int destinationId)
     {
-        ApiResponse<Integer> response = destinationService.deleteDestination(destinationId);
+        ApiResponse<Void> response = destinationService.deleteDestination(destinationId);
         return ResponseEntity.status(200).body(response);
     }
 }

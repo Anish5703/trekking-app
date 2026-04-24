@@ -4,6 +4,8 @@ import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.GpxImportResponse;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrackPoint;
+import com.example.trekking_app.exception.resource.ResourceDeletionFailedException;
+import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.route.FileParsingFailedException;
 import com.example.trekking_app.exception.route.RouteNotFoundException;
 import com.example.trekking_app.repository.DestinationRepository;
@@ -119,7 +121,7 @@ public class GpxParserService {
                  lineCoords.add(new Coordinate(longitude,latitude));
              }
              //clear and save track points
-             trackPointRepo.deleteByRouteId(routeId);
+             trackPointRepo.deleteAllByRoute_Id(routeId);
              trackPointRepo.saveAll(trackPoints);
 
              //build route line string geometry from all track points
@@ -158,6 +160,25 @@ public class GpxParserService {
              log.error("Gpx Parsing failed : {}",e.getLocalizedMessage());
              throw new FileParsingFailedException("Failed to parse Gpx file");
          }
+    }
+
+    public ApiResponse<Void> deleteGpx(int routeId)
+    {
+        boolean routeExists = routeRepo.existsById(routeId);
+        if(!routeExists) throw new ResourceNotFoundException("route","id",routeId);
+
+        boolean trackPointExists = trackPointRepo.existsByRoute_Id(routeId);
+        if(!trackPointExists) throw new ResourceNotFoundException("trackpoints","route id",routeId);
+
+        try{
+            trackPointRepo.deleteAllByRoute_Id(routeId);
+            return new ApiResponse<>(null,"Gpx file deleted",200);
+        }
+        catch (Exception e)
+        {
+            log.error("Failed to delete gpx : {}",e.getLocalizedMessage());
+            throw new ResourceDeletionFailedException("gpx file","route id",routeId);
+        }
     }
 
     private double haversineKm(double lat1 , double lon1 , double lat2 , double lon2)

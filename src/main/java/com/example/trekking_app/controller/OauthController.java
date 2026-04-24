@@ -51,8 +51,8 @@ import org.springframework.web.bind.annotation.RestController;
         
         WHAT YOU GET BACK
         
-        On success OauthLoginResponse wrapped with ApiResponse dto is returned  ,
-        On Failure ErrorResponse wrapped with ApiResponse dto is returned
+        On success ApiResponse`<OauthLoginResponse>` dto is returned  ,
+        On Failure ApiResponse`<ErrorResponse>` dto is returned
         
         """
 )
