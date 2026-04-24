@@ -21,7 +21,7 @@ Swagger Api docs url : http://localhost:8081/swagger-ui/index.html#
 4.User login with credentials.
 5.Recieves login response including jwt token .
 6.Store jwt token in local storage.
-7.Retrieve jwt token and add it in  Authorization header  i.e : Bearer /<jwtToken/>  for every request
+7.Retrieve jwt token and add it in  Authorization header  i.e : Bearer "<jwtToken>"  for every request
 
 #OAuthentication Flow 
 
