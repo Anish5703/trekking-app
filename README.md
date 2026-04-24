@@ -13,11 +13,14 @@ Base_Url : http://localhost:8080 or  http://localhost:3000
 #Api Documentaion Provided in 
 Swagger Api docs url : http://localhost:8081/swagger-ui/index.html#
 
+#open application.properties for signup confirmation url configuration
+
+
 #Local Authentication Flow
 
 1.User signup with email.
 2.Confirmation link is send to user email inbox.
-3.User clicks the link and email gets verified.
+3.User clicks the link and email gets verified. 
 4.User login with credentials.
 5.Recieves login response including jwt token .
 6.Store jwt token in local storage.
