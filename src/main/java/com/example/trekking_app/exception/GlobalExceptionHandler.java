@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
     {
         log.error("Duplicate email found {}",ex.getMessage());
         ErrorResponse data = new ErrorResponse(ErrorType.DUPLICATE_EMAIL_FOUND,ex.getMessage());
-        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),409);
         return ResponseEntity.badRequest().body(response);
     }
     /*
@@ -61,6 +61,23 @@ public class GlobalExceptionHandler {
         ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
         return ResponseEntity.badRequest().body(response);
     }
+    @ExceptionHandler(EmailAlreadyVerifiedException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleEmailAlreadyVerified(EmailAlreadyVerifiedException ex)
+    {
+        log.error("Email already verified {}",ex.getMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.ALREADY_VERIFIED,ex.getMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        return ResponseEntity.badRequest().body(response);
+    }
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleEmailNotVerified(EmailNotVerifiedException ex)
+    {
+        log.error("Email not verified {}",ex.getMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.NOT_VERIFIED,ex.getMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),403);
+        return ResponseEntity.badRequest().body(response);
+    }
+
 
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ApiResponse<ErrorResponse>> handleEmailNotFound(UsernameNotFoundException ex)
@@ -77,7 +94,7 @@ public class GlobalExceptionHandler {
     {
         log.error("Email not registered : {}",ex.getLocalizedMessage());
         ErrorResponse data = new ErrorResponse(ErrorType.EMAIL_NOT_FOUND,ex.getMessage());
-        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),404);
         return ResponseEntity.badRequest().body(response);
     }
 

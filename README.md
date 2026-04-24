@@ -1,4 +1,4 @@
-**Steps to run springboot application**
+**Steps to run spring boot application**
 1. Open env.txt file , fill the required credentials and rename file env.txt to .env
 
 2. Run docker compose up --build in terminal to start the backend application

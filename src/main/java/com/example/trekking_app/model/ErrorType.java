@@ -3,6 +3,8 @@ package com.example.trekking_app.model;
 public enum ErrorType {
     /* General Errors */
     ILLEGAL_ARGUMENTS,
+    ALREADY_VERIFIED,
+    NOT_VERIFIED,
 
     /* Signup Errors */
     EMPTY_FIELD,

@@ -95,13 +95,13 @@ public class AuthService {
     @Transactional
     public ApiResponse<SignupResponse> resendSignupConfirmation(String email, HttpServletRequest servletRequest)
     {
-        try
-        {
+
             User user = userRepo.findByEmail(email)
-                    .orElseThrow( () -> new SignupFailedException("Email not registered fill the signup page"));
+                    .orElseThrow( () -> new UserNotFoundException("Email not registered fill the signup form"));
             if(user.isEmailVerified())
-                throw new SignupFailedException("Email is already verified go to login page");
+                throw new EmailAlreadyVerifiedException("Email is already verified.You can go to login page");
             tokenRepo.deleteByUserEmail(email);
+            try{
             sendSignupConfirmationToken(user,servletRequest);
             String message = "Check mail for confirmation link";
             SignupResponse signupResponse = userMapper.toSignupResponse(user);
@@ -132,7 +132,7 @@ public class AuthService {
          user.setEmailVerified(true);
          userRepo.save(user);
          SignupResponse signupResponse = userMapper.toSignupResponse(user);
-         String message = "Email verified go to login page";
+         String message = "Email verified. You can now log in";
          return new ApiResponse<>(signupResponse,message,200);
      }
      catch(Exception e)
@@ -185,7 +185,7 @@ public class AuthService {
                             () -> new UserNotFoundException("Email not found")
                     );
             if(!user.isEmailVerified())
-                throw new LoginFailedException("Email not verified");
+                throw new EmailNotVerifiedException("Email not verified. Check email inbox for confirmation or apply resend confirmation");
             if(oauthUserRepo.existsByEmail(request.getEmail()))
             {
                 Optional<OauthUser> oauthUser = oauthUserRepo.findByEmail(request.getEmail());
