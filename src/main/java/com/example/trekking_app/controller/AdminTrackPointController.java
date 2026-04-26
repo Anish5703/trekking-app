@@ -3,6 +3,8 @@ package com.example.trekking_app.controller;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.trackpoint.TrackPointDetails;
 import com.example.trekking_app.service.TrackPointService;
+import jakarta.validation.constraints.NotNull;
+import lombok.NonNull;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +25,7 @@ public class AdminTrackPointController {
     }
 
 @GetMapping
-public ResponseEntity<ApiResponse<List<TrackPointDetails>>> handleGetTrackPoints(@RequestParam Integer routeId)
+public ResponseEntity<ApiResponse<List<TrackPointDetails>>> handleGetTrackPoints(@NonNull @RequestParam Integer routeId)
     {
        ApiResponse<List<TrackPointDetails>> response = trackPointService.getTrackPoints(routeId);
        return ResponseEntity.status(200).body(response);

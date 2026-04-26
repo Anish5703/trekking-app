@@ -32,7 +32,7 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/delete/user")
-    public ResponseEntity<ApiResponse<UserDetails>> handleDeleteUser(@RequestParam(name = "id") int id) {
+    public ResponseEntity<ApiResponse<UserDetails>> handleDeleteUser(@RequestParam(name = "id") Integer id) {
         ApiResponse<UserDetails> response = adminService.deleteUser(id);
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");

@@ -14,5 +14,6 @@ public class GpxImportResponse {
     private int routeId;
     private String routeName;
     private int numberOfTrackPoints;
+    private double distanceInKm;
     private String addedBy;
 }

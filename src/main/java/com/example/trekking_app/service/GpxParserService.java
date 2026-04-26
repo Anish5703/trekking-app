@@ -26,7 +26,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -144,12 +143,13 @@ public class GpxParserService {
                  totalDist += haversineKm(trackPoints.get(i-1).getLatitude(),trackPoints.get(i-1).getLongitude(),
                                            trackPoints.get(i).getLatitude() , trackPoints.get(i).getLongitude());
              }
-             route.setDistance(Math.round(totalDist*100.0)/100.0);
+             route.setDistanceInKm(Math.round(totalDist*100.0)/100.0);
              routeRepo.save(route);
 
              GpxImportResponse gpxImportResponse = GpxImportResponse.builder()
                      .routeId(routeId).routeName(route.getName())
                      .numberOfTrackPoints(wptNodesLength)
+                     .distanceInKm(totalDist)
                      .addedBy(route.getUser().getName())
                      .build();
 

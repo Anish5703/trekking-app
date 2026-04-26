@@ -24,7 +24,6 @@ public class AdminDestinationController {
     {
         this.destinationService = destinationService;
     }
-
     @GetMapping
     public ResponseEntity<ApiResponse<List<DestinationResponse>>> handleGetAllDestination()
     {

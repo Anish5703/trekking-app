@@ -11,6 +11,7 @@ public interface RouteRepository extends JpaRepository<Route,Integer> {
 Optional<Route> findById(int routeId);
 Optional<Route> findByName(int routeName);
 Optional<List<Route>> findByUserId(int userId);
+Optional<List<Route>> findAllByDestination_Id(int destinationId);
 Boolean existsByName(int routeName);
 long count();
 }

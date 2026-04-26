@@ -251,12 +251,14 @@ public class AuthController {
     })
     @PutMapping("/signup/resend")
     public ResponseEntity<ApiResponse<SignupResponse>> handleResendSignupConfirmation(
+
             @Parameter(
                     name = "email",
                     description = "The registered email address to resend the confirmation link to",
                     required = true,
                     example = "garunddigital@gmail.com"
             )
+
             @RequestParam(name="email") @Email @NotBlank String email,
             HttpServletRequest servletRequest)
     {

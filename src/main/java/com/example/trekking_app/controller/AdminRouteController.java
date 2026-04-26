@@ -8,6 +8,7 @@ import com.example.trekking_app.model.UserPrincipal;
 import com.example.trekking_app.service.GpxParserService;
 import com.example.trekking_app.service.RouteService;
 import jakarta.validation.Valid;
+import lombok.NonNull;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,6 +38,14 @@ public class AdminRouteController {
     {
         ApiResponse<RouteResponse> response = routeService.createRoute(routeRequest, user.getId());
         return ResponseEntity.status(201).body(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping
+    public ResponseEntity<ApiResponse<RouteResponse>> handleGetRoute(@NonNull @RequestParam  Integer routeId)
+    {
+        ApiResponse<RouteResponse> response = routeService.getRoute(routeId);
+        return  ResponseEntity.status(200).body(response);
     }
 
 

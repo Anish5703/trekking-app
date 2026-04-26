@@ -54,7 +54,7 @@ public class Route extends BaseEntity{
 
     // distance in km
     @Column
-    private double distance;
+    private double distanceInKm;
 
     @Column(name="difficulty_level",length=20)
     @Enumerated(EnumType.STRING)
