@@ -1,14 +1,12 @@
 package com.example.trekking_app.service;
 
-import com.example.trekking_app.dto.auth.LoginRequest;
-import com.example.trekking_app.dto.auth.LoginResponse;
-import com.example.trekking_app.dto.auth.SignupRequest;
-import com.example.trekking_app.dto.auth.SignupResponse;
+import com.example.trekking_app.dto.auth.*;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.entity.OauthUser;
 import com.example.trekking_app.entity.Token;
 import com.example.trekking_app.entity.User;
 import com.example.trekking_app.exception.auth.*;
+import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.mapper.UserMapper;
 import com.example.trekking_app.repository.OauthUserRepository;
 import com.example.trekking_app.repository.TokenRepository;
@@ -56,6 +54,7 @@ public class AuthService {
     /*
     * Signup User flow
     * Validate SignupRequest dto for empty fields and email duplication
+    * If email exists but not verified resends confirmation token and returns mail resend response
     * Map SignupRequest dto to User entity
     * Encode raw password
     * Save user in user specific repository referring the role
@@ -65,8 +64,12 @@ public class AuthService {
 
     @Transactional
     public ApiResponse<SignupResponse> signupUser(SignupRequest request, HttpServletRequest servletRequest)
-    { try {
-        this.validateSignupRequest(request,servletRequest);
+    {
+       ApiResponse<SignupResponse> response = this.validateSignupRequest(request,servletRequest);
+       if(response!=null)
+           return response;
+
+        try{
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
        User newUser = userRepo.save(user);
@@ -101,7 +104,7 @@ public class AuthService {
             if(user.isEmailVerified())
                 throw new EmailAlreadyVerifiedException("Email is already verified.You can go to login page");
             try{
-                tokenRepo.deleteByUserEmail(email);
+                tokenRepo.deleteByUser_Email(email);
                 sendSignupConfirmationToken(user,servletRequest);
             String message = "Check mail for confirmation link";
             SignupResponse signupResponse = userMapper.toSignupResponse(user);
@@ -144,7 +147,7 @@ public class AuthService {
     * Method for validating SignupRequest dto for empty fields and duplicate email
     * throws exception if violates any terms else returns void
      */
-    public void validateSignupRequest(SignupRequest request,HttpServletRequest servletRequest)
+    public ApiResponse<SignupResponse> validateSignupRequest(SignupRequest request,HttpServletRequest servletRequest)
     {
 
             if (request.getName().isEmpty() || request.getEmail().isEmpty() || request.getPassword().isEmpty())
@@ -156,14 +159,15 @@ public class AuthService {
                 if(user.isPresent())
                 {
                     if (!user.get().isEmailVerified())
+                       return resendSignupConfirmation(user.get().getEmail(), servletRequest);
+                    else
                     {
-                        resendSignupConfirmation(user.get().getEmail(), servletRequest);
-                    }
-
                 log.error("User with email {} already exists", request.getEmail());
                 throw new DuplicateEmailFoundException("Email already exists");
+                }
             }
     }
+            return null;
     }
 
   /*
@@ -207,17 +211,20 @@ public class AuthService {
     //Method to send registration confirmation token
     public void sendSignupConfirmationToken(User user, HttpServletRequest servletRequest) throws MessagingException
     {
-        //generating token and storing it to the repo with username
-        String tokenName = mailService.generateToken();
-        log.info("Generated token {} for user {}",tokenName,user);
-        Token token = new Token(tokenName,user);
-        tokenRepo.save(token);
 
-        //Concatenating url and token
-        String confirmationLink = mailService.getConfirmationUrl(servletRequest)+token.getTokenName();
+            //generating token and storing it to the repo with username
+            String tokenName = mailService.generateToken();
+            log.info("Generated token {} for user {}", tokenName, user);
+            Token token = new Token(tokenName, user);
+            tokenRepo.save(token);
 
-        //sending confirmation mail to the user
-        String htmlContent = mailService.buildConfirmationEmail(user.getName(),confirmationLink);
-        mailService.sendHtmlMail(user.getEmail(),"Confirmation Mail",htmlContent);
+            //Concatenating url and token
+            String confirmationLink = mailService.getConfirmationUrl(servletRequest) + token.getTokenName();
+
+            //sending confirmation mail to the user
+            String htmlContent = mailService.buildConfirmationEmail(user.getName(), confirmationLink);
+            mailService.sendHtmlMail(user.getEmail(), "Confirmation Mail", htmlContent);
     }
+
+
 }

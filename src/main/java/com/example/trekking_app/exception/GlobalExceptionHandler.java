@@ -13,6 +13,8 @@ import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.tool.schema.spi.CommandAcceptanceException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.MailSendException;
+import org.springframework.mail.MailSender;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -59,6 +61,15 @@ public class GlobalExceptionHandler {
         log.error("Signup attempt failed {}",ex.getMessage());
         ErrorResponse data = new ErrorResponse(ErrorType.SIGNUP_FAILED,ex.getMessage());
         ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(MailSendException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleMailSendFailed(MailSendException ex)
+    {
+        log.error("Failed send mail :{}",ex.getFailedMessages());
+        ErrorResponse data = new ErrorResponse(ErrorType.SEND_MAIL_FAILED,"failed to send mail");
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),500);
         return ResponseEntity.badRequest().body(response);
     }
     @ExceptionHandler(EmailAlreadyVerifiedException.class)

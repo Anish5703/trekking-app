@@ -46,7 +46,7 @@ public class AdminService {
         try {
             User user = userRepo.findById(id)
                     .orElseThrow(() -> new UserNotFoundException("User not found"));
-            Optional<Token> token = tokenRepo.findByUserId(user.getId());
+            Optional<Token> token = tokenRepo.findByUser_Id(user.getId());
             if (token.isPresent())
                 tokenRepo.delete(token.get());
             userRepo.delete(user);

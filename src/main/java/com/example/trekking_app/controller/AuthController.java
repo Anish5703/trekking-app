@@ -1,9 +1,6 @@
 package com.example.trekking_app.controller;
 
-import com.example.trekking_app.dto.auth.LoginRequest;
-import com.example.trekking_app.dto.auth.LoginResponse;
-import com.example.trekking_app.dto.auth.SignupRequest;
-import com.example.trekking_app.dto.auth.SignupResponse;
+import com.example.trekking_app.dto.auth.*;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import lombok.NonNull;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -355,7 +353,7 @@ public class AuthController {
     }
 
 
-    /**
+    /*
      * Builds a consistent set of security-hardened HTTP response headers
      * for all auth endpoints.
      * Note: X-Frame-Options, HSTS, CSP etc. are ideally handled globally

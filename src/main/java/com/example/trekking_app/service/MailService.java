@@ -1,11 +1,10 @@
 package com.example.trekking_app.service;
 
-import com.example.trekking_app.entity.Token;
-import com.example.trekking_app.entity.User;
 import com.example.trekking_app.repository.TokenRepository;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailSendException;
@@ -14,7 +13,10 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.util.UUID;
+import java.util.random.RandomGenerator;
+
 @Slf4j
 @Service
 public class MailService {
@@ -77,4 +79,6 @@ public void sendHtmlMail(String to,String subject,String htmlContent) throws Mes
         }
         return token;
     }
+
+
 }

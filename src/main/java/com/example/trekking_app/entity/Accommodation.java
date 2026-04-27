@@ -5,16 +5,13 @@ import com.example.trekking_app.model.WaterSource;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "hotel_details")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
-public class HotelDetail extends POI{
+public class Accommodation extends POI{
 
     @Column(length = 500)
     private String address;
