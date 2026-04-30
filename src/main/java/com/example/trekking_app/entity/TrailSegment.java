@@ -45,21 +45,14 @@ public class TrailSegment extends BaseEntity{
     @Column(name = "segment_group" , length = 100)
     private String segmentGroup;
 
-    @Column(name = "priority_order")
-    @Builder.Default
-    private Integer priorityOrder = 0;
-
-    @Column(name = "is_primary")
-    @Builder.Default
-    private Boolean isPrimary = true;
 
     @Column(name = "estimated_time_minutes")
     private Integer estimatedTimeMinutes;
 
-    /* distance in km */
+    /* distance in meter */
     @Column(name = "distance")
-    private Double distance;
+    private Double distanceInMeter;
 
-    @Column(name = "segment_geometry" , columnDefinition = "geometry(LineString, 4326)")
-    private LineString segmentGeometry;
+    @Column(name = "segment_path" , columnDefinition = "geometry(LineString, 4326)")
+    private LineString segmentPath;
 }
