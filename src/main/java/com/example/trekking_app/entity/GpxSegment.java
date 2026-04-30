@@ -7,6 +7,8 @@ import lombok.*;
 import org.aspectj.bridge.IMessage;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name="gpx_segments")
@@ -49,9 +51,9 @@ public class GpxSegment {
     @Column(name="recorded_until")
     private LocalDateTime recordedUntil;
 
-
-
-
+    @OneToMany(mappedBy = "track_point",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)
+    @OrderBy("local_sequence ASC")
+    private List<TrackPoint> trackPoints = new ArrayList<>();
 
 
 }

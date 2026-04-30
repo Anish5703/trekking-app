@@ -3,20 +3,20 @@ package com.example.trekking_app.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
+import org.locationtech.jts.geom.Point;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Entity
+@Table(name = "way_points" , uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"route_id" , "sequence_order"})
+})
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-@Table(name = "way_points" , uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"route_id" , "sequence_order"})
-})
-@Entity
 @Builder
 public class WayPoint {
 
@@ -28,6 +28,10 @@ public class WayPoint {
     @JoinColumn(name="route_id")
     private Route route;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="gpx_segment_id")
+    private GpxSegment gpxSegment;
+
     @Column(nullable = false , length = 100)
     private String name;
 
@@ -37,12 +41,19 @@ public class WayPoint {
     @Column(nullable = false)
     private Double longitude;
 
-    @Column(name="sequence_order" , nullable = false)
-    private Integer sequenceOrder;
+    @Column(name = "elevation")
+    private Double elevation;
 
-    @OneToMany(mappedBy = "wayPoint" ,cascade = CascadeType.ALL,orphanRemoval = true ,fetch = FetchType.LAZY)
+
+    @Column(name="global_sequence" , nullable = false)
+    private Integer globalSequence;
+
+    @Column(name="location" , columnDefinition = "Geometry(Point, 4326)")
+    private Point location;
+
+    @Column(name = "recorded_At")
+    private LocalDateTime recordedAt;
+
+    @OneToMany(mappedBy = "way_point" ,cascade = CascadeType.ALL,orphanRemoval = true ,fetch = FetchType.LAZY)
     private List<POI> pois = new ArrayList<>();
-
-    @CreationTimestamp
-    private LocalDateTime timeStamp;
 }

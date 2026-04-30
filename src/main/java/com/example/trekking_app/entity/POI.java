@@ -30,7 +30,7 @@ public class POI extends BaseEntity{
     private Route route;
 
     @ManyToOne(fetch =  FetchType.LAZY)
-    @JoinColumn(name = "waypoint_id")
+    @JoinColumn(name = "way_point_id")
     private WayPoint wayPoint;
 
     @Column(nullable = false,length = 100)

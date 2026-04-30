@@ -11,7 +11,7 @@ public class TrackPointMapper {
                   .id(trackPoint.getId())
                   .lat(trackPoint.getLatitude())
                   .lon(trackPoint.getLongitude())
-                  .sequenceOrder(trackPoint.getSequenceOrder())
+                  .sequenceOrder(trackPoint.getGlobal_sequence())
                   .elevation(trackPoint.getElevation())
                   .build();
     }

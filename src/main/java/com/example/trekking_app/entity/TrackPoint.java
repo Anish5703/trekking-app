@@ -1,5 +1,6 @@
 package com.example.trekking_app.entity;
 
+import com.example.trekking_app.model.TrackPointStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.locationtech.jts.geom.Point;
@@ -26,6 +27,10 @@ public class TrackPoint extends BaseEntity{
     @JoinColumn(name="route_id")
     private Route route;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="gpx_segment_id")
+    private GpxSegment gpxSegment;
+
     @Column(nullable = false)
     private Double latitude;
 
@@ -35,12 +40,22 @@ public class TrackPoint extends BaseEntity{
     @Column
     private Double elevation;
 
-    @Column(name = "sequence_order",nullable = false)
-    private Integer sequenceOrder;
+    @Column(name = "local_sequence",nullable = false)
+    private Integer localSequence;
 
-    @Column(name = "geom" , columnDefinition = "geometry(Point, 4326)")
-    private Point geom;
+    @Column(name = "location" , columnDefinition = "geometry(Point, 4326)")
+    private Point location;
 
-    @Column(name = "time_stamp")
-    private LocalDateTime timeStamp;
+    @Column(name ="status")
+    @Builder.Default
+    private TrackPointStatus status = TrackPointStatus.ACTIVE;
+
+    @Column(name="recorded_at" )
+    private LocalDateTime recordedAt;
+
+    @Column(name = "is_deleted")
+    @Builder.Default
+    private Boolean isDeleted = false;
+
+
 }

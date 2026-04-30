@@ -3,9 +3,7 @@ package com.example.trekking_app.entity;
 import com.example.trekking_app.model.DifficultyLevel;
 import jakarta.persistence.*;
 import lombok.*;
-
 import org.locationtech.jts.geom.LineString;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,8 +38,8 @@ public class Route extends BaseEntity{
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "route_geometry",columnDefinition = "geometry(LineString, 4326)")
-    private LineString routeGeometry;
+    @Column(name = "path",columnDefinition = "geometry(LineString, 4326)")
+    private LineString path;
 
     @Column(name="max_elevation")
     private Double maxElevation;
@@ -52,7 +50,6 @@ public class Route extends BaseEntity{
     @Column(name="estimated_days")
     private Integer estimatedDays;
 
-    // distance in km
     @Column
     private double distanceInKm;
 
@@ -61,20 +58,21 @@ public class Route extends BaseEntity{
     private DifficultyLevel difficultyLevel;
 
 
-    @OneToMany(mappedBy = "route", cascade = CascadeType.ALL , orphanRemoval = true)
-    @OrderBy("sequenceOrder ASC")
+    @OneToMany(mappedBy = "route", cascade = CascadeType.ALL , orphanRemoval = true , fetch = FetchType.LAZY)
+    @OrderBy("global_sequence ASC")
     private List<WayPoint> waypoints = new ArrayList<>();
 
-    @OneToMany(mappedBy = "route",cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TrackPoint> trackPoints = new ArrayList<>();
+    @OneToMany(mappedBy = "route",cascade = CascadeType.ALL, orphanRemoval = true , fetch = FetchType.LAZY)
+    @OrderBy("order_index ASC")
+    private List<GpxSegment> gpxSegments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "route" ,cascade = CascadeType.ALL , orphanRemoval = true)
+    @OneToMany(mappedBy = "route" ,cascade = CascadeType.ALL , orphanRemoval = true , fetch = FetchType.LAZY)
     private List<POI> pois = new ArrayList<>();
 
-    @OneToMany(mappedBy = "route" ,cascade = CascadeType.ALL , orphanRemoval = true)
+    @OneToMany(mappedBy = "route" ,cascade = CascadeType.ALL , orphanRemoval = true , fetch = FetchType.LAZY)
     private List<DangerZone> dangerZones = new ArrayList<>();
 
-    @OneToMany(mappedBy = "route", cascade = CascadeType.ALL , orphanRemoval = true)
+    @OneToMany(mappedBy = "route", cascade = CascadeType.ALL , orphanRemoval = true , fetch = FetchType.LAZY)
     private List<Image> images = new ArrayList<>();
 
    @OneToOne(mappedBy = "route" , cascade = CascadeType.ALL , orphanRemoval = true )

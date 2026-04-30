@@ -113,8 +113,8 @@ public class GpxParserService {
 
                  TrackPoint trackpoint = TrackPoint.builder()
                          .route(route).latitude(latitude).longitude(longitude)
-                         .elevation(elevation).timeStamp(timeStamp)
-                         .sequenceOrder(sequenceOrder).geom(point).build();
+                         .elevation(elevation).deletedAt(timeStamp)
+                         .global_sequence(sequenceOrder).location(point).build();
 
                  trackPoints.add(trackpoint);
                  lineCoords.add(new Coordinate(longitude,latitude));
@@ -127,7 +127,7 @@ public class GpxParserService {
              if(lineCoords.size() >= 2)
              {
                  LineString routeLine = GF.createLineString(lineCoords.toArray(new Coordinate[0]));
-                 route.setRouteGeometry(routeLine);
+                 route.setPath(routeLine);
              }
 
              //update route stats

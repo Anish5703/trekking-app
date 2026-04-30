@@ -32,7 +32,7 @@ public class RouteMapper {
                  .difficultyLevel(route.getDifficultyLevel())
                  .userId(route.getUser().getId())
                  .estimatedDays(route.getEstimatedDays())
-                 .timeStamp(route.getTimeStamp())
+                 .timeStamp(route.getDeletedAt())
                  .build();
 
     }
