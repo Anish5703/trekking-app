@@ -4,8 +4,6 @@ package com.example.trekking_app.entity;
 import com.example.trekking_app.model.GpxSegmentStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.aspectj.bridge.IMessage;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,13 +43,14 @@ public class GpxSegment {
     @JoinColumn(name="user_id" , nullable = false)
     private User user;
 
+
     @Column(name="recorded_at")
     private LocalDateTime recordedAt;
 
     @Column(name="recorded_until")
     private LocalDateTime recordedUntil;
 
-    @OneToMany(mappedBy = "track_point",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "gpxSegment",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)
     @OrderBy("local_sequence ASC")
     private List<TrackPoint> trackPoints = new ArrayList<>();
 

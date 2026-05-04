@@ -1,6 +1,7 @@
 package com.example.trekking_app.service;
 
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.route.RouteDetails;
 import com.example.trekking_app.dto.route.RouteRequest;
 import com.example.trekking_app.dto.route.RouteResponse;
 import com.example.trekking_app.entity.Destination;
@@ -53,7 +54,7 @@ public class RouteService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<List<RouteResponse>> getAllRoute(Integer destinationId)
+    public ApiResponse<List<RouteDetails>> getAllRoute(Integer destinationId)
     {
         if(destinationId < 1) throw new IllegalArgumentException("invalid destination id");
 
@@ -63,9 +64,9 @@ public class RouteService {
         List<Route> routeList = routeRepo.findAllByDestination_Id(destination.getId()).orElseThrow(
                 () -> new NoResourceFoundException("routes")
         );
-        List<RouteResponse> routeResponseList = new ArrayList<>();
+        List<RouteDetails> routeResponseList = new ArrayList<>();
         routeList.forEach(
-                route -> routeResponseList.add(routeMapper.toRouteResponse(route))
+                route -> routeResponseList.add(routeMapper.toRouteDetails(route))
         );
         return new ApiResponse<>(routeResponseList,"routes fetched ",200);
     }

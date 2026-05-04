@@ -1,6 +1,7 @@
 package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.route.RouteDetails;
 import com.example.trekking_app.dto.route.RouteResponse;
 import com.example.trekking_app.service.RouteService;
 import lombok.NonNull;
@@ -24,9 +25,9 @@ public class RouteController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<RouteResponse>>> handleGetAllRoute(@NonNull @RequestParam Integer destinationId)
+    public ResponseEntity<ApiResponse<List<RouteDetails>>> handleGetAllRoute(@NonNull @RequestParam Integer destinationId)
     {
-        ApiResponse<List<RouteResponse>> response = routeService.getAllRoute(destinationId);
+        ApiResponse<List<RouteDetails>> response = routeService.getAllRoute(destinationId);
         return ResponseEntity.status(200).body(response);
     }
 
@@ -36,4 +37,6 @@ public class RouteController {
         ApiResponse<RouteResponse> response = routeService.getRoute(routeId);
         return ResponseEntity.status(200).body(response);
     }
+
+
 }

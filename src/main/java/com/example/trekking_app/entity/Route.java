@@ -12,7 +12,11 @@ import java.util.List;
 indexes = {
         @Index(name="idx_routes_name",columnList = "name"),
         @Index(name="idx_routes_user" , columnList = "user_id")
-})
+},
+        uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"name","destination_id"})
+        }
+)
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -60,7 +64,7 @@ public class Route extends BaseEntity{
 
     @OneToMany(mappedBy = "route", cascade = CascadeType.ALL , orphanRemoval = true , fetch = FetchType.LAZY)
     @OrderBy("global_sequence ASC")
-    private List<WayPoint> waypoints = new ArrayList<>();
+    private List<TrackPoint> trackPoints = new ArrayList<>();
 
     @OneToMany(mappedBy = "route",cascade = CascadeType.ALL, orphanRemoval = true , fetch = FetchType.LAZY)
     @OrderBy("order_index ASC")

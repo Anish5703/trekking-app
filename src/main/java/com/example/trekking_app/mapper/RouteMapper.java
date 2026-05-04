@@ -1,5 +1,6 @@
 package com.example.trekking_app.mapper;
 
+import com.example.trekking_app.dto.route.RouteDetails;
 import com.example.trekking_app.dto.route.RouteRequest;
 import com.example.trekking_app.dto.route.RouteResponse;
 import com.example.trekking_app.entity.Destination;
@@ -30,10 +31,27 @@ public class RouteMapper {
                  .destinationId(route.getDestination().getId())
                  .description(route.getDescription())
                  .difficultyLevel(route.getDifficultyLevel())
-                 .userId(route.getUser().getId())
                  .estimatedDays(route.getEstimatedDays())
-                 .timeStamp(route.getDeletedAt())
+                 .path(route.getPath())
+                 .timeStamp(route.getTimeStamp())
                  .build();
+
+    }
+
+    public RouteDetails toRouteDetails(@NonNull Route route)
+    {
+         return RouteDetails.builder()
+                 .id(route.getId())
+                 .name(route.getName())
+                 .destinationId(route.getDestination().getId())
+                 .description(route.getDescription())
+                 .estimatedDays(route.getEstimatedDays())
+                 .difficultyLevel(route.getDifficultyLevel())
+                 .minElevation(route.getMinElevation())
+                 .maxElevation(route.getMaxElevation())
+                 .totalDistanceInKm(route.getDistanceInKm())
+                 .build();
+
 
     }
 }

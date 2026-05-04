@@ -1,34 +1,53 @@
 package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.global.ApiResponse;
-import com.example.trekking_app.dto.trackpoint.TrackPointDetails;
+import com.example.trekking_app.dto.trackpoint.TrackPointResponse;
+import com.example.trekking_app.service.IngestionOrchestratorService;
 import com.example.trekking_app.service.TrackPointService;
-import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/admin/trackpoint")
+@RequestMapping("/api/v1/admin/route/{routeId}/trackpoint")
 public class AdminTrackPointController {
 
     private final TrackPointService trackPointService;
+    private final IngestionOrchestratorService orchestrator;
 
-    public AdminTrackPointController(TrackPointService trackPointService)
+    public AdminTrackPointController(TrackPointService trackPointService , IngestionOrchestratorService orchestrator)
     {
         this.trackPointService = trackPointService;
+        this.orchestrator = orchestrator;
     }
 
-@GetMapping
-public ResponseEntity<ApiResponse<List<TrackPointDetails>>> handleGetTrackPoints(@NonNull @RequestParam Integer routeId)
+@GetMapping("/all")
+public ResponseEntity<ApiResponse<List<TrackPointResponse>>> handleGetAlTrackPoints(@PathVariable Integer routeId)
     {
-       ApiResponse<List<TrackPointDetails>> response = trackPointService.getTrackPoints(routeId);
+       ApiResponse<List<TrackPointResponse>> response = trackPointService.getAllTrackPoints(routeId);
        return ResponseEntity.status(200).body(response);
     }
+    @GetMapping("/active")
+    public ResponseEntity<ApiResponse<List<TrackPointResponse>>> handleGetActiveTrackPoints(@PathVariable Integer routeId)
+    {
+        ApiResponse<List<TrackPointResponse>> response = trackPointService.getActiveTrackPoints(routeId);
+        return ResponseEntity.status(200).body(response);
+    }
 
+    @PutMapping("/merge")
+    public ResponseEntity<ApiResponse<Void>> handleMergeTrackPoints(@PathVariable Integer routeId)
+    {
+        ApiResponse<Void> response = orchestrator.mergeTrackPoints(routeId);
+        return ResponseEntity.status(200).body(response);
+    }
+
+    @DeleteMapping
+    public ResponseEntity<ApiResponse<Void>> handleDeleteTrackPoint(@PathVariable Integer routeId ,
+                                                                   @NonNull @RequestParam Integer trackPointId)
+    {
+        ApiResponse<Void> response = trackPointService.deleteTrackPoint(routeId,trackPointId);
+        return ResponseEntity.status(200).body(response);
+    }
 }

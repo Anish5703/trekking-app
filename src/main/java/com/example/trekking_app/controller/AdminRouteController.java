@@ -1,11 +1,9 @@
 package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.global.ApiResponse;
-import com.example.trekking_app.dto.route.GpxImportResponse;
 import com.example.trekking_app.dto.route.RouteRequest;
 import com.example.trekking_app.dto.route.RouteResponse;
 import com.example.trekking_app.model.UserPrincipal;
-import com.example.trekking_app.service.GpxParserService;
 import com.example.trekking_app.service.RouteService;
 import jakarta.validation.Valid;
 import lombok.NonNull;
@@ -22,12 +20,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class AdminRouteController {
 
     private final RouteService routeService;
-    private final GpxParserService gpxParserService;
 
-    public AdminRouteController(RouteService routeService , GpxParserService gpxParserService)
+    public AdminRouteController(RouteService routeService )
     {
         this.routeService = routeService;
-        this.gpxParserService = gpxParserService;
+
     }
 
 
@@ -49,29 +46,4 @@ public class AdminRouteController {
     }
 
 
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping(value = "/import/gpx" , consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<GpxImportResponse>> handleGpxImport(MultipartFile file,
-                                                                          @RequestParam Integer routeId) {
-        ApiResponse<GpxImportResponse> response = gpxParserService.importGpx(file,routeId);
-        return ResponseEntity.status(201).body(response);
-    }
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping(value = "/update/gpx" , consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<GpxImportResponse>> handleGpxUpdate(MultipartFile file,
-                                                                          @RequestParam Integer routeId)
-    {
-        ApiResponse<GpxImportResponse> response = gpxParserService.importGpx(file,routeId);
-        return ResponseEntity.status(200).body(response);
-    }
-
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/delete/gpx")
-    public ResponseEntity<ApiResponse<Void>> handleGpxDelete(@RequestParam Integer routeId)
-    {
-        ApiResponse<Void> response = gpxParserService.deleteGpx(routeId);
-        return ResponseEntity.status(200).body(response);
-    }
 }

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "track_points" , indexes = {
-        @Index(name  = "idx_track_points_route_seq" , columnList = "route_id , sequence_order"),
+        @Index(name  = "idx_track_points_route_seq" , columnList = "route_id , global_sequence"),
         @Index(name = "idx_track_points_geom" , columnList = "geom")
 })
 @Getter
@@ -43,8 +43,13 @@ public class TrackPoint extends BaseEntity{
     @Column(name = "local_sequence",nullable = false)
     private Integer localSequence;
 
-    @Column(name = "location" , columnDefinition = "geometry(Point, 4326)")
-    private Point location;
+    @Column(name = "global_sequence")
+    @Builder.Default
+    private Integer globalSequence = 0;
+
+
+    @Column(name = "geom" , columnDefinition = "geometry(Point, 4326)")
+    private Point geom;
 
     @Column(name ="status")
     @Builder.Default

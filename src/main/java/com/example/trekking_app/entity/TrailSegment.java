@@ -53,6 +53,6 @@ public class TrailSegment extends BaseEntity{
     @Column(name = "distance")
     private Double distanceInMeter;
 
-    @Column(name = "segment_path" , columnDefinition = "geometry(LineString, 4326)")
-    private LineString segmentPath;
+    @Column(name = "segment_geometry" , columnDefinition = "geometry(LineString, 4326)")
+    private LineString segmentGeometry;
 }

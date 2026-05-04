@@ -11,8 +11,13 @@ import java.util.List;
 
 @Entity
 @Table(name = "way_points" , uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"route_id" , "sequence_order"})
-})
+        @UniqueConstraint(name = "uq_wp_segment_local",  columnNames = {"gpx_segment_id", "local_sequence"}),
+        @UniqueConstraint(name = "uq_wp_route_global",   columnNames = {"route_id", "global_sequence"}),
+
+},
+        indexes = {
+                @Index(name = "idx_wp_route_number", columnList = "route_id, waypoint_number")})
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
@@ -35,6 +40,10 @@ public class WayPoint {
     @Column(nullable = false , length = 100)
     private String name;
 
+    /** XLSX join key — string to preserve leading zeros (e.g. "001"). */
+    @Column(name = "waypoint_number", length = 32)
+    private String waypointNumber;
+
     @Column(nullable = false)
     private Double latitude;
 
@@ -44,6 +53,8 @@ public class WayPoint {
     @Column(name = "elevation")
     private Double elevation;
 
+    @Column(name = "local_sequence" , nullable = false)
+    private Integer localSequence;
 
     @Column(name="global_sequence" , nullable = false)
     private Integer globalSequence;
@@ -54,6 +65,9 @@ public class WayPoint {
     @Column(name = "recorded_At")
     private LocalDateTime recordedAt;
 
-    @OneToMany(mappedBy = "way_point" ,cascade = CascadeType.ALL,orphanRemoval = true ,fetch = FetchType.LAZY)
+    @Column(name = "geom", columnDefinition = "geometry(Point, 4326)")
+    private Point geom;
+
+    @OneToMany(mappedBy = "wayPoint" ,cascade = CascadeType.ALL,orphanRemoval = true ,fetch = FetchType.LAZY)
     private List<POI> pois = new ArrayList<>();
 }
