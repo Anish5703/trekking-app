@@ -1,7 +1,9 @@
 package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.gpx.GpxSegmentOrderRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointResponse;
+import com.example.trekking_app.service.GpxParserService;
 import com.example.trekking_app.service.IngestionOrchestratorService;
 import com.example.trekking_app.service.TrackPointService;
 import lombok.NonNull;
@@ -16,11 +18,14 @@ public class AdminTrackPointController {
 
     private final TrackPointService trackPointService;
     private final IngestionOrchestratorService orchestrator;
+    private final GpxParserService gpxParserService;
 
-    public AdminTrackPointController(TrackPointService trackPointService , IngestionOrchestratorService orchestrator)
+    public AdminTrackPointController(TrackPointService trackPointService , IngestionOrchestratorService orchestrator,
+                                     GpxParserService gpxParserService)
     {
         this.trackPointService = trackPointService;
         this.orchestrator = orchestrator;
+        this.gpxParserService = gpxParserService;
     }
 
 @GetMapping("/all")
@@ -36,10 +41,11 @@ public ResponseEntity<ApiResponse<List<TrackPointResponse>>> handleGetAlTrackPoi
         return ResponseEntity.status(200).body(response);
     }
 
-    @PutMapping("/merge")
-    public ResponseEntity<ApiResponse<Void>> handleMergeTrackPoints(@PathVariable Integer routeId)
+    @PutMapping("/reorder")
+    public ResponseEntity<ApiResponse<Void>> handleReorderTrackPoints(@RequestBody GpxSegmentOrderRequest orderRequest,
+                                                                    @PathVariable Integer routeId)
     {
-        ApiResponse<Void> response = orchestrator.mergeTrackPoints(routeId);
+        ApiResponse<Void> response = orchestrator.reorderGpxSegment(orderRequest,routeId);
         return ResponseEntity.status(200).body(response);
     }
 

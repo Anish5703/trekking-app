@@ -27,7 +27,7 @@ public class OauthService {
     private final OauthUserMapper oauthUserMapper;
     private final JwtService jwtService;
 
-    public OauthService(OauthUserRepository oauthRepo, UserRepository userRepo,JwtService jwtService) {
+    public OauthService(OauthUserRepository oauthRepo, UserRepository userRepo, JwtService jwtService) {
         this.oauthRepo = oauthRepo;
         this.userRepo = userRepo;
         this.oauthUserMapper = new OauthUserMapper();
@@ -35,11 +35,11 @@ public class OauthService {
     }
 
     /*
-    * Method set jwt token in cookie and set Authorization response header
-    * Create Cookie and set attributes
-    * Add Cookie to the response
-    * Add Header Authorization with jwt token eg: "Bearer $jwtToken"
-    * Return response;
+     * Method set jwt token in cookie and set Authorization response header
+     * Create Cookie and set attributes
+     * Add Cookie to the response
+     * Add Header Authorization with jwt token eg: "Bearer $jwtToken"
+     * Return response;
      */
 
     public HttpServletResponse setJwtCookieAndHeader(HttpServletRequest servletRequest, HttpServletResponse servletResponse, String jwtToken) {
@@ -55,10 +55,10 @@ public class OauthService {
     }
 
     /*
-    * Method to signup user using oauth
-    * Validate if email already exists
-    * Prepare OauthUser
-    * Save OauthUser to the OauthUserRepository
+     * Method to signup user using oauth
+     * Validate if email already exists
+     * Prepare OauthUser
+     * Save OauthUser to the OauthUserRepository
      */
 
     @Transactional
@@ -75,14 +75,14 @@ public class OauthService {
     }
 
     /*
-    * Method to login user using oauth
-    * Fetch UserPrincipal from authentication object
-    * Validate if UserPrincipal is present
-    * Fetch email from UserPrincipal
-    * Validate if email exists
-    * Fetch OauthUser from OauthUserRepository
-    * Prepare OauthLoginResponse
-    * Return ApiResponse<OauthLoginResponse>
+     * Method to login user using oauth
+     * Fetch UserPrincipal from authentication object
+     * Validate if UserPrincipal is present
+     * Fetch email from UserPrincipal
+     * Validate if email exists
+     * Fetch OauthUser from OauthUserRepository
+     * Prepare OauthLoginResponse
+     * Return ApiResponse<OauthLoginResponse>
      */
 
     public ApiResponse<OauthLoginResponse> getOauthLogin(Authentication authentication) {
@@ -92,22 +92,23 @@ public class OauthService {
             if (userPrincipal == null)
                 throw new LoginFailedException("Failed to fetch user credentials");
             String email = userPrincipal.getUsername();  //since username = email in UserPrincipal
-                if (email.isEmpty())
-                    throw new LoginFailedException("Failed to fetch user credentials");
-                else {
-                    oauthUser = oauthRepo.findByEmail(email)
-                            .orElseThrow(
-                                    () -> new LoginFailedException("No user found with this email")
-                            );
-                    OauthLoginResponse oauthLoginResponse = oauthUserMapper.toOauthUserDetails(oauthUser);
-                    oauthLoginResponse.setJwtToken(jwtService.generateToken(oauthLoginResponse.getEmail()));
-                    return new ApiResponse<>(oauthLoginResponse, "Login Successful", 200);
-                }
+            if (email.isEmpty())
+                throw new LoginFailedException("Failed to fetch user credentials");
+            else {
+                oauthUser = oauthRepo.findByEmail(email)
+                        .orElseThrow(
+                                () -> new LoginFailedException("No user found with this email")
+                        );
+                OauthLoginResponse oauthLoginResponse = oauthUserMapper.toOauthUserDetails(oauthUser);
+                oauthLoginResponse.setJwtToken(jwtService.generateToken(oauthLoginResponse.getEmail()));
+                return new ApiResponse<>(oauthLoginResponse, "Login Successful", 200);
+            }
 
 
         } catch (Exception e) {
             throw new LoginFailedException("Failed to authenticate user");
         }
     }
+
 }
 

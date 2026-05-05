@@ -2,10 +2,12 @@ package com.example.trekking_app.service;
 
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.gpx.GpxImportResponse;
+import com.example.trekking_app.dto.gpx.GpxSegmentOrderRequest;
 import com.example.trekking_app.dto.gpx.GpxSegmentResponse;
 import com.example.trekking_app.entity.GpxSegment;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrackPoint;
+import com.example.trekking_app.exception.resource.NoResourceFoundException;
 import com.example.trekking_app.exception.resource.ResourceDeletionFailedException;
 import com.example.trekking_app.exception.resource.ResourceMergeFailedException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
@@ -14,6 +16,7 @@ import com.example.trekking_app.repository.GpxSegmentRepository;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.LineString;
 import org.springframework.stereotype.Service;
@@ -28,25 +31,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class IngestionOrchestratorService {
 
     private final RouteRepository routeRepo;
     private final GpxSegmentRepository gpxSegmentRepo;
     private final GpxParserService gpxParserService;
-    private final GpxSegmentMapper gpxSegmentMapper;
     private final TrackPointRepository trackPointRepo;
+    private final GpxMergeService gpxMergeService;
+    private final GpxSegmentMapper gpxSegmentMapper = new GpxSegmentMapper();
 
-    public IngestionOrchestratorService(RouteRepository routeRepo
-            , GpxSegmentRepository gpxSegmentRepo
-            ,GpxParserService gpxParserService
-            ,TrackPointRepository trackPointRepo)
-    {
-        this.routeRepo = routeRepo;
-        this.gpxSegmentRepo = gpxSegmentRepo;
-        this.gpxParserService = gpxParserService;
-        this.gpxSegmentMapper = new GpxSegmentMapper();
-        this.trackPointRepo  = trackPointRepo;
-    }
 
     @Transactional
     public ApiResponse<List<GpxImportResponse>> uploadGpxFiles(@NonNull Integer routeId , List<MultipartFile> files) throws IOException {
@@ -55,17 +49,13 @@ public class IngestionOrchestratorService {
         );
         int nextOrder = gpxSegmentRepo.findByRoute_IdOrderByOrderIndexAsc(routeId).stream().mapToInt(GpxSegment::getOrderIndex).max().orElse(0)+1;
         List<GpxImportResponse> gpxImportResponses = new ArrayList<>();
-        int totalTp = 0 ; double totalKm = 0;
         for(MultipartFile file : files)
         {
           GpxImportResponse gpxImportResponse =  gpxParserService.parse(file,route,nextOrder);
            nextOrder++;
            gpxImportResponses.add(gpxImportResponse);
-           totalTp += gpxImportResponse.getTotalTrackPoints();
-           totalKm += gpxImportResponse.getTotalDistanceInKm();
         }
-        route.setDistanceInKm(totalKm);
-        routeRepo.save(route);
+        gpxMergeService.mergeTrackPoints(routeId);
         return new ApiResponse<>(gpxImportResponses,"gpx file uploaded",201);
 
     }
@@ -90,6 +80,20 @@ public class IngestionOrchestratorService {
 
     }
 
+    public ApiResponse<Void> reorderGpxSegment(@NonNull GpxSegmentOrderRequest segmentOrderRequest , @NonNull Integer routeId)
+    {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route","id",routeId)
+        );
+        List<GpxSegment> gpxSegments = gpxSegmentRepo.findByRoute(route).orElseThrow(
+                () -> new ResourceNotFoundException("gpx segments","route id",routeId)
+        );
+        gpxSegments.forEach(gpxSegment -> gpxSegment.setOrderIndex(segmentOrderRequest.getSegmentIdWithOrder().get(gpxSegment.getId())));
+        gpxSegmentRepo.saveAll(gpxSegments);
+        gpxMergeService.mergeTrackPoints(routeId);
+        return new ApiResponse<>(null,"gpx segments reordered",200);
+    }
+
     @Transactional
     public ApiResponse<Void> deleteGpxSegment(@NonNull Integer gpxSegmentId,@NonNull Integer routeId)
     {
@@ -99,7 +103,7 @@ public class IngestionOrchestratorService {
         try {
             trackPointRepo.deleteAllByGpxSegment_Id(gpxSegment.getId());
             gpxSegmentRepo.deleteById(gpxSegment.getId());
-            mergeTrackPoints(routeId);
+            gpxMergeService.mergeTrackPoints(routeId);
             return new ApiResponse<>(null,"gpx segment deleted",200);
         }
         catch (Exception e)
@@ -109,48 +113,5 @@ public class IngestionOrchestratorService {
     }
 
 
-    @Transactional
-    public ApiResponse<Void> mergeTrackPoints(@NonNull Integer routeId) {
-        Route route = routeRepo.findById(routeId).orElseThrow(
-                () -> new ResourceNotFoundException("route", "id", routeId)
-        );
-        List<GpxSegment> gpxSegments = gpxSegmentRepo.findByRoute(route).orElseThrow(
-                        () -> new ResourceNotFoundException("gpx segments", "route id", routeId)
-                ).stream()
-                .sorted(Comparator.comparingInt(GpxSegment::getOrderIndex))
-                .toList();
 
-        try {
-            AtomicInteger counter = new AtomicInteger(1);
-            for (GpxSegment gpxSegment : gpxSegments) {
-                List<TrackPoint> trackPoints = gpxSegment.getTrackPoints().stream().sorted(Comparator.comparingInt(TrackPoint::getLocalSequence)).toList();
-                trackPoints.forEach(trackPoint -> trackPoint.setGlobalSequence(counter.getAndIncrement()));
-                trackPointRepo.saveAll(trackPoints);
-
-            }
-            List<TrackPoint> activeTrackPoints = trackPointRepo.findByRouteAndIsDeletedFalseOrderByGlobalSequenceAsc(route).orElseThrow(
-                    () -> new ResourceNotFoundException("active trackpoints","route id",routeId)
-            );
-
-            /** Fetch min elevation , max elevation , total distance in km */
-
-           double minELe = activeTrackPoints.stream().filter(tp -> tp.getElevation() != null)
-                   .mapToDouble(TrackPoint::getElevation).min().orElse(0.0);
-           double maxEle = activeTrackPoints.stream().filter(tp -> tp.getElevation() != null)
-                   .mapToDouble(TrackPoint::getElevation).max().orElse(0.0);
-            double totalDist = gpxParserService.calculateTotalDistance(activeTrackPoints);
-            LineString path = gpxParserService.generateRoutePath(activeTrackPoints,route);
-
-            route.setMinElevation(minELe);
-            route.setMaxElevation(maxEle);
-            route.setDistanceInKm(Math.round(totalDist*100.0)/100.0);
-            route.setPath(path);
-
-            routeRepo.save(route);
-
-            return new ApiResponse<>(null, "merged successful", 200);
-        } catch (Exception e) {
-            throw new ResourceMergeFailedException("trackpoints", "route id", routeId);
-        }
-    }
 }

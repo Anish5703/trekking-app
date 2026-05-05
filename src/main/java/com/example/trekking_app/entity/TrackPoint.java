@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "track_points" , indexes = {
         @Index(name  = "idx_track_points_route_seq" , columnList = "route_id , global_sequence"),
+        @Index(name = "idx_track_points_route_deleted_seq",
+                columnList = "route_id, is_deleted, global_sequence"),
         @Index(name = "idx_track_points_geom" , columnList = "geom")
 })
 @Getter
@@ -51,6 +53,7 @@ public class TrackPoint extends BaseEntity{
     @Column(name = "geom" , columnDefinition = "geometry(Point, 4326)")
     private Point geom;
 
+    @Enumerated(EnumType.STRING)
     @Column(name ="status")
     @Builder.Default
     private TrackPointStatus status = TrackPointStatus.ACTIVE;

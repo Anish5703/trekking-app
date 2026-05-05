@@ -10,6 +10,7 @@ import com.example.trekking_app.mapper.TrackPointMapper;
 import com.example.trekking_app.model.TrackPointStatus;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,20 +19,15 @@ import java.util.Comparator;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class TrackPointService {
 
     private final TrackPointRepository trackPointRepo;
     private final RouteRepository routeRepo;
-    private final TrackPointMapper trackPointMapper;
-    private IngestionOrchestratorService orchestratorService;
+    private final TrackPointMapper trackPointMapper = new TrackPointMapper();
+    private final GpxMergeService gpxMergeService;
 
-    public TrackPointService(TrackPointRepository trackPointRepo,
-                             RouteRepository routeRepo, IngestionOrchestratorService orchestratorService) {
-        this.trackPointRepo = trackPointRepo;
-        this.routeRepo = routeRepo;
-        this.trackPointMapper = new TrackPointMapper();
-        this.orchestratorService = orchestratorService;
-    }
+
 
     @Transactional(readOnly = true)
     public ApiResponse<List<TrackPointResponse>> getAllTrackPoints(int routeId) {
@@ -71,7 +67,7 @@ public class TrackPointService {
             trackPoint.setIsDeleted(true);
             trackPoint.setStatus(TrackPointStatus.SOFT_DELETED);
             trackPointRepo.save(trackPoint);
-            orchestratorService.mergeTrackPoints(routeId);
+            gpxMergeService.mergeTrackPoints(routeId);
             return new ApiResponse<>(null, "trackpoint deleted", 200);
         } catch (Exception e) {
             throw new ResourceDeletionFailedException("trackpoint", "id", trackPointId);

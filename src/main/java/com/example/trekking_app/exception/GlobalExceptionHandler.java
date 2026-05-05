@@ -14,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.hibernate.tool.schema.spi.CommandAcceptanceException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailSendException;
-import org.springframework.mail.MailSender;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -93,14 +92,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ApiResponse<ErrorResponse>> handleEmailNotFound(UsernameNotFoundException ex)
     {
-        log.error("User email not found : {}",ex.getLocalizedMessage());
+        log.error("User with this email not found : {}",ex.getLocalizedMessage());
         ErrorResponse data = new ErrorResponse(ErrorType.EMAIL_NOT_FOUND,ex.getLocalizedMessage());
-        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
-        return ResponseEntity.badRequest().body(response);
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),404);
+        return ResponseEntity.status(404).body(response);
 
     }
 
-    @ExceptionHandler(UserNotFoundException.class)
+    @ExceptionHandler({UserNotFoundException.class})
     public ResponseEntity<ApiResponse<ErrorResponse>> handleUserNotFound(UserNotFoundException ex)
     {
         log.error("Email not registered : {}",ex.getLocalizedMessage());
@@ -204,6 +203,14 @@ public class GlobalExceptionHandler {
     {
         log.error(ex.getMessage());
         ErrorResponse data = new ErrorResponse(ErrorType.NO_RESOURCE_FOUND,ex.getMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        return ResponseEntity.status(400).body(response);
+    }
+    @ExceptionHandler(DuplicateResourceFoundException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleDuplicateResourceFound(DuplicateResourceFoundException ex)
+    {
+        log.error(ex.getMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.DUPLICATE_RESOURCE_FOUND,ex.getMessage());
         ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
         return ResponseEntity.status(400).body(response);
     }

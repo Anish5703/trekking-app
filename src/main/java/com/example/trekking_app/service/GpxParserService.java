@@ -4,6 +4,7 @@ import com.example.trekking_app.dto.gpx.GpxImportResponse;
 import com.example.trekking_app.entity.GpxSegment;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrackPoint;
+
 import com.example.trekking_app.exception.route.FileParsingFailedException;
 import com.example.trekking_app.model.GpxSegmentStatus;
 import com.example.trekking_app.repository.GpxSegmentRepository;
@@ -13,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import org.locationtech.jts.geom.*;
@@ -29,6 +29,7 @@ import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Service
@@ -69,12 +70,8 @@ public class GpxParserService {
 
             NodeList wptNodes = doc.getElementsByTagName("wpt");
             List<TrackPoint> trackPoints = new ArrayList<>();
-            List<Coordinate> lineCoords = new ArrayList<>();
 
-            double maxEle = Double.MIN_VALUE;
-            double minEle = Double.MAX_VALUE;
-
-            int sequenceOrder = 0;
+            int localSequence = 0;
             LocalDateTime timeStamp = null;
             double latitude , longitude , elevation = 0 ;
 
@@ -95,25 +92,17 @@ public class GpxParserService {
                 NodeList eleNodes = wpt.getElementsByTagName("ele");
                 if (eleNodes.getLength() > 0) {
                     elevation = Double.parseDouble(eleNodes.item(0).getTextContent());
-                    minEle = Math.min(minEle, elevation);
-                    maxEle = Math.max(maxEle, elevation);
                 }
                 NodeList timeNodes = wpt.getElementsByTagName("time");
                 if (timeNodes.getLength() > 0) {
                     timeStamp = ZonedDateTime.parse(timeNodes.item(0).getTextContent()).toLocalDateTime();
                 }
-                sequenceOrder = i + 1;
+                localSequence = i + 1;
                 NodeList nameNodes = wpt.getElementsByTagName("name");
                 if (nameNodes.getLength() > 0) {
-                    try { sequenceOrder = Integer.parseInt(nameNodes.item(0).getTextContent().trim()); }
+                    try { localSequence = Integer.parseInt(nameNodes.item(0).getTextContent().trim()); }
                     catch (NumberFormatException ignored) {}
                 }
-
-                minEle = Math.min(minEle , elevation);
-                maxEle = Math.max(maxEle , elevation);
-
-                Point point = GF.createPoint(new Coordinate(longitude,latitude));
-
 
                 TrackPoint trackpoint = TrackPoint.builder()
                         .route(route)
@@ -121,8 +110,7 @@ public class GpxParserService {
                         .latitude(latitude)
                         .longitude(longitude)
                         .elevation(elevation)
-                        .localSequence(sequenceOrder)
-                        .geom(point)
+                        .localSequence(localSequence)
                         .recordedAt(timeStamp)
                         .build();
 
@@ -135,36 +123,24 @@ public class GpxParserService {
             //clear and save track points
             trackPointRepo.saveAll(trackPoints);
 
-            //build route line string geometry from all track points
-           LineString path = generateRoutePath(trackPoints,route);
-           route.setPath(path);
 
-            //update route stats
-            if(minEle != Double.MAX_VALUE)
-            {
-                route.setMinElevation(minEle);
-                route.setMaxElevation(maxEle);
-            }
             //calculate total distance using Haversine method
             double totalDist = calculateTotalDistance(trackPoints);
 
-            route.setDistanceInKm(Math.round(totalDist*100.0)/100.0);
-            routeRepo.save(route);
-
-            GpxImportResponse gpxImportResponse = GpxImportResponse.builder()
+            return GpxImportResponse.builder()
                     .routeId(route.getId())
                     .segmentId(gpxSegment.getId())
                     .segmentName(gpxSegment.getSourceFileName())
                     .totalTrackPoints(wptNodesLength)
                     .totalDistanceInKm(totalDist)
                     .build();
-            return gpxImportResponse;
 
         } catch (Exception e) {
             log.error("GPX parse failed for {}", file.getOriginalFilename(), e);
             throw new FileParsingFailedException("Invalid GPX file: " + file.getOriginalFilename());
         }
     }
+
 
     /** Helper methods */
 
@@ -222,20 +198,5 @@ public class GpxParserService {
         return totalDist;
     }
 
-    public LineString generateRoutePath(List<TrackPoint> trackPoints,Route route)
-    {
-        if (trackPoints.size() < 2) {
-            route.setPath(null);
-            return null;
-        }
 
-        GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
-
-        Coordinate[] coordinates = trackPoints.stream()
-                .map(tp -> new Coordinate(tp.getLongitude(), tp.getLatitude()))
-                .toArray(Coordinate[]::new);
-
-        LineString path = geometryFactory.createLineString(coordinates);
-        return path;
-    }
 }
