@@ -6,11 +6,15 @@ import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrackPoint;
 import com.example.trekking_app.exception.resource.ResourceDeletionFailedException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
+import com.example.trekking_app.mapper.GpxSegmentMapper;
 import com.example.trekking_app.mapper.TrackPointMapper;
 import com.example.trekking_app.model.TrackPointStatus;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,28 +34,31 @@ public class TrackPointService {
 
 
     @Transactional(readOnly = true)
-    public ApiResponse<List<TrackPointResponse>> getAllTrackPoints(int routeId) {
+    public ApiResponse<Page<TrackPointResponse>> getAllTrackPoints(int routeId , int page ,int size) {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
+        Pageable pageable = PageRequest.of(page, size);
+        Page<TrackPointResponse> trackPointResponses = trackPointRepo.findByRoute_IdOrderByGlobalSequenceAsc(routeId,pageable).map(trackPointMapper::toTrackPointResponse);
+        String message = trackPointResponses.isEmpty()
+                ? "no trackpoints found for route"
+                : "trackpoints fetched";
 
-        List<TrackPoint> trackPointList = route.getTrackPoints().stream().sorted(Comparator.comparingInt(TrackPoint::getGlobalSequence)).toList();
-        List<TrackPointResponse> trackPointResponseList = new ArrayList<>();
-        trackPointList.forEach(trackPoint -> trackPointResponseList.add(trackPointMapper.toTrackPointResponse(trackPoint)));
-        return new ApiResponse<>(trackPointResponseList, "trackpoints fetched", 200);
+        return new ApiResponse<>(trackPointResponses, message, 200);
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<List<TrackPointResponse>> getActiveTrackPoints(Integer routeId) {
+    public ApiResponse<Page<TrackPointResponse>> getActiveTrackPoints(Integer routeId, Integer page , Integer size) {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
-        List<TrackPoint> activeTrackPoints = trackPointRepo.findByRouteAndIsDeletedFalseOrderByGlobalSequenceAsc(route).orElseThrow(
-                () -> new ResourceNotFoundException("active trackpoints", "route id", routeId)
-        );
-        List<TrackPointResponse> trackPointResponseList = new ArrayList<>();
-        activeTrackPoints.forEach(tp -> trackPointResponseList.add(trackPointMapper.toTrackPointResponse(tp)));
-        return new ApiResponse<>(trackPointResponseList, "active trackpoints fetched", 200);
+        Pageable pageable = PageRequest.of(page,size);
+        Page<TrackPointResponse> activeTrackPoints = trackPointRepo.findByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceAsc(routeId,pageable)
+                .map(trackPointMapper::toTrackPointResponse);
+        String message = activeTrackPoints.isEmpty()
+                ? "no active trackpoints found for route"
+                : "active trackpoints fetched";
+        return new ApiResponse<>(activeTrackPoints, message, 200);
     }
 
 

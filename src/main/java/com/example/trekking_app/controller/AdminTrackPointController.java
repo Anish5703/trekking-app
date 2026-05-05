@@ -7,6 +7,7 @@ import com.example.trekking_app.service.GpxParserService;
 import com.example.trekking_app.service.IngestionOrchestratorService;
 import com.example.trekking_app.service.TrackPointService;
 import lombok.NonNull;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,15 +30,15 @@ public class AdminTrackPointController {
     }
 
 @GetMapping("/all")
-public ResponseEntity<ApiResponse<List<TrackPointResponse>>> handleGetAlTrackPoints(@PathVariable Integer routeId)
+public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoints(@PathVariable Integer routeId,int page , int size)
     {
-       ApiResponse<List<TrackPointResponse>> response = trackPointService.getAllTrackPoints(routeId);
+       ApiResponse<Page<TrackPointResponse>> response = trackPointService.getAllTrackPoints(routeId,page,size);
        return ResponseEntity.status(200).body(response);
     }
     @GetMapping("/active")
-    public ResponseEntity<ApiResponse<List<TrackPointResponse>>> handleGetActiveTrackPoints(@PathVariable Integer routeId)
+    public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetActiveTrackPoints(@PathVariable Integer routeId,int page , int size)
     {
-        ApiResponse<List<TrackPointResponse>> response = trackPointService.getActiveTrackPoints(routeId);
+        ApiResponse<Page<TrackPointResponse>> response = trackPointService.getActiveTrackPoints(routeId,page,size);
         return ResponseEntity.status(200).body(response);
     }
 
