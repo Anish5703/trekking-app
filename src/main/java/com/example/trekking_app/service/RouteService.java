@@ -1,5 +1,6 @@
 package com.example.trekking_app.service;
 
+import com.example.trekking_app.dto.geojson.GeoJsonFeature;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.RouteDetails;
 import com.example.trekking_app.dto.route.RouteRequest;
@@ -12,10 +13,14 @@ import com.example.trekking_app.exception.resource.NoResourceFoundException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.route.CreateRouteFailedException;
 import com.example.trekking_app.exception.destination.DestinationNotFoundException;
+import com.example.trekking_app.mapper.GeoJsonMapper;
 import com.example.trekking_app.mapper.RouteMapper;
 import com.example.trekking_app.repository.DestinationRepository;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.UserRepository;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,20 +30,15 @@ import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class RouteService {
 
     private final RouteRepository routeRepo;
     private final DestinationRepository destinationRepo;
     private final UserRepository userRepo;
-    private final RouteMapper routeMapper;
+    private final RouteMapper routeMapper = new RouteMapper();
+    private final GeoJsonMapper geoJsonMapper = new GeoJsonMapper();
 
-    public RouteService(RouteRepository routeRepo ,UserRepository userRepo , DestinationRepository destinationRepo)
-    {
-        this.routeRepo = routeRepo;
-        this.destinationRepo = destinationRepo;
-        this.userRepo  = userRepo;
-        this.routeMapper = new RouteMapper();
-    }
 
     @Transactional(readOnly = true )
     public ApiResponse<RouteResponse> getRoute(Integer routeId)
@@ -50,7 +50,7 @@ public class RouteService {
 
         );
         RouteResponse routeResponse = routeMapper.toRouteResponse(route);
-        return new ApiResponse<>(routeResponse,"roue fetched",200);
+        return new ApiResponse<>(routeResponse,"route fetched",200);
     }
 
     @Transactional(readOnly = true)
@@ -92,5 +92,19 @@ public class RouteService {
           log.error("Failed to create new route : {}",ex.getLocalizedMessage());
           throw new CreateRouteFailedException("Failed to create new route");
       }
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<GeoJsonFeature> getRoutePath(@NonNull Integer routeId) {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route", "id", routeId)
+        );
+        try {
+            GeoJsonFeature feature = geoJsonMapper.toGeoJson(route);
+            return new ApiResponse<>(feature, "route path fetched", 200);
+        } catch (Exception e) {
+            log.error("failed to convert route path to geojson : {}", e.getLocalizedMessage());
+            throw new CreateRouteFailedException("failed to create route path");
+        }
     }
 }

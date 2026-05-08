@@ -26,6 +26,5 @@ public class RouteResponse {
     private Double maxElevation;
     private Double minElevation;
     private Double totalDistanceInKm;
-    private LineString path;
 
 }

@@ -55,7 +55,7 @@ public class GpxParserService {
                     .user(route.getUser())
                     .orderIndex(nextOrder)
                     .route(route)
-                    .status(GpxSegmentStatus.DRAFT)
+                    .status(GpxSegmentStatus.ACTIVE)
                     .build();
 
             String xml = new String(gpxBytes, StandardCharsets.UTF_8)
@@ -103,6 +103,7 @@ public class GpxParserService {
                     try { localSequence = Integer.parseInt(nameNodes.item(0).getTextContent().trim()); }
                     catch (NumberFormatException ignored) {}
                 }
+                Point point = GF.createPoint(new Coordinate(longitude,latitude));
 
                 TrackPoint trackpoint = TrackPoint.builder()
                         .route(route)
@@ -111,6 +112,7 @@ public class GpxParserService {
                         .longitude(longitude)
                         .elevation(elevation)
                         .localSequence(localSequence)
+                        .geom(point)
                         .recordedAt(timeStamp)
                         .build();
 

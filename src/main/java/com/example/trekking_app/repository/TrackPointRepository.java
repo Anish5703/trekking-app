@@ -24,4 +24,6 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
      Page<TrackPoint>findByRoute_IdAndGpxSegment_IdOrderByLocalSequenceAsc(Integer routeId, Integer gpxSegmentId, Pageable pageable);
      Page<TrackPoint> findByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceAsc(Integer routeId,Pageable pageable);
      Page<TrackPoint> findByRoute_IdOrderByGlobalSequenceAsc(Integer routeId,Pageable pageable);
+
+     Optional<TrackPoint> findByIdAndRoute_Id(Integer trackPointId, Integer routeId);
 }

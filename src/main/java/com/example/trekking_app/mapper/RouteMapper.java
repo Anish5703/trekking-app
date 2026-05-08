@@ -32,7 +32,6 @@ public class RouteMapper {
                  .description(route.getDescription())
                  .difficultyLevel(route.getDifficultyLevel())
                  .estimatedDays(route.getEstimatedDays())
-                 .path(route.getPath())
                  .timeStamp(route.getTimeStamp())
                  .build();
 

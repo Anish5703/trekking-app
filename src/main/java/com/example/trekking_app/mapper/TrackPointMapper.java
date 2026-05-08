@@ -19,4 +19,5 @@ public class TrackPointMapper {
                   .status(trackPoint.getStatus())
                   .build();
     }
+
 }

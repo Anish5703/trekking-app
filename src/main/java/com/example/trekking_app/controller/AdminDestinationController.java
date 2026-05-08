@@ -16,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/admin/destination")
+
 public class AdminDestinationController {
 
     private final DestinationService destinationService;
@@ -24,12 +25,7 @@ public class AdminDestinationController {
     {
         this.destinationService = destinationService;
     }
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<DestinationResponse>>> handleGetAllDestination()
-    {
-        ApiResponse<List<DestinationResponse>> response = destinationService.getAllDestination();
-        return ResponseEntity.status(200).body(response);
-    }
+
     @Operation(
             summary = "Create new destination",
             description = "Uses DestinationRequest dto to create new destination"
@@ -58,7 +54,7 @@ public class AdminDestinationController {
             })
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping
-    public ResponseEntity<ApiResponse<DestinationResponse>> handleUpdateDestination(@RequestParam int destinationId,
+    public ResponseEntity<ApiResponse<DestinationResponse>> handleUpdateDestination(@RequestParam Integer destinationId,
                                                                                         @Valid @RequestBody DestinationRequest destinationRequest)
     {
         ApiResponse<DestinationResponse> response = destinationService.updateDestination(destinationRequest,destinationId);

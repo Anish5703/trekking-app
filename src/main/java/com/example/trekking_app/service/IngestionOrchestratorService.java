@@ -79,7 +79,21 @@ public class IngestionOrchestratorService {
           return new ApiResponse<>(gpxSegmentResponseList,"gpx segments fetched",200);
 
     }
+    @Transactional(readOnly = true)
+    public ApiResponse<GpxSegmentResponse> getGpxSegment(@NonNull Integer routeId , @NonNull Integer gpxSegmentId)
+    {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route","id",routeId)
+        );
+        GpxSegment gpxSegment = gpxSegmentRepo.findByIdAndRoute_Id(routeId,gpxSegmentId).orElseThrow(
+                () -> new ResourceNotFoundException("gpx segments","id",gpxSegmentId)
+        );
+        GpxSegmentResponse segmentResponse = gpxSegmentMapper.toGpxSegmentResponse(gpxSegment);
+        return new ApiResponse<>(segmentResponse, "gpx segment fetched",200);
 
+    }
+
+    @Transactional
     public ApiResponse<Void> reorderGpxSegment(@NonNull GpxSegmentOrderRequest segmentOrderRequest , @NonNull Integer routeId)
     {
         Route route = routeRepo.findById(routeId).orElseThrow(
