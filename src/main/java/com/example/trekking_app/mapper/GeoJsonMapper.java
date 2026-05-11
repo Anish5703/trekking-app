@@ -1,8 +1,8 @@
 package com.example.trekking_app.mapper;
 
 
-import com.example.trekking_app.dto.geojson.GeoJsonFeature;
-import com.example.trekking_app.dto.geojson.GeoJsonGeometry;
+import com.example.trekking_app.dto.geoJson.GeoJsonFeature;
+import com.example.trekking_app.dto.geoJson.GeoJsonGeometry;
 import com.example.trekking_app.entity.Route;
 
 import java.util.Arrays;
@@ -27,6 +27,6 @@ public class GeoJsonMapper {
         properties.put("name", route.getName());
 
         // Step 4: return single feature
-        return GeoJsonFeature.builder().geometry(geometry).properties(properties).build();
+        return GeoJsonFeature.builder().geoJsonGeometry(geometry).properties(properties).build();
     }
 }

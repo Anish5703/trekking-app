@@ -4,6 +4,7 @@ import com.example.trekking_app.exception.auth.EmptySignupFieldException;
 import com.example.trekking_app.model.Role;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 @Inheritance(strategy = InheritanceType.JOINED)
 @Entity
 @NoArgsConstructor
+@AllArgsConstructor
 @Data
 public class User {
     @Id

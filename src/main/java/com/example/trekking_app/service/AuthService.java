@@ -6,7 +6,6 @@ import com.example.trekking_app.entity.OauthUser;
 import com.example.trekking_app.entity.Token;
 import com.example.trekking_app.entity.User;
 import com.example.trekking_app.exception.auth.*;
-import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.mapper.UserMapper;
 import com.example.trekking_app.repository.OauthUserRepository;
 import com.example.trekking_app.repository.TokenRepository;
@@ -14,42 +13,33 @@ import com.example.trekking_app.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AuthService {
     private final UserRepository userRepo;
     private final TokenRepository tokenRepo;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final UserMapper userMapper;
+    private final UserMapper userMapper = new UserMapper();
     private final MailService mailService;
     private final AuthenticationManager authManager;
     private final JwtService jwtService;
     private final OauthUserRepository oauthUserRepo;
-    public AuthService(UserRepository userRepo,TokenRepository tokenRepo,
-                       BCryptPasswordEncoder passwordEncoder,
-                       MailService mailService,AuthenticationManager authManager,
-                       JwtService jwtService,OauthUserRepository oauthUserRepo)
-    {
-        this.userRepo = userRepo;
-        this.tokenRepo = tokenRepo;
-        this.userMapper = new UserMapper();
-        this.passwordEncoder = passwordEncoder;
-        this.mailService = mailService;
-        this.authManager = authManager;
-        this.jwtService = jwtService;
-        this.oauthUserRepo = oauthUserRepo;
-    }
-
+    private final TokenService tokenService;
 
     /*
     * Signup User flow
@@ -197,9 +187,15 @@ public class AuthService {
             }
             Authentication auth = authManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(),request.getPassword()));
             String message = "Login Successful";
-            String jwtToken = jwtService.generateToken(request.getEmail());
+
+            String jwtToken = jwtService.generateAccessToken(request.getEmail());
+            String refreshToken = tokenService.generateRefreshToken(user);
+
             LoginResponse loginResponse = userMapper.toLoginResponse(user);
-            loginResponse.setJwtToken(jwtToken);
+
+            loginResponse.setAccessToken(jwtToken);
+            loginResponse.setRefreshToken(refreshToken);
+
             return new ApiResponse<>(loginResponse,message,200);
         }
         catch(AuthenticationException ex)

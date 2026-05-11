@@ -9,6 +9,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,14 +23,28 @@ public class JwtService {
     private String secretKey;
 
 
-    public String generateToken(String email) {
+    public String generateAccessToken(String email) {
         Map<String, Object> claims = new HashMap<>();
         return Jwts.builder()
                 .claims()
                 .add(claims)
                 .subject(email)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 10*1000 * 60 * 30))
+                .expiration(Date.from(Instant.now().plus(Duration.ofHours(1))))
+                .and()
+                .signWith(getKey())
+                .compact();
+    }
+
+    public String generateRefreshToken(String email)
+    {
+        Map<String, Object> claims = new HashMap<>();
+        return Jwts.builder()
+                .claims()
+                .add(claims)
+                .subject(email)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(Date.from(Instant.now().plus(Duration.ofDays(7))))
                 .and()
                 .signWith(getKey())
                 .compact();

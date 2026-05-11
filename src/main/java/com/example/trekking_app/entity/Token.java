@@ -2,7 +2,6 @@ package com.example.trekking_app.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 @Entity
 @Table(name = "tokens")
 @NoArgsConstructor

@@ -1,4 +1,4 @@
-package com.example.trekking_app.dto.geojson;
+package com.example.trekking_app.dto.geoJson;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

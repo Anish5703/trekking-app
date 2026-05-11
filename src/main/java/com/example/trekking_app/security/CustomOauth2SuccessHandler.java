@@ -74,7 +74,7 @@ public class CustomOauth2SuccessHandler implements AuthenticationSuccessHandler 
                 OauthSignupRequest signupRequest = new OauthSignupRequest(email, provider, name);
                 oauthService.signupUser(signupRequest);
             }
-            String jwtToken = jwtService.generateToken(email);
+            String jwtToken = jwtService.generateAccessToken(email);
             response = oauthService.setJwtCookieAndHeader(request, response, jwtToken);
 
             response.sendRedirect(redirectUrl);

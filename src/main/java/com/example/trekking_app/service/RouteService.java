@@ -1,6 +1,6 @@
 package com.example.trekking_app.service;
 
-import com.example.trekking_app.dto.geojson.GeoJsonFeature;
+import com.example.trekking_app.dto.geoJson.GeoJsonFeature;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.RouteDetails;
 import com.example.trekking_app.dto.route.RouteRequest;
@@ -18,7 +18,6 @@ import com.example.trekking_app.mapper.RouteMapper;
 import com.example.trekking_app.repository.DestinationRepository;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.UserRepository;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

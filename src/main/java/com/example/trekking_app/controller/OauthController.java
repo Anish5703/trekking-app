@@ -1,14 +1,18 @@
 package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.oauth.OauthLoginRequest;
 import com.example.trekking_app.dto.oauth.OauthLoginResponse;
 import com.example.trekking_app.service.OauthService;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.NonNull;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+/*
 @Tag(
         name = "OAuth2 Authentication",
         description = """
@@ -54,6 +58,8 @@ import org.springframework.web.bind.annotation.*;
         """
 )
 
+ */
+
 @RestController
 @RequestMapping("/api/v1/oauth")
 public class OauthController {
@@ -66,8 +72,8 @@ public class OauthController {
     }
 
 
-
-    @GetMapping("/login")
+    @Hidden
+    @PostMapping("/login")
     public ResponseEntity<ApiResponse<OauthLoginResponse>> handleOauthLogin(Authentication authentication)
     {
       ApiResponse<OauthLoginResponse> response = oauthService.getOauthLogin(authentication);
@@ -75,6 +81,13 @@ public class OauthController {
         headers.set("Content-Type","application/json");
         return ResponseEntity.status(200).headers(headers).body(response);
 
+    }
+
+    @PostMapping("/app/login")
+    public ResponseEntity<ApiResponse<OauthLoginResponse>> handleAppOauthLogin(@NonNull @RequestBody OauthLoginRequest oauthLoginRequest)
+    {
+      ApiResponse<OauthLoginResponse> response = oauthService.getAppOauthLogin(oauthLoginRequest);
+      return ResponseEntity.status(200).body(response);
     }
 
 

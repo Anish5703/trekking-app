@@ -2,7 +2,10 @@ package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.auth.*;
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.token.AccessTokenRequest;
+import com.example.trekking_app.dto.token.AccessTokenResponse;
 import com.example.trekking_app.service.AuthService;
+import com.example.trekking_app.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -15,6 +18,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,14 +32,11 @@ import java.util.UUID;
 )
 @RestController
 @RequestMapping("/api/v1/auth/")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
-
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
-
+    private final TokenService tokenService;
     @Operation(
             summary = "Register a new user",
             description = """
@@ -352,6 +353,14 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.OK).headers(buildSecureHeaders(requestId)).body(response);
     }
 
+
+    @PutMapping("/refresh/access-token")
+    public ResponseEntity<ApiResponse<AccessTokenResponse>> handleGenerateJwtToken(@Valid @RequestBody AccessTokenRequest accessTokenRequest)
+    {
+        String requestId = UUID.randomUUID().toString();
+        ApiResponse<AccessTokenResponse> response = tokenService.generateJwtToken(accessTokenRequest.getRefreshToken());
+        return ResponseEntity.status(HttpStatus.OK).headers(buildSecureHeaders(requestId)).body(response);
+    }
 
     /*
      * Builds a consistent set of security-hardened HTTP response headers

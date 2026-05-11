@@ -2,6 +2,7 @@ package com.example.trekking_app.service;
 
 
 import com.example.trekking_app.entity.User;
+import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.model.UserPrincipal;
 import com.example.trekking_app.repository.UserRepository;
 import org.jspecify.annotations.NonNull;
@@ -25,7 +26,7 @@ public class MyUserDetailsService implements UserDetailsService {
     {
         User user = userRepo.findByEmail(email)
                 .orElseThrow(
-                        () -> new UsernameNotFoundException("User Email not found")
+                        () -> new ResourceNotFoundException("user","email",email)
                 );
         return new UserPrincipal(user);
 

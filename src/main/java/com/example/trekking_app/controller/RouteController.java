@@ -1,6 +1,5 @@
 package com.example.trekking_app.controller;
-
-import com.example.trekking_app.dto.geojson.GeoJsonFeature;
+import com.example.trekking_app.dto.geoJson.GeoJsonFeature;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.RouteDetails;
 import com.example.trekking_app.dto.route.RouteResponse;
