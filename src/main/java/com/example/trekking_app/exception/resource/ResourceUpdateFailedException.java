@@ -14,4 +14,12 @@ public class ResourceUpdateFailedException extends RuntimeException {
         this.fieldName = fieldName;
         this.fieldValue = fieldValue;
     }
+    public ResourceUpdateFailedException(String message)
+    {
+        super(message);
+        resourceName = null;
+        fieldName = null ;
+        fieldValue = null ;
+
+    }
 }

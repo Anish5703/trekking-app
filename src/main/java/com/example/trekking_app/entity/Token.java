@@ -1,7 +1,11 @@
 package com.example.trekking_app.entity;
 
+import com.google.api.client.util.DateTime;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "tokens")
 @NoArgsConstructor
@@ -9,6 +13,7 @@ import lombok.*;
 @Getter
 @Setter
 @ToString(exclude = "user")
+@Builder
 public class Token {
 
     @Id
@@ -22,8 +27,17 @@ public class Token {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "expiry_at")
+    private LocalDateTime expiryAt;
+
+
     public Token(String tokenName, User user) {
         this.tokenName = tokenName;
         this.user = user;
+    }
+    public boolean isExpired()
+    {
+        if(expiryAt==null) return true;
+        return LocalDateTime.now().isAfter(expiryAt);
     }
 }

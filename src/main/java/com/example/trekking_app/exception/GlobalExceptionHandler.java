@@ -215,6 +215,25 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(400).body(response);
     }
 
+    @ExceptionHandler(NullPointerException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleNullPointerException(NullPointerException ex)
+    {
+        log.error(ex.getMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.EMPTY_FIELD,ex.getMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        return ResponseEntity.status(400).body(response);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleNullPointerException(IllegalArgumentException ex)
+    {
+        log.error(ex.getMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.ILLEGAL_ARGUMENTS,ex.getMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        return ResponseEntity.status(400).body(response);
+    }
+
+
 
     @ExceptionHandler(CommandAcceptanceException.class)
     public void handleCommandAcceptanceFailed(CommandAcceptanceException ex)

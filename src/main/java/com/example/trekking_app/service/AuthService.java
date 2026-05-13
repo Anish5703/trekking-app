@@ -6,11 +6,13 @@ import com.example.trekking_app.entity.OauthUser;
 import com.example.trekking_app.entity.Token;
 import com.example.trekking_app.entity.User;
 import com.example.trekking_app.exception.auth.*;
+import com.example.trekking_app.exception.resource.ResourceNotFoundException;
+import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
+import com.example.trekking_app.mapper.TokenMapper;
 import com.example.trekking_app.mapper.UserMapper;
 import com.example.trekking_app.repository.OauthUserRepository;
 import com.example.trekking_app.repository.TokenRepository;
 import com.example.trekking_app.repository.UserRepository;
-import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.NonNull;
@@ -20,9 +22,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -34,12 +34,13 @@ public class AuthService {
     private final UserRepository userRepo;
     private final TokenRepository tokenRepo;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final UserMapper userMapper = new UserMapper();
     private final MailService mailService;
     private final AuthenticationManager authManager;
     private final JwtService jwtService;
     private final OauthUserRepository oauthUserRepo;
     private final TokenService tokenService;
+    private final UserMapper userMapper = new UserMapper();
+    private final TokenMapper tokenMapper = new TokenMapper();
 
     /*
     * Signup User flow
@@ -53,29 +54,23 @@ public class AuthService {
     */
 
     @Transactional
-    public ApiResponse<SignupResponse> signupUser(SignupRequest request, HttpServletRequest servletRequest)
+    public ApiResponse<SignupResponse> signupUser(@NonNull SignupRequest request, HttpServletRequest servletRequest)
     {
        ApiResponse<SignupResponse> response = this.validateSignupRequest(request,servletRequest);
        if(response!=null)
            return response;
 
-        try{
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
        User newUser = userRepo.save(user);
         if (newUser == null)
             throw new SignupFailedException("Failed to save new user : "+newUser.getName());
         else {
-            sendSignupConfirmationToken(newUser,servletRequest);
+            mailService.sendSignupConfirmationMail(newUser);
             SignupResponse signupResponse =userMapper.toSignupResponse(newUser);
-            return new ApiResponse<>(signupResponse,"Check mail for confirmation link",201);
+            return new ApiResponse<>(signupResponse,"Check inbox for confirmation link",201);
         }
-    }
-    catch(Exception e)
-    {
-        log.error("Database Exception : {}",e.getLocalizedMessage());
-        throw new SignupFailedException("Failed to save new user");
-    }
+
     }
     /*
     * Method resend signup confirmation link
@@ -86,7 +81,7 @@ public class AuthService {
     * return ApiResponse<SignupResponse> dto
     */
     @Transactional
-    public ApiResponse<SignupResponse> resendSignupConfirmation(String email, HttpServletRequest servletRequest)
+    public ApiResponse<SignupResponse> resendSignupConfirmation(String email)
     {
 
             User user = userRepo.findByEmail(email)
@@ -95,7 +90,7 @@ public class AuthService {
                 throw new EmailAlreadyVerifiedException("Email is already verified.You can go to login page");
             try{
                 tokenRepo.deleteByUser_Email(email);
-                sendSignupConfirmationToken(user,servletRequest);
+                mailService.sendSignupConfirmationMail(user);
             String message = "Check mail for confirmation link";
             SignupResponse signupResponse = userMapper.toSignupResponse(user);
             return new ApiResponse<>(signupResponse,message,200);
@@ -149,7 +144,7 @@ public class AuthService {
                 if(user.isPresent())
                 {
                     if (!user.get().isEmailVerified())
-                       return resendSignupConfirmation(user.get().getEmail(), servletRequest);
+                       return resendSignupConfirmation(user.get().getEmail());
                     else
                     {
                 log.error("User with email {} already exists", request.getEmail());
@@ -204,23 +199,59 @@ public class AuthService {
         }
     }
 
-    //Method to send registration confirmation token
-    public void sendSignupConfirmationToken(User user, HttpServletRequest servletRequest) throws MessagingException
+
+    //Method to reset user password
+    @Transactional
+    public ApiResponse<PasswordResetResponse> passwordReset(@NonNull PasswordResetRequest resetRequest , @NonNull Integer userId )
     {
+        if(resetRequest.getOldPassword().equals(resetRequest.getNewPassword()))
+            throw new ResourceUpdateFailedException("new password must be different from old password");
 
-            //generating token and storing it to the repo with username
-            String tokenName = mailService.generateToken();
-            log.info("Generated token {} for user {}", tokenName, user);
-            Token token = new Token(tokenName, user);
-            tokenRepo.save(token);
+        User user = userRepo.findById(userId).orElseThrow(
+                () -> new ResourceNotFoundException("user" , "id" , userId)
+        );
+        if(passwordEncoder.matches(resetRequest.getOldPassword(),user.getPassword()))
+            throw new ResourceUpdateFailedException("failed to update password ! old password is incorrect");
+        user.setPassword(passwordEncoder.encode(resetRequest.getNewPassword()));
+        User modifiedUser = userRepo.save(user);
+        PasswordResetResponse resetResponse = PasswordResetResponse.builder()
+                .userId(modifiedUser.getId())
+                .refreshToken(jwtService.generateRefreshToken(modifiedUser.getEmail()))
+                .accessToken(jwtService.generateAccessToken(modifiedUser.getEmail()))
+                .build();
 
-            //Concatenating url and token
-            String confirmationLink = mailService.getConfirmationUrl(servletRequest) + token.getTokenName();
-
-            //sending confirmation mail to the user
-            String htmlContent = mailService.buildConfirmationEmail(user.getName(), confirmationLink);
-            mailService.sendHtmlMail(user.getEmail(), "Confirmation Mail", htmlContent);
+        return new ApiResponse<>(resetResponse,"password updated",200);
     }
 
+    @Transactional
+    public ApiResponse<Void> forgotPasswordReset(@NonNull String email)
+    {
+        User user = userRepo.findByEmail(email).orElseThrow(
+                () -> new ResourceNotFoundException("user","email",email)
+        );
+        Optional<Token> token = tokenRepo.findByUser(user);
+        token.ifPresent(tokenRepo::delete);
+        mailService.sendForgotPasswordResetMail(user);
+        return new ApiResponse<>(null,"Check inbox for password reset confirmation link",200);
+
+    }
+
+    @Transactional
+    public ApiResponse<ForgotPasswordResetResponse> VerifyForgotPasswordReset(@NonNull ForgotPasswordResetRequest resetPasswordRequest)
+    {
+      if(resetPasswordRequest.getToken().isBlank() || resetPasswordRequest.getNewPassword().isBlank())
+          throw new IllegalArgumentException("token and new password required");
+
+      Token token = tokenRepo.findByTokenName(resetPasswordRequest.getToken()).orElseThrow(
+              () -> new ResourceNotFoundException("token","name",resetPasswordRequest.getToken())
+      );
+      User user = userRepo.findById(token.getUser().getId()).orElseThrow(
+              () -> new ResourceNotFoundException("user","email",token.getUser().getEmail())
+      );
+      user.setPassword(passwordEncoder.encode(resetPasswordRequest.getNewPassword()));
+      userRepo.save(user);
+      ForgotPasswordResetResponse resetResponse = ForgotPasswordResetResponse.builder().email(user.getEmail()).build();
+      return new ApiResponse<>(resetResponse,"password reset successfully",200);
+    }
 
 }

@@ -17,7 +17,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -262,7 +261,7 @@ public class AuthController {
             HttpServletRequest servletRequest)
     {
         String requestId = UUID.randomUUID().toString();
-        ApiResponse<SignupResponse> response = authService.resendSignupConfirmation(email, servletRequest);
+        ApiResponse<SignupResponse> response = authService.resendSignupConfirmation(email);
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type","application/json");
         return ResponseEntity.status(HttpStatus.OK).headers(buildSecureHeaders(requestId)).body(response);
@@ -361,6 +360,24 @@ public class AuthController {
         ApiResponse<AccessTokenResponse> response = tokenService.generateJwtToken(accessTokenRequest.getRefreshToken());
         return ResponseEntity.status(HttpStatus.OK).headers(buildSecureHeaders(requestId)).body(response);
     }
+
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> handleResetForgotPassword(@NotBlank @Email String email)
+    {
+        String requestId = UUID.randomUUID().toString();
+        ApiResponse<Void> response = authService.forgotPasswordReset(email);
+        return ResponseEntity.status(200).headers(buildSecureHeaders(requestId)).body(response);
+    }
+
+    @PostMapping("/reset-password/verify")
+    public ResponseEntity<ApiResponse<ForgotPasswordResetResponse>> handleVerifyForgotPasswordReset(@Valid @RequestBody ForgotPasswordResetRequest resetRequest)
+    {
+        String requestId = UUID.randomUUID().toString();
+        ApiResponse<ForgotPasswordResetResponse> response = authService.VerifyForgotPasswordReset(resetRequest);
+        return ResponseEntity.status(200).headers(buildSecureHeaders(requestId)).body(response);
+    }
+
 
     /*
      * Builds a consistent set of security-hardened HTTP response headers
