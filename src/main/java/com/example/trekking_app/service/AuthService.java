@@ -10,6 +10,7 @@ import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
 import com.example.trekking_app.mapper.TokenMapper;
 import com.example.trekking_app.mapper.UserMapper;
+import com.example.trekking_app.model.Role;
 import com.example.trekking_app.repository.OauthUserRepository;
 import com.example.trekking_app.repository.TokenRepository;
 import com.example.trekking_app.repository.UserRepository;
@@ -25,6 +26,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Slf4j
@@ -118,6 +120,8 @@ public class AuthService {
                  .orElseThrow(() -> new SignupFailedException("Invalid signup token"));
          User user = token.getUser();
          user.setEmailVerified(true);
+         if(user.getRole().equals(Role.CUSTOMER)) user.setActive(true);
+         else if(user.getRole().equals(Role.ADMIN)) user.setActive(false);
          userRepo.save(user);
          SignupResponse signupResponse = userMapper.toSignupResponse(user);
          String message = "Email verified. You can now log in";
@@ -175,6 +179,8 @@ public class AuthService {
                     );
             if(!user.isEmailVerified())
                 throw new EmailNotVerifiedException("Email not verified. Check email inbox for confirmation or apply resend confirmation");
+            if(!user.isActive() && user.getRole().equals(Role.ADMIN)) throw new LoginFailedException("new admin account must be approved by any existing admin ");
+            if(!user.isActive() && user.getRole().equals(Role.CUSTOMER)) throw new LoginFailedException("account is blocked by admin");
             if(oauthUserRepo.existsByEmail(request.getEmail()))
             {
                 Optional<OauthUser> oauthUser = oauthUserRepo.findByEmail(request.getEmail());
@@ -210,7 +216,7 @@ public class AuthService {
         User user = userRepo.findById(userId).orElseThrow(
                 () -> new ResourceNotFoundException("user" , "id" , userId)
         );
-        if(passwordEncoder.matches(resetRequest.getOldPassword(),user.getPassword()))
+        if(!passwordEncoder.matches(resetRequest.getOldPassword(),user.getPassword()))
             throw new ResourceUpdateFailedException("failed to update password ! old password is incorrect");
         user.setPassword(passwordEncoder.encode(resetRequest.getNewPassword()));
         User modifiedUser = userRepo.save(user);
@@ -232,7 +238,7 @@ public class AuthService {
         Optional<Token> token = tokenRepo.findByUser(user);
         token.ifPresent(tokenRepo::delete);
         mailService.sendForgotPasswordResetMail(user);
-        return new ApiResponse<>(null,"Check inbox for password reset confirmation link",200);
+        return new ApiResponse<>(null,"Check inbox for password reset confirmation link ! link will be expired in 5 minutes",200);
 
     }
 
@@ -250,6 +256,10 @@ public class AuthService {
       );
       user.setPassword(passwordEncoder.encode(resetPasswordRequest.getNewPassword()));
       userRepo.save(user);
+      //Invalidating token after use
+        token.setExpiryAt(LocalDateTime.now().plusMinutes(10));
+        tokenRepo.save(token);
+
       ForgotPasswordResetResponse resetResponse = ForgotPasswordResetResponse.builder().email(user.getEmail()).build();
       return new ApiResponse<>(resetResponse,"password reset successfully",200);
     }

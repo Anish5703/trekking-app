@@ -12,4 +12,5 @@ public class UserDetails {
     private String email;
     private String contact;
     private Role role;
+    private boolean isActive;
 }

@@ -30,7 +30,10 @@ public class User {
     private String contact;
     @Enumerated(EnumType.STRING)
     private Role role;
+    @Column(name = "email_verified" , nullable = false)
     private boolean emailVerified = false;
+    @Column(name = "is_active",nullable = false)
+    private boolean isActive = false;
     @CreationTimestamp
     private LocalDateTime timeStamp;
 

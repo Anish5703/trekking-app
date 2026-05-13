@@ -21,7 +21,7 @@ public class RouteController {
         this.routeService = routeService;
     }
 
-    @GetMapping("/all")
+    @GetMapping
     public ResponseEntity<ApiResponse<List<RouteDetails>>> handleGetAllRoute(@NonNull @RequestParam Integer destinationId)
     {
         ApiResponse<List<RouteDetails>> response = routeService.getAllRoute(destinationId);

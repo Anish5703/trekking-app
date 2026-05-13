@@ -4,6 +4,7 @@ import com.example.trekking_app.dto.auth.*;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.token.AccessTokenRequest;
 import com.example.trekking_app.dto.token.AccessTokenResponse;
+import com.example.trekking_app.model.UserPrincipal;
 import com.example.trekking_app.service.AuthService;
 import com.example.trekking_app.service.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -362,7 +364,7 @@ public class AuthController {
     }
 
 
-    @PostMapping("/forgot-password")
+    @PostMapping("/forgot-password/reset")
     public ResponseEntity<ApiResponse<Void>> handleResetForgotPassword(@NotBlank @Email String email)
     {
         String requestId = UUID.randomUUID().toString();
@@ -370,12 +372,22 @@ public class AuthController {
         return ResponseEntity.status(200).headers(buildSecureHeaders(requestId)).body(response);
     }
 
-    @PostMapping("/reset-password/verify")
+    @PostMapping("/forgot-password/reset/verify")
     public ResponseEntity<ApiResponse<ForgotPasswordResetResponse>> handleVerifyForgotPasswordReset(@Valid @RequestBody ForgotPasswordResetRequest resetRequest)
     {
         String requestId = UUID.randomUUID().toString();
         ApiResponse<ForgotPasswordResetResponse> response = authService.VerifyForgotPasswordReset(resetRequest);
         return ResponseEntity.status(200).headers(buildSecureHeaders(requestId)).body(response);
+    }
+
+    @PutMapping("/password/reset")
+    public ResponseEntity<ApiResponse<PasswordResetResponse>> handlePasswordReset(@Valid @RequestBody PasswordResetRequest passwordResetRequest,
+                                                                                  @AuthenticationPrincipal UserPrincipal user)
+
+    {
+        String requestId = UUID.randomUUID().toString();
+        ApiResponse<PasswordResetResponse> response = authService.passwordReset(passwordResetRequest,user.getId());
+        return ResponseEntity.status(HttpStatus.OK).headers(buildSecureHeaders(requestId)).body(response);
     }
 
 

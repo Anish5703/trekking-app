@@ -44,7 +44,9 @@ public class TrackPointService {
 
 
     @Transactional(readOnly = true)
-    public ApiResponse<Page<TrackPointResponse>> getAllTrackPoints(int routeId , int page ,int size) {
+    public ApiResponse<Page<TrackPointResponse>> getAllTrackPoints(@NonNull Integer routeId ,
+                                                                   @NonNull Integer page ,
+                                                                   @NonNull Integer size) {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
@@ -58,7 +60,9 @@ public class TrackPointService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<Page<TrackPointResponse>> getActiveTrackPoints(Integer routeId, Integer page , Integer size) {
+    public ApiResponse<Page<TrackPointResponse>> getActiveTrackPoints(@NonNull Integer routeId,
+                                                                      @NonNull Integer page ,
+                                                                      @NonNull Integer size) {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );

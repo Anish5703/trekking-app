@@ -25,7 +25,7 @@ public class MailService {
 
 private final JavaMailSender mailSender;
 private final TokenRepository tokenRepo;
-private final TokenMapper tokenMapper;
+private final TokenMapper tokenMapper = new TokenMapper();
 
 @Value("${frontend.signup.confirmation.url}")
 private String signupConfirmationUrl;

@@ -35,8 +35,8 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
     }
     @GetMapping("/active")
     public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetActiveTrackPoints(@PathVariable Integer routeId,
-                                                                                            Integer page ,
-                                                                                            Integer size)
+                                                                                          @NonNull  Integer page ,
+                                                                                          @NonNull  Integer size)
     {
         ApiResponse<Page<TrackPointResponse>> response = trackPointService.getActiveTrackPoints(routeId,page,size);
         return ResponseEntity.status(200).body(response);

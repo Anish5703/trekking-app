@@ -11,6 +11,7 @@ import com.example.trekking_app.exception.auth.DuplicateEmailFoundException;
 import com.example.trekking_app.exception.auth.LoginFailedException;
 import com.example.trekking_app.exception.auth.SignupFailedException;
 import com.example.trekking_app.mapper.OauthUserMapper;
+import com.example.trekking_app.model.Role;
 import com.example.trekking_app.model.UserPrincipal;
 import com.example.trekking_app.repository.OauthUserRepository;
 import com.example.trekking_app.repository.UserRepository;
@@ -139,6 +140,8 @@ public class OauthService {
            boolean isExistingUser = oauthUserRepo.existsByProviderAndProviderId(userInfo.getProvider(), userInfo.getProviderId());
            userInfo.setRole(loginRequest.getRole());
            OauthUser oauthUser = findOrCreateUser(userInfo);
+           if(oauthUser.getRole().equals(Role.ADMIN) && !oauthUser.isActive()) throw new LoginFailedException("new admin account must be first approved by any existing admin");
+           if(oauthUser.getRole().equals(Role.CUSTOMER) && !oauthUser.isActive())  throw new LoginFailedException("account is blocked by admin");
            OauthLoginResponse loginResponse = oauthUserMapper.toOauthLoginResponse(oauthUser);
            loginResponse.setAccessToken(jwtService.generateAccessToken(loginResponse.getEmail()));
            loginResponse.setRefreshToken(tokenService.generateRefreshToken(oauthUser));
@@ -170,6 +173,8 @@ public class OauthService {
                 else
                 {
                     OauthUser oauthUser = oauthUserMapper.toOauthUser(userInfo);
+                    if(oauthUser.getRole().equals(Role.ADMIN)) oauthUser.setActive(false);
+                    if(oauthUser.getRole().equals(Role.CUSTOMER)) oauthUser.setActive(true);
                    return  oauthUserRepo.save(oauthUser);
                 }
 

@@ -122,9 +122,13 @@ public class SecurityConfig {
 
 
   public static final String[] PUBLIC_ENDPOINTS = {
-           "/api/v1/auth/**",
-          "/api/v1/oauth/**",
+          "/api/v1/auth/login",
+          "/api/v1/auth/signup",
           "/api/v1/auth/signup/**",
+          "/api/v1/auth/refresh/access-token",
+          "/api/v1/auth/forgot-password/**",
+
+          "/api/v1/oauth/**",
           "/oauth2/authorization/**",
           "/login/oauth2/**",
           "/v3/api-docs/**",
