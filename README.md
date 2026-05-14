@@ -10,7 +10,7 @@ Base_Url : http://localhost:8081
 #Allowed Frontend Origin (CORS)
 Base_Url : http://localhost:8080 or  http://localhost:3000
 
-#Api Documentation Provided in
+#Api Documentation Provided in 
 Swagger Api docs url : http://localhost:8081/swagger-ui/index.html#
 
 #open application.properties for signup confirmation url configuration
