@@ -9,7 +9,7 @@ INSERT INTO users (
     time_stamp
 )
 SELECT
-    'admin',
+    'super admin',
     'admin@admin.com',
     '$2a$10$3pmBQT1IsrI2UNDVPekwaeQQZYcnHpL.JFEbBWBeOpXHfOuD5Zwpu',
     '9857099999',
