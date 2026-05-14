@@ -14,43 +14,53 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
-@RequestMapping("/api/v1/admin")
+@RequestMapping("/api/v1/admin/users")
 @PreAuthorize("hasRole('ADMIN')")
-public class AdminController {
+public class AdminUserController {
 
     private final AdminService adminService;
 
-    public AdminController(AdminService adminService) {
+    public AdminUserController(AdminService adminService) {
         this.adminService = adminService;
     }
 
-    @GetMapping("/list/user")
-    public ResponseEntity<ApiResponse<List<UserDetails>>> handleGetUserList() {
-        ApiResponse<List<UserDetails>> response = adminService.getUserList();
+    @GetMapping("/list")
+    public ResponseEntity<ApiResponse<Page<UserDetails>>> handleGetUserList(@RequestParam @NonNull Role role,
+                                                                            @RequestParam @NonNull Integer page ,
+                                                                            @RequestParam @NonNull Integer size)
+    {
+        ApiResponse<Page<UserDetails>> response = adminService.getUsers(role,page,size);
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type", "application/json");
         return ResponseEntity.status(HttpStatus.OK).headers(headers).body(response);
     }
-    @PutMapping("/update/account-status")
+    @PutMapping("/status/update")
     public ResponseEntity<ApiResponse<Void>> handleUpdateAccountStatus(@Valid @RequestBody AccountStatusResetRequest approveRequest)
     {
         ApiResponse<Void> response = adminService.updateAccountStatus(approveRequest);
         return ResponseEntity.status(200).body(response);
 
     }
-    @GetMapping("/list/deactivated-admin")
-    public ResponseEntity<ApiResponse<Page<UserDetails>>> handleGetDeactivatedUserList(@RequestParam @NonNull Role role,
-                                                                                       @RequestParam @NonNull Integer page ,
-                                                                                       @RequestParam @NonNull Integer size
+    @GetMapping("/inactive/list")
+    public ResponseEntity<ApiResponse<Page<UserDetails>>> handleGetInactiveUsers(@RequestParam @NonNull Role role,
+                                                                                 @RequestParam @NonNull Integer page ,
+                                                                                 @RequestParam @NonNull Integer size
                                                                                        )
     {
-        ApiResponse<Page<UserDetails>> response = adminService.getDeactivatedUserList(role,page,size);
+        ApiResponse<Page<UserDetails>> response = adminService.getInactiveUsers(role,page,size);
+        return ResponseEntity.status(200).body(response);
+    }
+    @GetMapping("/active/list")
+    public ResponseEntity<ApiResponse<Page<UserDetails>>> handleGetActiveUsers(@RequestParam @NonNull Role role,
+                                                                               @RequestParam @NonNull Integer page,
+                                                                               @RequestParam @NonNull Integer size)
+    {
+        ApiResponse<Page<UserDetails>> response = adminService.getActiveUsers(role,page,size);
         return ResponseEntity.status(200).body(response);
     }
 
+    /*
     @DeleteMapping("/delete/user")
     public ResponseEntity<ApiResponse<UserDetails>> handleDeleteUser(@RequestParam(name = "id") Integer id) {
         ApiResponse<UserDetails> response = adminService.deleteUser(id);
@@ -59,6 +69,7 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK).headers(headers).body(response);
 
     }
+     */
 
 
 

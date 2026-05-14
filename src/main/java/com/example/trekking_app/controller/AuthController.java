@@ -273,8 +273,9 @@ public class AuthController {
             summary = "Login user",
             description = """
             Authenticates a user with their email and password.
-            Returns a short-lived JWT access token on success.
-            Access token expires in 5 hours.
+            Returns a short-lived JWT access token  and a long-lived JWT refresh token on success.
+            Access token expires in 30 minutes and Refresh token expires in 7 days.
+            
             """,
             tags = {"Authentication"}
     )

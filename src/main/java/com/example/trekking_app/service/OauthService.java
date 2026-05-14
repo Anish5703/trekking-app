@@ -136,24 +136,24 @@ public class OauthService {
             case "FACEBOOK" -> userInfo = facebookOauthProvider.verify(loginRequest.getToken());
             default -> throw new IllegalArgumentException("Unknown oauth provider : " + loginRequest.getProvider());
         }
-       try {
            boolean isExistingUser = oauthUserRepo.existsByProviderAndProviderId(userInfo.getProvider(), userInfo.getProviderId());
            userInfo.setRole(loginRequest.getRole());
            OauthUser oauthUser = findOrCreateUser(userInfo);
-           if(oauthUser.getRole().equals(Role.ADMIN) && !oauthUser.isActive()) throw new LoginFailedException("new admin account must be first approved by any existing admin");
-           if(oauthUser.getRole().equals(Role.CUSTOMER) && !oauthUser.isActive())  throw new LoginFailedException("account is blocked by admin");
+           if(oauthUser.getRole().equals(Role.ADMIN) && !oauthUser.isActive() && isExistingUser) throw new LoginFailedException("need admin approval before login");
+           if(oauthUser.getRole().equals(Role.CUSTOMER) && !oauthUser.isActive() && isExistingUser)  throw new LoginFailedException("account is blocked by admin");
            OauthLoginResponse loginResponse = oauthUserMapper.toOauthLoginResponse(oauthUser);
-           loginResponse.setAccessToken(jwtService.generateAccessToken(loginResponse.getEmail()));
-           loginResponse.setRefreshToken(tokenService.generateRefreshToken(oauthUser));
-           String message = isExistingUser ? "login successful" : "signup successful";
-           return new ApiResponse<>(loginResponse, message, 200);
-       }
-       catch (Exception e)
-       {
-           log.error("App Oauth failed : {}",e.getLocalizedMessage());
-           throw new LoginFailedException("Login failed for "+userInfo.getEmail());
-       }
+           if(!oauthUser.getRole().equals(Role.ADMIN) && !isExistingUser && !oauthUser.isActive())
+           {
+               loginResponse.setAccessToken(jwtService.generateAccessToken(loginResponse.getEmail()));
+               loginResponse.setRefreshToken(tokenService.generateRefreshToken(oauthUser));
+           }
+           String message;
+           if(loginResponse.getRole().equals(Role.ADMIN))
+               message = isExistingUser ? "login successful" : "signup successful ! need admin approval before login";
+           else
+               message = isExistingUser ? "login successful" : "signup successful";
 
+        return new ApiResponse<>(loginResponse, message, 200);
     }
 
     @Transactional
@@ -167,12 +167,11 @@ public class OauthService {
                 Optional<User> existingUser = userRepo.findByEmail(userInfo.getEmail());
 
                 if(existingUser.isPresent())
-                {
                    return  linkOauthProvider(existingUser.get(), userInfo);
-                }
                 else
                 {
                     OauthUser oauthUser = oauthUserMapper.toOauthUser(userInfo);
+                    oauthUser.setEmailVerified(true);
                     if(oauthUser.getRole().equals(Role.ADMIN)) oauthUser.setActive(false);
                     if(oauthUser.getRole().equals(Role.CUSTOMER)) oauthUser.setActive(true);
                    return  oauthUserRepo.save(oauthUser);

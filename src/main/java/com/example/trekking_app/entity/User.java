@@ -29,11 +29,12 @@ public class User {
     private String password;
     private String contact;
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role;
     @Column(name = "email_verified" , nullable = false)
     private boolean emailVerified = false;
     @Column(name = "is_active",nullable = false)
-    private boolean isActive = false;
+    private boolean isActive;
     @CreationTimestamp
     private LocalDateTime timeStamp;
 

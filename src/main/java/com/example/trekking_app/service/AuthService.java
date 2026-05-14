@@ -64,6 +64,7 @@ public class AuthService {
 
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setActive(false);
        User newUser = userRepo.save(user);
         if (newUser == null)
             throw new SignupFailedException("Failed to save new user : "+newUser.getName());
@@ -172,37 +173,37 @@ public class AuthService {
     @Transactional
     public ApiResponse<LoginResponse> loginUser(LoginRequest request)
     {
-        try{
+
             User user = userRepo.findByEmail(request.getEmail())
                     .orElseThrow(
                             () -> new UserNotFoundException("Email not found")
                     );
             if(!user.isEmailVerified())
                 throw new EmailNotVerifiedException("Email not verified. Check email inbox for confirmation or apply resend confirmation");
-            if(!user.isActive() && user.getRole().equals(Role.ADMIN)) throw new LoginFailedException("new admin account must be approved by any existing admin ");
-            if(!user.isActive() && user.getRole().equals(Role.CUSTOMER)) throw new LoginFailedException("account is blocked by admin");
+            if(user.getRole().equals(Role.ADMIN) && !user.isActive()) throw new LoginFailedException("ned admin approval before login ");
+            if(user.getRole().equals(Role.CUSTOMER) && !user.isActive() ) throw new LoginFailedException("account is blocked by admin");
             if(oauthUserRepo.existsByEmail(request.getEmail()))
             {
                 Optional<OauthUser> oauthUser = oauthUserRepo.findByEmail(request.getEmail());
-                if(oauthUser.isPresent()) throw new LoginFailedException("Login with "+oauthUser.get().getProvider());
+                if(oauthUser.isPresent() && !passwordEncoder.matches(request.getPassword(),oauthUser.get().getPassword())) throw new LoginFailedException("Login with "+oauthUser.get().getProvider());
             }
-            Authentication auth = authManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(),request.getPassword()));
-            String message = "Login Successful";
+            try {
+                Authentication auth = authManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+                String jwtToken = jwtService.generateAccessToken(request.getEmail());
+                String refreshToken = tokenService.generateRefreshToken(user);
 
-            String jwtToken = jwtService.generateAccessToken(request.getEmail());
-            String refreshToken = tokenService.generateRefreshToken(user);
+                LoginResponse loginResponse = userMapper.toLoginResponse(user);
 
-            LoginResponse loginResponse = userMapper.toLoginResponse(user);
+                loginResponse.setAccessToken(jwtToken);
+                loginResponse.setRefreshToken(refreshToken);
 
-            loginResponse.setAccessToken(jwtToken);
-            loginResponse.setRefreshToken(refreshToken);
+                return new ApiResponse<>(loginResponse, "Login Successful", 200);
+            }
+            catch (AuthenticationException e)
+            {
+                throw new LoginFailedException("invalid credentials ! incorrect password");
+            }
 
-            return new ApiResponse<>(loginResponse,message,200);
-        }
-        catch(AuthenticationException ex)
-        {
-            throw new LoginFailedException("Credentials didn't matched");
-        }
     }
 
 

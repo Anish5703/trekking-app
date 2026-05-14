@@ -29,7 +29,7 @@ public class GoogleOauthProvider {
 
     public OauthUserInfo verify(@NonNull String token) {
         try {
-            log.info("Verifying Provider Id : "+token);
+            log.info("Verifying id_token : "+token);
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
                     new NetHttpTransport(),
                     GsonFactory.getDefaultInstance()

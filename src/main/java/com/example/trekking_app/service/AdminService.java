@@ -8,12 +8,12 @@ import com.example.trekking_app.entity.User;
 import com.example.trekking_app.exception.auth.EmailNotVerifiedException;
 import com.example.trekking_app.exception.auth.UserNotFoundException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
+import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
 import com.example.trekking_app.exception.user.DeleteUserFailedException;
 import com.example.trekking_app.mapper.UserMapper;
 import com.example.trekking_app.model.Role;
 import com.example.trekking_app.repository.TokenRepository;
 import com.example.trekking_app.repository.UserRepository;
-import jakarta.validation.Valid;
 import lombok.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,8 +21,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -39,16 +37,12 @@ public class AdminService {
         this.userMapper = new UserMapper();
     }
    @Transactional
-    public ApiResponse<List<UserDetails>> getUserList()
+    public ApiResponse<Page<UserDetails>> getUsers(@NonNull Role role ,Integer page , Integer size)
     {
-        List<User> users = userRepo.findAll();
-        List<UserDetails> userDetailsList = new ArrayList<>();
-        users.stream()
-                .forEach(
-                        user -> userDetailsList.add(userMapper.toUserDetails(user))
-                );
+        Pageable pageable = PageRequest.of(page , size);
+        Page<UserDetails> users = userRepo.findByRoleOrderByTimeStampDesc(role,pageable).map(userMapper::toUserDetails);
         String message = "List of users retrieved";
-        return new ApiResponse<>(userDetailsList,message,200);
+        return new ApiResponse<>(users,message,200);
     }
     @Transactional
     public ApiResponse<UserDetails> deleteUser(Integer id)
@@ -71,13 +65,21 @@ public class AdminService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<Page<UserDetails>> getDeactivatedUserList(@NonNull Role role ,@NonNull Integer page , @NonNull Integer size)
+    public ApiResponse<Page<UserDetails>> getInactiveUsers(@NonNull Role role , Integer page ,Integer size)
     {
         Pageable pageable = PageRequest.of(page,size);
-      Page<UserDetails> deactivatedUserList = userRepo.findByRoleAndIsActiveFalse(role,pageable).map(userMapper::toUserDetails);
-      String message = deactivatedUserList.isEmpty() ? "no deactivated user found" : "deactivated user fetched";
-      return new ApiResponse<>(deactivatedUserList,message,200);
+      Page<UserDetails> inactiveUsers = userRepo.findByRoleAndIsActiveFalseOrderByTimeStampDesc(role,pageable).map(userMapper::toUserDetails);
+      String message = inactiveUsers.isEmpty() ? String.format("no inactive %s found",role) : String.format("deactivated %s fetched",role);
+      return new ApiResponse<>(inactiveUsers,message,200);
 
+    }
+    @Transactional(readOnly = true)
+    public ApiResponse<Page<UserDetails>> getActiveUsers(@NonNull Role role,Integer page,Integer size)
+    {
+        Pageable pageable = PageRequest.of(page,size);
+        Page<UserDetails> activeUsers = userRepo.findByRoleAndIsActiveTrueOrderByTimeStampDesc(role,pageable).map(userMapper::toUserDetails);
+        String message = activeUsers.isEmpty() ? String.format("no active %s found",role) : String.format("active %s fetched",role);
+        return new ApiResponse<>(activeUsers,message,200);
     }
 
 
@@ -87,6 +89,9 @@ public class AdminService {
         User user = userRepo.findById(accountStatusResetRequest.getUserId()).orElseThrow(
                 () -> new ResourceNotFoundException("user","id",accountStatusResetRequest.getUserId())
         );
+        //hardcoded super admin email
+        if(user.getEmail().equals("admin@admin.com")) throw new ResourceUpdateFailedException("this is a super admin account not allowed for status update");
+
         if(!user.isEmailVerified()) throw new EmailNotVerifiedException("email must be verified first");
         user.setActive(accountStatusResetRequest.isActive());
         User savedUser = userRepo.save(user);

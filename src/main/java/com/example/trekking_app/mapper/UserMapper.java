@@ -50,6 +50,7 @@ public class UserMapper {
         response.setEmail(user.getEmail());
         response.setContact(user.getContact());
         response.setRole(user.getRole());
+        response.setActive(user.isActive());
         return response;
     }
 
