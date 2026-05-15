@@ -142,7 +142,7 @@ public class OauthService {
            if(oauthUser.getRole().equals(Role.ADMIN) && !oauthUser.isActive() && isExistingUser) throw new LoginFailedException("need admin approval before login");
            if(oauthUser.getRole().equals(Role.CUSTOMER) && !oauthUser.isActive() && isExistingUser)  throw new LoginFailedException("account is blocked by admin");
            OauthLoginResponse loginResponse = oauthUserMapper.toOauthLoginResponse(oauthUser);
-           if(!oauthUser.getRole().equals(Role.ADMIN) && !isExistingUser && !oauthUser.isActive())
+           if(oauthUser.isActive())
            {
                loginResponse.setAccessToken(jwtService.generateAccessToken(loginResponse.getEmail()));
                loginResponse.setRefreshToken(tokenService.generateRefreshToken(oauthUser));

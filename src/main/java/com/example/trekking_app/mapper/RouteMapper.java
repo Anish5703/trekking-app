@@ -32,6 +32,9 @@ public class RouteMapper {
                  .description(route.getDescription())
                  .difficultyLevel(route.getDifficultyLevel())
                  .estimatedDays(route.getEstimatedDays())
+                 .maxElevation(route.getMaxElevation())
+                 .minElevation(route.getMinElevation())
+                 .totalDistanceInKm(route.getDistanceInKm())
                  .timeStamp(route.getTimeStamp())
                  .build();
 

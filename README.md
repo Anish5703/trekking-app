@@ -4,13 +4,13 @@
 2. Run docker compose up --build in terminal to start the backend application
 
 
-#Bacend Server Configuration
+#Backend Server Configuration
 Base_Url : http://localhost:8081
 
 #Allowed Frontend Origin (CORS)
 Base_Url : http://localhost:8080 or  http://localhost:3000
 
-#Api Documentation Provided in 
+#Api Documentation Provided in
 Swagger Api docs url : http://localhost:8081/swagger-ui/index.html#
 
 #open application.properties for signup confirmation url configuration
@@ -20,7 +20,7 @@ Swagger Api docs url : http://localhost:8081/swagger-ui/index.html#
 
 1.User signup with email.
 2.Confirmation link is send to user email inbox.
-3.User clicks the link and email gets verified. 
+3.User clicks the link and email gets verified.
 4.User login with credentials.
 5.Recieves login response including two jwt tokens (access and refresh token ) .
 6.Store access token and refresh token in local storage .
@@ -44,7 +44,7 @@ Swagger Api docs url : http://localhost:8081/swagger-ui/index.html#
 
 #Web Oauth urls (older version : depreciated)
 1. Url for Google Oauth Signup and Login : http://localhost:8081/oauth2/authorization/google         
--> returns ApiResponse<OauthLoginResponse> or ApiResponse<ErrorResponse>
+   -> returns ApiResponse<OauthLoginResponse> or ApiResponse<ErrorResponse>
 
 2. Url for Facebook Oauth Signup and Login : http://localhost:8081/oauth2/authorization/facebook   
--> returns ApiResponse<OauthLoginResponse> or ApiResponse<ErrorResponse>
+   -> returns ApiResponse<OauthLoginResponse> or ApiResponse<ErrorResponse>
