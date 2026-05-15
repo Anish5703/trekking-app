@@ -2,6 +2,7 @@ package com.example.trekking_app.repository;
 
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrackPoint;
+import lombok.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,4 +27,6 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
      Page<TrackPoint> findByRoute_IdOrderByGlobalSequenceAsc(Integer routeId,Pageable pageable);
 
      Optional<TrackPoint> findByIdAndRoute_Id(Integer trackPointId, Integer routeId);
+
+    Page<TrackPoint> findByRoute_IdAndIsDeletedTrueOrderByUpdateAtAsc(@NonNull Integer routeId, Pageable pageable);
 }

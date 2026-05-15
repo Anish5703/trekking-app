@@ -8,7 +8,6 @@ import com.example.trekking_app.entity.TrackPoint;
 import com.example.trekking_app.exception.resource.ResourceDeletionFailedException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
-import com.example.trekking_app.mapper.GpxSegmentMapper;
 import com.example.trekking_app.mapper.TrackPointMapper;
 import com.example.trekking_app.model.TrackPointStatus;
 import com.example.trekking_app.repository.RouteRepository;
@@ -25,10 +24,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -61,8 +56,8 @@ public class TrackPointService {
 
     @Transactional(readOnly = true)
     public ApiResponse<Page<TrackPointResponse>> getActiveTrackPoints(@NonNull Integer routeId,
-                                                                      @NonNull Integer page ,
-                                                                      @NonNull Integer size) {
+                                                                      Integer page ,
+                                                                       Integer size) {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
@@ -73,6 +68,22 @@ public class TrackPointService {
                 ? "no active trackpoints found for route"
                 : "active trackpoints fetched";
         return new ApiResponse<>(activeTrackPoints, message, 200);
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<Page<TrackPointResponse>> getInactiveTrackPoints(@NonNull Integer routeId ,
+                                                                        Integer page , Integer size)
+    {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route", "id", routeId)
+        );
+        Pageable pageable = PageRequest.of(page,size);
+        Page<TrackPointResponse> inactiveTrackPoints = trackPointRepo.findByRoute_IdAndIsDeletedTrueOrderByUpdateAtAsc(routeId,pageable)
+                .map(trackPointMapper::toTrackPointResponse);
+        String message = inactiveTrackPoints.isEmpty()
+                ? "no deleted trackpoints found  "
+                : "deleted trackpoints fetched";
+        return new ApiResponse<>(inactiveTrackPoints,message,200);
     }
 
     @Transactional(readOnly = true)

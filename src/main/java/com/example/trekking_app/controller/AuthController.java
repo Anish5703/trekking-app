@@ -159,7 +159,7 @@ public class AuthController {
                     )
             )
     })
-    @GetMapping("/signup/confirmation")
+    @GetMapping("/signup/verify")
     public ResponseEntity<ApiResponse<SignupResponse>> handleSignupConfirmation(
             @Parameter(
                     name = "token",
