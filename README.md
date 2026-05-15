@@ -4,7 +4,7 @@
 2. Run docker compose up --build in terminal to start the backend application
 
 
-#Bacend Server Configuration
+#Backend Server Configuration
 Base_Url : http://localhost:8081
 
 #Allowed Frontend Origin (CORS)
