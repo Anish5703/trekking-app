@@ -33,7 +33,7 @@ public class GpxMergeService {
     private final GpxSegmentRepository gpxSegmentRepo;
     private final TrackPointRepository trackPointRepo;
 
-    @Async
+    @Async("generalTaskExecutor")
     @Transactional
     public void mergeTrackPoints(@NonNull Integer routeId) {
         Route route = routeRepo.findById(routeId).orElseThrow(

@@ -1,4 +1,4 @@
-package com.example.trekking_app.security;
+package com.example.trekking_app.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

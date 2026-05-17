@@ -1,4 +1,4 @@
-package com.example.trekking_app.security;
+package com.example.trekking_app.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
