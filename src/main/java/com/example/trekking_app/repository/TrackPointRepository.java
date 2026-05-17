@@ -28,5 +28,5 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
 
      Optional<TrackPoint> findByIdAndRoute_Id(Integer trackPointId, Integer routeId);
 
-    Page<TrackPoint> findByRoute_IdAndIsDeletedTrueOrderByUpdateAtAsc(@NonNull Integer routeId, Pageable pageable);
+    Page<TrackPoint> findByRoute_IdAndIsDeletedTrueOrderByUpdatedAtAsc(@NonNull Integer routeId, Pageable pageable);
 }

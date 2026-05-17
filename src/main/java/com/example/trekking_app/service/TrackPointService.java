@@ -78,7 +78,7 @@ public class TrackPointService {
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
         Pageable pageable = PageRequest.of(page,size);
-        Page<TrackPointResponse> inactiveTrackPoints = trackPointRepo.findByRoute_IdAndIsDeletedTrueOrderByUpdateAtAsc(routeId,pageable)
+        Page<TrackPointResponse> inactiveTrackPoints = trackPointRepo.findByRoute_IdAndIsDeletedTrueOrderByUpdatedAtAsc(routeId,pageable)
                 .map(trackPointMapper::toTrackPointResponse);
         String message = inactiveTrackPoints.isEmpty()
                 ? "no deleted trackpoints found  "
