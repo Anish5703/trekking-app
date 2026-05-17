@@ -1,4 +1,4 @@
-package com.example.trekking_app.security;
+package com.example.trekking_app.config;
 
 import com.example.trekking_app.exception.auth.LoginFailedException;
 import jakarta.servlet.ServletException;

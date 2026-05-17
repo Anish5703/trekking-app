@@ -34,7 +34,7 @@ private String signupConfirmationUrl;
 private String forgotPasswordResetConfirmationUrl;
 
 
-@Async
+@Async("mailTaskExecutor")
 public void sendSignupConfirmationMail(@NonNull User user) {
     try
 {
@@ -59,7 +59,7 @@ public void sendSignupConfirmationMail(@NonNull User user) {
         throw new MailSendException("Failed to send signup confirmation mail");
     }
 }
-@Async
+@Async("mailTaskExecutor")
 public void sendForgotPasswordResetMail(@NonNull User user)
 {
     try {
