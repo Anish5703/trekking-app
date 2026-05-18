@@ -22,8 +22,8 @@ public class AdminTrackPointController {
 
 @GetMapping("/list")
 public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoints(@PathVariable Integer routeId,
-                                                                                    Integer page ,
-                                                                                    Integer size)
+                                                                                   @NonNull Integer page ,
+                                                                                   @NonNull Integer size)
     {
        ApiResponse<Page<TrackPointResponse>> response = trackPointService.getAllTrackPoints(routeId,page,size);
        return ResponseEntity.status(200).body(response);

@@ -14,6 +14,5 @@ public interface GpxSegmentRepository extends JpaRepository<GpxSegment,Integer> 
 
     List<GpxSegment> findByRoute_IdOrderByOrderIndexAsc(Integer routeId);
     Optional<List<GpxSegment>> findByRoute(Route route);
-
     Optional<GpxSegment> findByIdAndRoute_Id(@NonNull Integer routeId, @NonNull Integer gpxSegmentId);
 }
