@@ -2,6 +2,9 @@
 FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
 
+# create the logs dir and make sure the app user can write to it
+RUN mkdir -p /app/logs
+
 # Cache dependencies
 COPY pom.xml .
 RUN mvn dependency:go-offline

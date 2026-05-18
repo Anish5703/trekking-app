@@ -4,7 +4,7 @@ import com.example.trekking_app.dto.auth.PasswordResetRequest;
 import com.example.trekking_app.dto.auth.PasswordResetResponse;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.model.UserPrincipal;
-import com.example.trekking_app.service.AuthService;
+import com.example.trekking_app.service.auth.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;

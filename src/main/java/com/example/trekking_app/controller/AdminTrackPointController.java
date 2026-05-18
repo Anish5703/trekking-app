@@ -3,7 +3,7 @@ package com.example.trekking_app.controller;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.trackpoint.TrackPointRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointResponse;
-import com.example.trekking_app.service.TrackPointService;
+import com.example.trekking_app.service.trackpoints.TrackPointService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

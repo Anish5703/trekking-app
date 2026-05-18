@@ -18,7 +18,7 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
      void deleteAllByRoute_Id(int routeId);
      void deleteAllByGpxSegment_Id(int routeId);
      boolean existsByRoute_Id(int routeId);
-     List<TrackPoint>findByRoute_IdAndGpxSegment_IdOrderByLocalSequenceAsc(Integer routeId,Integer gpxSegmentId);
+     Optional<List<TrackPoint>>findByRoute_IdAndGpxSegment_IdOrderByLocalSequenceAsc(Integer routeId,Integer gpxSegmentId);
 
      Optional<List<TrackPoint>> findByRouteAndIsDeletedFalseOrderByGlobalSequenceAsc(Route route);
 

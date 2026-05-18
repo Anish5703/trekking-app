@@ -4,7 +4,7 @@ import com.example.trekking_app.dto.admin.AccountStatusResetRequest;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.user.UserDetails;
 import com.example.trekking_app.model.Role;
-import com.example.trekking_app.service.AdminService;
+import com.example.trekking_app.service.user.AdminService;
 import jakarta.validation.Valid;
 import lombok.NonNull;
 import org.springframework.data.domain.Page;

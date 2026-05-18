@@ -1,4 +1,4 @@
-package com.example.trekking_app.service;
+package com.example.trekking_app.service.trackpoints;
 
 import com.example.trekking_app.dto.gpx.GpxImportResponse;
 import com.example.trekking_app.entity.GpxSegment;
@@ -29,7 +29,6 @@ import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Service

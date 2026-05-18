@@ -1,4 +1,4 @@
-package com.example.trekking_app.service;
+package com.example.trekking_app.service.user;
 
 import com.example.trekking_app.dto.admin.AccountStatusResetRequest;
 import com.example.trekking_app.dto.global.ApiResponse;

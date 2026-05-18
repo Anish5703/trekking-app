@@ -1,4 +1,4 @@
-package com.example.trekking_app.service;
+package com.example.trekking_app.service.trackpoints;
 
 import com.example.trekking_app.entity.GpxSegment;
 import com.example.trekking_app.entity.Route;
@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
@@ -48,7 +47,9 @@ public class GpxMergeService {
         try {
             AtomicInteger counter = new AtomicInteger(1);
             for (GpxSegment gpxSegment : gpxSegments) {
-                List<TrackPoint>trackPoints = trackPointRepo.findByRoute_IdAndGpxSegment_IdOrderByLocalSequenceAsc(routeId,gpxSegment.getId());
+                List<TrackPoint>trackPoints = trackPointRepo.findByRoute_IdAndGpxSegment_IdOrderByLocalSequenceAsc(routeId,gpxSegment.getId()).orElseThrow(
+                        () -> new ResourceNotFoundException("trackpoints","route id and gpx file id",String.format("%s and %s respectively",routeId,gpxSegment.getId()))
+                );
                 if(trackPoints.isEmpty()) continue;
                 trackPoints.forEach(trackPoint -> trackPoint.setGlobalSequence(counter.getAndIncrement()));
                 trackPointRepo.saveAll(trackPoints);

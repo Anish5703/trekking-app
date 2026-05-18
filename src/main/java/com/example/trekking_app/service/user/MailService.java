@@ -1,4 +1,4 @@
-package com.example.trekking_app.service;
+package com.example.trekking_app.service.user;
 
 import com.example.trekking_app.entity.Token;
 import com.example.trekking_app.entity.User;

@@ -4,10 +4,8 @@ import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.gpx.GpxImportResponse;
 import com.example.trekking_app.dto.gpx.GpxSegmentOrderRequest;
 import com.example.trekking_app.dto.gpx.GpxSegmentResponse;
-import com.example.trekking_app.service.IngestionOrchestratorService;
+import com.example.trekking_app.service.trackpoints.GpxIngestionService;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,9 +20,9 @@ import java.util.List;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminGpxController {
 
-    private final IngestionOrchestratorService orchestrator;
+    private final GpxIngestionService orchestrator;
 
-    public AdminGpxController(IngestionOrchestratorService orchestrator)
+    public AdminGpxController(GpxIngestionService orchestrator)
     {
         this.orchestrator = orchestrator;
     }

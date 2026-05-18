@@ -1,7 +1,7 @@
 package com.example.trekking_app.config;
 
 
-import com.example.trekking_app.service.MyUserDetailsService;
+import com.example.trekking_app.service.user.MyUserDetailsService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

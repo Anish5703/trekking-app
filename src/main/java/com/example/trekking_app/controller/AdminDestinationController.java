@@ -3,7 +3,7 @@ package com.example.trekking_app.controller;
 import com.example.trekking_app.dto.destination.DestinationRequest;
 import com.example.trekking_app.dto.destination.DestinationResponse;
 import com.example.trekking_app.dto.global.ApiResponse;
-import com.example.trekking_app.service.DestinationService;
+import com.example.trekking_app.service.route.DestinationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
@@ -11,8 +11,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/admin/destination")

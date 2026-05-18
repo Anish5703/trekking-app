@@ -5,6 +5,8 @@ public enum POIType {
     HOTEL,
     TEA_HOUSE,
     REST_AREA,
+    TEMPLE,
+    WATER_SOURCE,
     VIEW_POINT,
     HOSPITAL,
     HEALTH_POST,
@@ -20,5 +22,6 @@ public enum POIType {
     CAMP_SITE,
     POLICE_STATION,
     ATM,
-    NETWORK_COVERAGE
+    NETWORK_COVERAGE,
+    OTHER
 }

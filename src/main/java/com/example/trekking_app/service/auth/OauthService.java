@@ -1,4 +1,4 @@
-package com.example.trekking_app.service;
+package com.example.trekking_app.service.auth;
 
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.oauth.OauthLoginRequest;
@@ -15,6 +15,7 @@ import com.example.trekking_app.model.Role;
 import com.example.trekking_app.model.UserPrincipal;
 import com.example.trekking_app.repository.OauthUserRepository;
 import com.example.trekking_app.repository.UserRepository;
+import com.example.trekking_app.service.user.TokenService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.Cookie;

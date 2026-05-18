@@ -1,4 +1,4 @@
-package com.example.trekking_app.service;
+package com.example.trekking_app.service.auth;
 
 import com.example.trekking_app.dto.oauth.OauthUserInfo;
 import com.example.trekking_app.exception.auth.LoginFailedException;
