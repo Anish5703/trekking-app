@@ -6,10 +6,7 @@ import com.example.trekking_app.dto.gpx.GpxSegmentOrderRequest;
 import com.example.trekking_app.dto.gpx.GpxSegmentResponse;
 import com.example.trekking_app.entity.GpxSegment;
 import com.example.trekking_app.entity.Route;
-import com.example.trekking_app.entity.TrackPoint;
-import com.example.trekking_app.exception.resource.NoResourceFoundException;
 import com.example.trekking_app.exception.resource.ResourceDeletionFailedException;
-import com.example.trekking_app.exception.resource.ResourceMergeFailedException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.mapper.GpxSegmentMapper;
 import com.example.trekking_app.repository.GpxSegmentRepository;
@@ -18,21 +15,18 @@ import com.example.trekking_app.repository.TrackPointRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.locationtech.jts.geom.LineString;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class IngestionOrchestratorService {
+public class GpxIngestionService {
 
     private final RouteRepository routeRepo;
     private final GpxSegmentRepository gpxSegmentRepo;
