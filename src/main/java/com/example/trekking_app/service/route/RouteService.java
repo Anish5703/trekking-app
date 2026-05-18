@@ -126,9 +126,9 @@ public class RouteService {
                 () -> new ResourceNotFoundException("user","id",userId)
         );
         Route newRoute = routeMapper.toEntity(routeRequest,user,destination);
-        if(newRoute.getMinElevation().isNaN()) newRoute.setMinElevation(route.getMinElevation());
-        if(newRoute.getMaxElevation().isNaN()) newRoute.setMaxElevation(route.getMaxElevation());
-        if(newRoute.getDistanceInKm()<0.1) newRoute.setDistanceInKm(route.getDistanceInKm());
+        newRoute.setMinElevation(route.getMinElevation());
+        newRoute.setMaxElevation(route.getMaxElevation());
+        newRoute.setDistanceInKm(route.getDistanceInKm());
         newRoute.setId(route.getId());
         Route updatedRoute = routeRepo.save(newRoute);
         RouteResponse routeResponse = routeMapper.toRouteResponse(updatedRoute);
