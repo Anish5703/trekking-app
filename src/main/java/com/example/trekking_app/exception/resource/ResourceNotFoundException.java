@@ -15,4 +15,11 @@ public class ResourceNotFoundException extends RuntimeException {
         this.filedValue = filedValue;
 
     }
+    public ResourceNotFoundException(String message)
+    {
+        super(message);
+        resourceName= "";
+        fieldName = "";
+        filedValue = "";
+    }
 }

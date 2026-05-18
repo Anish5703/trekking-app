@@ -9,6 +9,7 @@ import com.example.trekking_app.exception.resource.ResourceDeletionFailedExcepti
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
 import com.example.trekking_app.mapper.TrackPointMapper;
+import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.model.TrackPointStatus;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
@@ -95,6 +96,7 @@ public class TrackPointService {
         TrackPoint trackPoint = trackPointRepo.findByIdAndRoute_Id(trackPointId,routeId).orElseThrow(
                 () -> new ResourceNotFoundException("trackpoint","id",trackPointId)
         );
+        if(route.getRouteStatus().equals(RouteStatus.MERGING)) throw new ResourceUpdateFailedException("failed to update trackpoint since the associated routes trackpoints are merging");
         boolean isLocalSequenceSame = trackPoint.getLocalSequence().equals(trackPointRequest.getLocalSequence());
         try {
             trackPoint.setLongitude(trackPointRequest.getLongitude());
@@ -107,8 +109,9 @@ public class TrackPointService {
             trackPoint.setGeom(point);
             trackPointRepo.save(trackPoint);
 
-            if (!isLocalSequenceSame)
+            if (!isLocalSequenceSame) {
                 gpxMergeService.mergeTrackPoints(routeId);
+            }
 
             return new ApiResponse<>(null, "trackpoint updated", 200);
         }
@@ -134,7 +137,7 @@ public class TrackPointService {
             trackPoint.setIsDeleted(true);
             trackPoint.setStatus(TrackPointStatus.SOFT_DELETED);
             trackPointRepo.save(trackPoint);
-            gpxMergeService.mergeTrackPoints(routeId);
+            gpxMergeService.mergeTrackPoints(route.getId());
             return new ApiResponse<>(null, "trackpoint deleted", 200);
         } catch (Exception e) {
             throw new ResourceDeletionFailedException("trackpoint", "id", trackPointId);

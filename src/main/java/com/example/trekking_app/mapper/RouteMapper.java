@@ -52,6 +52,7 @@ public class RouteMapper {
                  .minElevation(route.getMinElevation())
                  .maxElevation(route.getMaxElevation())
                  .totalDistanceInKm(route.getDistanceInKm())
+                 .routeStatus(route.getRouteStatus())
                  .build();
 
 

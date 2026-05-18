@@ -14,6 +14,7 @@ import com.example.trekking_app.exception.route.CreateRouteFailedException;
 import com.example.trekking_app.exception.destination.DestinationNotFoundException;
 import com.example.trekking_app.mapper.GeoJsonMapper;
 import com.example.trekking_app.mapper.RouteMapper;
+import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.repository.DestinationRepository;
 import com.example.trekking_app.repository.GpxSegmentRepository;
 import com.example.trekking_app.repository.RouteRepository;
@@ -106,6 +107,18 @@ public class RouteService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
+        switch (route.getRouteStatus()) {
+            case IDLE ->
+                    throw new ResourceNotFoundException("No path available — route has no merged track points yet");
+            case MERGING ->
+                    throw new ResourceNotFoundException("Route is currently merging — please try again shortly");
+            case FAILED ->
+                    throw new ResourceNotFoundException("Route merge failed — please re-trigger the merge");
+            case MERGED -> {
+            }
+            default ->
+                    throw new IllegalStateException("Unexpected route status: " + route.getRouteStatus());
+        }
         try {
             GeoJsonFeature feature = geoJsonMapper.toGeoJson(route);
             return new ApiResponse<>(feature, "route path fetched", 200);
@@ -140,6 +153,7 @@ public class RouteService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
+        if(route.getRouteStatus().equals(RouteStatus.MERGING)) throw new ResourceDeletionFailedException("failed to delete route since it is merging currently");
         Optional<List<GpxSegment>> gpxSegments = gpxSegmentRepo.findByRoute(route);
         if(gpxSegments.isPresent() && !gpxSegments.get().isEmpty())
             throw new ResourceDeletionFailedException("failed to delete route ! delete gpx files associated with route first");

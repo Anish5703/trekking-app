@@ -1,6 +1,7 @@
 package com.example.trekking_app.entity;
 
 import com.example.trekking_app.model.DifficultyLevel;
+import com.example.trekking_app.model.RouteStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.locationtech.jts.geom.LineString;
@@ -46,16 +47,23 @@ public class Route extends BaseEntity{
     private LineString path;
 
     @Column(name="max_elevation")
-    private Double maxElevation;
+    @Builder.Default
+    private Double maxElevation=0.0;
 
     @Column(name = "min_elevation")
-    private Double minElevation;
+    @Builder.Default
+    private Double minElevation=0.0;
 
     @Column(name="estimated_days")
     private Integer estimatedDays;
 
     @Column
-    private double distanceInKm;
+    @Builder.Default
+    private Double distanceInKm=0.0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name="route_status")
+    private RouteStatus routeStatus = RouteStatus.IDLE;
 
     @Column(name="difficulty_level",length=20)
     @Enumerated(EnumType.STRING)

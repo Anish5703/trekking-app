@@ -9,6 +9,7 @@ import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.exception.resource.ResourceDeletionFailedException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.mapper.GpxSegmentMapper;
+import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.repository.GpxSegmentRepository;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
@@ -106,6 +107,9 @@ public class GpxIngestionService {
     @Transactional
     public ApiResponse<Void> deleteGpxSegment(@NonNull Integer gpxSegmentId,@NonNull Integer routeId)
     {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route","id",routeId)
+        );
         GpxSegment gpxSegment = gpxSegmentRepo.findById(gpxSegmentId).orElseThrow(
                 () -> new ResourceNotFoundException("gpx segment","id",gpxSegmentId)
         );

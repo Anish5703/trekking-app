@@ -30,7 +30,7 @@ public class AsyncConfig {
     public Executor generalTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(5);
-        executor.setMaxPoolSize(20);
+        executor.setMaxPoolSize(50);
         executor.setQueueCapacity(100);
         executor.setThreadNamePrefix("general-async-");
         executor.setWaitForTasksToCompleteOnShutdown(true);

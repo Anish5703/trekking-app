@@ -27,7 +27,7 @@
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <!-- rolled files look like: app-2025-05-17.1.log -->
             <fileNamePattern>logs/app-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxFileSize>10MB</maxFileSize>
+            <maxFileSize>50MB</maxFileSize>
             <maxHistory>30</maxHistory>          <!-- keep last 30 days, then auto-delete -->
             <totalSizeCap>500MB</totalSizeCap>   <!-- total folder cap just in case -->
         </rollingPolicy>
@@ -55,7 +55,7 @@
 
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>logs/error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxFileSize>10MB</maxFileSize>
+            <maxFileSize>50MB</maxFileSize>
             <maxHistory>60</maxHistory>   <!-- keep errors longer than general logs -->
         </rollingPolicy>
 

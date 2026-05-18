@@ -6,6 +6,9 @@ import lombok.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -29,4 +32,41 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
      Optional<TrackPoint> findByIdAndRoute_Id(Integer trackPointId, Integer routeId);
 
     Page<TrackPoint> findByRoute_IdAndIsDeletedTrueOrderByUpdatedAtAsc(@NonNull Integer routeId, Pageable pageable);
+
+     // Replaces the entire for-loop
+     @Modifying
+     @Query(value = """
+    UPDATE track_points tp
+    SET global_sequence = sub.new_seq
+    FROM (
+        SELECT tp2.id,
+               ROW_NUMBER() OVER (
+                   ORDER BY gs.order_index, tp2.local_sequence
+               ) AS new_seq
+        FROM track_points tp2
+        JOIN gpx_segments gs ON tp2.gpx_segment_id = gs.id
+        WHERE tp2.route_id = :routeId
+    ) sub
+    WHERE tp.id = sub.id
+    """, nativeQuery = true)
+     void updateGlobalSequences(@Param("routeId") Integer routeId);
+
+     // In repository
+     @Query("""
+    SELECT MIN(tp.elevation)
+    FROM TrackPoint tp
+    WHERE tp.route.id = :routeId
+      AND tp.isDeleted = false
+      AND tp.elevation IS NOT NULL
+    """)
+     Optional<Double> findMinElevation(@Param("routeId") Integer routeId);
+
+     @Query("""
+    SELECT MAX(tp.elevation)
+    FROM TrackPoint tp
+    WHERE tp.route.id = :routeId
+      AND tp.isDeleted = false
+      AND tp.elevation IS NOT NULL
+    """)
+     Optional<Double> findMaxElevation(@Param("routeId") Integer routeId);
 }
