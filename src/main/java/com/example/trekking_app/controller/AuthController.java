@@ -381,16 +381,6 @@ public class AuthController {
         return ResponseEntity.status(200).headers(buildSecureHeaders(requestId)).body(response);
     }
 
-    @PutMapping("/password/reset")
-    public ResponseEntity<ApiResponse<PasswordResetResponse>> handlePasswordReset(@Valid @RequestBody PasswordResetRequest passwordResetRequest,
-                                                                                  @AuthenticationPrincipal UserPrincipal user)
-
-    {
-        String requestId = UUID.randomUUID().toString();
-        ApiResponse<PasswordResetResponse> response = authService.passwordReset(passwordResetRequest,user.getId());
-        return ResponseEntity.status(HttpStatus.OK).headers(buildSecureHeaders(requestId)).body(response);
-    }
-
 
     /*
      * Builds a consistent set of security-hardened HTTP response headers
