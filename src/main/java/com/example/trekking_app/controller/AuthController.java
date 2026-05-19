@@ -159,7 +159,7 @@ public class AuthController {
                     )
             )
     })
-    @GetMapping("/signup/verify")
+    @GetMapping("/signup/confirmation")
     public ResponseEntity<ApiResponse<SignupResponse>> handleSignupConfirmation(
             @Parameter(
                     name = "token",
@@ -373,7 +373,7 @@ public class AuthController {
         return ResponseEntity.status(200).headers(buildSecureHeaders(requestId)).body(response);
     }
 
-    @PostMapping("/forgot-password/reset/verify")
+    @PostMapping("/forgot-password/reset/confirmation")
     public ResponseEntity<ApiResponse<ForgotPasswordResetResponse>> handleVerifyForgotPasswordReset(@Valid @RequestBody ForgotPasswordResetRequest resetRequest)
     {
         String requestId = UUID.randomUUID().toString();
