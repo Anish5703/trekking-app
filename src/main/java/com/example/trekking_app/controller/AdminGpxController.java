@@ -34,7 +34,7 @@ public class AdminGpxController {
         return  ResponseEntity.status(200).body(response);
     }
 
-    @GetMapping("/gpxSegmentId")
+    @GetMapping("/{gpxSegmentId}")
     public ResponseEntity<ApiResponse<GpxSegmentResponse>> handleGetGpxSegments(@PathVariable Integer routeId ,
                                                                                 @PathVariable Integer gpxSegmentId )
     {
