@@ -30,10 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class GpxMergeService {
 
    private final GpxMergeHelper mergeHelper;
-
-
-@Async("generalTaskExecutor")
-public void mergeTrackPoints(@NonNull Integer routeId) {
+   public void mergeTrackPoints(@NonNull Integer routeId){
     mergeHelper.updateRouteStatus(routeId, RouteStatus.MERGING);
     try {
         mergeHelper.assignGlobalSequences(routeId);

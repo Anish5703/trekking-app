@@ -38,7 +38,6 @@ public class GpxIngestionService {
     private final GpxSegmentMapper gpxSegmentMapper = new GpxSegmentMapper();
 
 
-    @Transactional
     public ApiResponse<List<GpxImportResponse>> uploadGpxFiles(@NonNull Integer routeId , List<MultipartFile> files) throws IOException {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
@@ -125,6 +124,12 @@ public class GpxIngestionService {
         }
     }
 
-
-
+    public ApiResponse<Void> remergeGpxSegment(Integer routeId)
+    {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route","id",routeId)
+        );
+        gpxMergeService.mergeTrackPoints(route.getId());
+        return new ApiResponse<>(null,"gpx segments merged successfully",200);
+    }
 }

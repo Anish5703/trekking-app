@@ -5,7 +5,10 @@ import com.example.trekking_app.dto.gpx.GpxImportResponse;
 import com.example.trekking_app.dto.gpx.GpxSegmentOrderRequest;
 import com.example.trekking_app.dto.gpx.GpxSegmentResponse;
 import com.example.trekking_app.service.trackpoints.GpxIngestionService;
+import com.example.trekking_app.service.trackpoints.GpxMergeService;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import org.apache.coyote.Response;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,14 +21,10 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/admin/route/{routeId}/gpx")
 @PreAuthorize("hasRole('ADMIN')")
+@RequiredArgsConstructor
 public class AdminGpxController {
 
     private final GpxIngestionService orchestrator;
-
-    public AdminGpxController(GpxIngestionService orchestrator)
-    {
-        this.orchestrator = orchestrator;
-    }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<GpxSegmentResponse>>> handleGetAllGpxSegments(@PathVariable Integer routeId)
@@ -66,7 +65,12 @@ public class AdminGpxController {
         return ResponseEntity.status(200).body(response);
     }
 
-
+    @PutMapping("/remerge")
+    public ResponseEntity<ApiResponse<Void>> handleRemergeGpxSegment(@PathVariable Integer routeId)
+    {
+        ApiResponse<Void> response = orchestrator.remergeGpxSegment(routeId);
+        return ResponseEntity.status(200).body(response);
+    }
 
 
 

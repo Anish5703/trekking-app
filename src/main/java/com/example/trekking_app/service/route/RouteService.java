@@ -114,8 +114,7 @@ public class RouteService {
                     throw new ResourceNotFoundException("Route is currently merging — please try again shortly");
             case FAILED ->
                     throw new ResourceNotFoundException("Route merge failed — please re-trigger the merge");
-            case MERGED -> {
-            }
+            case MERGED -> { }
             default ->
                     throw new IllegalStateException("Unexpected route status: " + route.getRouteStatus());
         }

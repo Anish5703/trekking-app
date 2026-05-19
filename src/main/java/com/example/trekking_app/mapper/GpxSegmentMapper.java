@@ -16,6 +16,7 @@ public class GpxSegmentMapper {
                 .status(gpxSegment.getStatus())
                 .minTime(gpxSegment.getRecordedAt())
                 .maxTime(gpxSegment.getRecordedUntil())
+                .distanceInKm(gpxSegment.getRoute().getDistanceInKm())
                 .build();
     }
 }
