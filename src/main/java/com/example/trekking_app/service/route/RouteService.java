@@ -122,7 +122,7 @@ public class RouteService {
             GeoJsonFeature feature = geoJsonMapper.toGeoJson(route);
             return new ApiResponse<>(feature, "route path fetched", 200);
         } catch (Exception e) {
-            log.error("failed to convert route path to geojson : {}", e.getLocalizedMessage());
+            log.error("failed to convert route path to geo json : {}", e.getLocalizedMessage());
             throw new CreateRouteFailedException("failed to create route path");
         }
     }
@@ -152,7 +152,11 @@ public class RouteService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
-        if(route.getRouteStatus().equals(RouteStatus.MERGING)) throw new ResourceDeletionFailedException("failed to delete route since it is merging currently");
+        if(!(route.getRouteStatus() ==null))
+        {
+            if (route.getRouteStatus().equals(RouteStatus.MERGING))
+                throw new ResourceDeletionFailedException("failed to delete route since it is merging currently");
+        }
         Optional<List<GpxSegment>> gpxSegments = gpxSegmentRepo.findByRoute(route);
         if(gpxSegments.isPresent() && !gpxSegments.get().isEmpty())
             throw new ResourceDeletionFailedException("failed to delete route ! delete gpx files associated with route first");
