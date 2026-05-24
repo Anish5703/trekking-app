@@ -5,7 +5,7 @@ import com.example.trekking_app.dto.gpx.GpxImportResponse;
 import com.example.trekking_app.dto.gpx.GpxSegmentOrderRequest;
 import com.example.trekking_app.dto.gpx.GpxSegmentResponse;
 import com.example.trekking_app.model.GpxSegmentStatus;
-import com.example.trekking_app.service.trackpoints.GpxIngestionService;
+import com.example.trekking_app.service.gpx.GpxIngestionService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;

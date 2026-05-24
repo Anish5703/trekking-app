@@ -1,4 +1,4 @@
-package com.example.trekking_app.service.waypoint;
+package com.example.trekking_app.service.xlsx;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.poi.POIUploadResponse;
 import com.example.trekking_app.dto.poi.XlsxPoiRow;
@@ -12,6 +12,7 @@ import com.example.trekking_app.repository.GpxSegmentRepository;
 import com.example.trekking_app.repository.POIRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
 import com.example.trekking_app.repository.WayPointRepository;
+import com.example.trekking_app.service.waypoint.POITypeResolver;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;

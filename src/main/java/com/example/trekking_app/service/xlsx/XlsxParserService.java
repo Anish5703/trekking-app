@@ -1,4 +1,4 @@
-package com.example.trekking_app.service.waypoint;
+package com.example.trekking_app.service.xlsx;
 
 import com.example.trekking_app.dto.poi.XlsxPoiRow;
 import com.example.trekking_app.exception.route.FileParsingFailedException;

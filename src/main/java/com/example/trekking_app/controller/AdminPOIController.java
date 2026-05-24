@@ -2,7 +2,7 @@ package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.poi.POIUploadResponse;
-import com.example.trekking_app.service.waypoint.XlsxIngestionService;
+import com.example.trekking_app.service.xlsx.XlsxIngestionService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;

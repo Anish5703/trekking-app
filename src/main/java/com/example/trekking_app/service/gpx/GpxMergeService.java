@@ -1,4 +1,4 @@
-package com.example.trekking_app.service.trackpoints;
+package com.example.trekking_app.service.gpx;
 
 import com.example.trekking_app.exception.resource.ResourceMergeFailedException;
 import com.example.trekking_app.model.RouteStatus;

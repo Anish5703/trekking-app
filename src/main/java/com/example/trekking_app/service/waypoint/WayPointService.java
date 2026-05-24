@@ -1,6 +1,7 @@
 package com.example.trekking_app.service.waypoint;
 
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.waypoint.WayPointRequest;
 import com.example.trekking_app.dto.waypoint.WayPointResponse;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.WayPoint;
@@ -10,7 +11,7 @@ import com.example.trekking_app.mapper.WayPointMapper;
 import com.example.trekking_app.model.WayPointStatus;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.WayPointRepository;
-import com.example.trekking_app.service.trackpoints.GpxMergeService;
+import com.example.trekking_app.service.gpx.GpxMergeService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -92,5 +93,20 @@ public class WayPointService {
         } catch (Exception e) {
             throw new ResourceDeletionFailedException("waypoint", "id", wayPointId);
         }
+    }
+
+    public ApiResponse<WayPointResponse> updateWayPoint(@NonNull Integer routeId,@NonNull Integer wayPointId,@NonNull WayPointRequest wayPointRequest)
+    {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route","id",routeId)
+        );
+        WayPoint wayPoint = wayPointRepo.findByIdAndRoute_Id(wayPointId,route.getId()).orElseThrow(
+                () -> new ResourceNotFoundException("waypoint","route id and waypoint id",String.format("%s and %s respectively",routeId,wayPointId))
+        );
+        wayPoint = wayPointMapper.toUpdateWayPoint(wayPoint,wayPointRequest);
+        WayPoint updatedWayPoint = wayPointRepo.save(wayPoint);
+        WayPointResponse wayPointResponse = wayPointMapper.toWayPointResponse(updatedWayPoint);
+        return new ApiResponse<>(wayPointResponse,"waypoint updated",200);
+
     }
 }

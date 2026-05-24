@@ -43,6 +43,13 @@ public class AdminWayPointController {
         ApiResponse<Page<WayPointResponse>> response = wayPointService.getInactiveWayPoints(routeId,page,size);
         return ResponseEntity.status(200).body(response);
     }
+    @PutMapping("/{wayPointId}")
+    public ResponseEntity<ApiResponse<WayPointResponse>> handleUpdateWayPoint(@PathVariable Integer routeId,
+                                                                              @PathVariable Integer wayPointId)
+    {
+        ApiResponse<WayPointResponse> response = wayPointService.updateWayPoint(routeId,wayPointId);
+        return ResponseEntity.status(200).body(response);
+    }
 
     @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> handleDeleteTrackPoint(@PathVariable Integer routeId ,

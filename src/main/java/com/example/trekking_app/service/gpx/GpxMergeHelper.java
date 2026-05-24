@@ -1,9 +1,8 @@
-package com.example.trekking_app.service.trackpoints;
+package com.example.trekking_app.service.gpx;
 
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrackPoint;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
-import com.example.trekking_app.model.GpxSegmentStatus;
 import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;

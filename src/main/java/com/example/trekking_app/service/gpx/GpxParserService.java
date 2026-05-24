@@ -1,4 +1,4 @@
-package com.example.trekking_app.service.trackpoints;
+package com.example.trekking_app.service.gpx;
 
 import com.example.trekking_app.dto.gpx.GpxImportResponse;
 import com.example.trekking_app.entity.GpxSegment;

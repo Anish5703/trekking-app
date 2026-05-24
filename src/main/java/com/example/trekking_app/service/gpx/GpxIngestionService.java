@@ -1,4 +1,4 @@
-package com.example.trekking_app.service.trackpoints;
+package com.example.trekking_app.service.gpx;
 
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.gpx.GpxImportResponse;
@@ -7,7 +7,6 @@ import com.example.trekking_app.dto.gpx.GpxSegmentResponse;
 import com.example.trekking_app.entity.GpxSegment;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.exception.resource.*;
-import com.example.trekking_app.exception.route.FileParsingFailedException;
 import com.example.trekking_app.mapper.GpxSegmentMapper;
 import com.example.trekking_app.model.GpxSegmentStatus;
 import com.example.trekking_app.repository.GpxSegmentRepository;

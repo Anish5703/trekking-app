@@ -46,11 +46,11 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<Void>> updateTrackPoint(@PathVariable Integer routeId,
+    public ResponseEntity<ApiResponse<TrackPointResponse>> updateTrackPoint(@PathVariable Integer routeId,
                                                               @NonNull @RequestParam Integer trackPointId,
                                                               @NonNull @RequestBody TrackPointRequest trackPointRequest)
     {
-        ApiResponse<Void> response = trackPointService.updateTrackPoint(routeId,trackPointId,trackPointRequest);
+        ApiResponse<TrackPointResponse> response = trackPointService.updateTrackPoint(routeId,trackPointId,trackPointRequest);
         return ResponseEntity.status(200).body(response);
     }
     @DeleteMapping

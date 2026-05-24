@@ -15,7 +15,5 @@ public class TrackPointRequest {
     private Double longitude;
     private Double latitude;
     private Double elevation;
-    private Integer localSequence;
     private TrackPointStatus status;
-    private Boolean isDeleted;
 }

@@ -69,4 +69,6 @@ public interface WayPointRepository extends JpaRepository<WayPoint,Integer> {
     Page<WayPoint> findByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceAsc(Integer routeId, Pageable pageable);
 
     Page<WayPoint> findByRoute_IdAndIsDeletedTrueOrderByUpdatedAtAsc(Integer routeId, Pageable pageable);
+
+    Optional<WayPoint> findByIdAndRoute_Id(@NonNull Integer wayPointId, Integer id);
 }

@@ -13,6 +13,7 @@ import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.model.TrackPointStatus;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
+import com.example.trekking_app.service.gpx.GpxMergeService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -88,7 +89,7 @@ public class TrackPointService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<Void> updateTrackPoint(@NonNull Integer routeId , @NonNull Integer trackPointId , @NonNull TrackPointRequest trackPointRequest)
+    public ApiResponse<TrackPointResponse> updateTrackPoint(@NonNull Integer routeId , @NonNull Integer trackPointId , @NonNull TrackPointRequest trackPointRequest)
     {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
@@ -97,23 +98,12 @@ public class TrackPointService {
                 () -> new ResourceNotFoundException("trackpoint","id",trackPointId)
         );
         if(route.getRouteStatus().equals(RouteStatus.MERGING)) throw new ResourceUpdateFailedException("failed to update trackpoint since the associated routes trackpoints are merging");
-        boolean isLocalSequenceSame = trackPoint.getLocalSequence().equals(trackPointRequest.getLocalSequence());
         try {
-            trackPoint.setLongitude(trackPointRequest.getLongitude());
-            trackPoint.setLatitude(trackPointRequest.getLatitude());
-            trackPoint.setElevation(trackPointRequest.getElevation());
-            trackPoint.setStatus(trackPointRequest.getStatus());
-            trackPoint.setIsDeleted(trackPoint.getStatus().equals(TrackPointStatus.SOFT_DELETED));
-            trackPoint.setLocalSequence(trackPointRequest.getLocalSequence());
-            Point point = GF.createPoint(new Coordinate(trackPointRequest.getLongitude(), trackPointRequest.getLatitude()));
-            trackPoint.setGeom(point);
+            trackPoint = trackPointMapper.toUpdateTrackPoint(trackPoint,trackPointRequest);
             trackPointRepo.save(trackPoint);
-
-            if (!isLocalSequenceSame) {
-                gpxMergeService.mergeTrackPoints(routeId);
-            }
-
-            return new ApiResponse<>(null, "trackpoint updated", 200);
+            TrackPointResponse tpResponse = trackPointMapper.toTrackPointResponse(trackPoint);
+             gpxMergeService.mergeTrackPoints(routeId);
+            return new ApiResponse<>(tpResponse, "trackpoint updated", 200);
         }
         catch (Exception e)
         {
