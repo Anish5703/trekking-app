@@ -36,8 +36,8 @@ public class GpxSegment {
     private int orderIndex;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false,name = "status")
-    private GpxSegmentStatus status;
+    @Column(nullable = false,name = "segment_status")
+    private GpxSegmentStatus segmentStatus;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id" , nullable = false)
@@ -54,6 +54,11 @@ public class GpxSegment {
     @OrderBy("local_sequence ASC")
     @Builder.Default
     private List<TrackPoint> trackPoints = new ArrayList<>();
+
+    @OneToMany(mappedBy = "gpxSegment",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)
+    @OrderBy("local_sequence ASC")
+    @Builder.Default
+    private List<TrackPoint> wayPoints = new ArrayList<>();
 
 
 }

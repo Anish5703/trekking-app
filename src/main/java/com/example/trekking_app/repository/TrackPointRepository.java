@@ -2,6 +2,7 @@ package com.example.trekking_app.repository;
 
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrackPoint;
+import com.example.trekking_app.model.GpxSegmentStatus;
 import lombok.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -10,6 +11,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +37,7 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
 
      // Replaces the entire for-loop
      @Modifying
+     @Transactional
      @Query(value = """
     UPDATE track_points tp
     SET global_sequence = sub.new_seq
@@ -46,6 +49,7 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
         FROM track_points tp2
         JOIN gpx_segments gs ON tp2.gpx_segment_id = gs.id
         WHERE tp2.route_id = :routeId
+            AND gs.segment_status = 'TRACKPOINT'
     ) sub
     WHERE tp.id = sub.id
     """, nativeQuery = true)
@@ -55,16 +59,20 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
      @Query("""
     SELECT MIN(tp.elevation)
     FROM TrackPoint tp
-    WHERE tp.route.id = :routeId
+    JOIN tp.gpxSegment gs
+           WHERE tp.route.id = :routeId
+      AND gs.segmentStatus = 'TRACKPOINT'
       AND tp.isDeleted = false
       AND tp.elevation IS NOT NULL
-    """)
+   """)
      Optional<Double> findMinElevation(@Param("routeId") Integer routeId);
 
      @Query("""
     SELECT MAX(tp.elevation)
     FROM TrackPoint tp
+    JOIN tp.gpxSegment gs
     WHERE tp.route.id = :routeId
+      AND gs.segmentStatus = 'TRACKPOINT'
       AND tp.isDeleted = false
       AND tp.elevation IS NOT NULL
     """)

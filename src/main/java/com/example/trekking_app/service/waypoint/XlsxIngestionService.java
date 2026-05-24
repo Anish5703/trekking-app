@@ -1,4 +1,4 @@
-package com.example.trekking_app.service.poi;
+package com.example.trekking_app.service.waypoint;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.poi.POIUploadResponse;
 import com.example.trekking_app.dto.poi.XlsxPoiRow;

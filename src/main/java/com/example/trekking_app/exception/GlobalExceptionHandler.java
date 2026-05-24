@@ -19,6 +19,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.util.NoSuchElementException;
+
 /*
 * Handles thrown exception
 * returns ErrorResponse object
@@ -156,6 +158,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleNoSuchElementException(NoSuchElementException ex)
+    {
+        log.error("File parsing failed : {}",ex.getLocalizedMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.FILE_PARSING_FAILED,ex.getMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        return ResponseEntity.badRequest().body(response);
+    }
+
+
     @ExceptionHandler({JwtException.class,SignatureException.class , ExpiredJwtException.class, ClaimJwtException.class, MalformedJwtException.class})
     public ResponseEntity<ApiResponse<ErrorResponse>> handleJwtException(Exception ex)
     {
@@ -196,6 +208,14 @@ public class GlobalExceptionHandler {
         log.error(ex.getMessage());
         ErrorResponse data = new ErrorResponse(ErrorType.RESOURCE_DELETE_FAILED,ex.getMessage());
         ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        return ResponseEntity.status(400).body(response);
+    }
+    @ExceptionHandler(ResourceMergeFailedException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleResourceMergeFailed(ResourceMergeFailedException ex)
+    {
+        log.error(ex.getMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.RESOURCE_MERGE_FAILED,ex.getMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),500);
         return ResponseEntity.status(400).body(response);
     }
 

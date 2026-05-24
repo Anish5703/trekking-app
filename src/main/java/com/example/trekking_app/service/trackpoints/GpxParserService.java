@@ -5,11 +5,13 @@ import com.example.trekking_app.entity.GpxSegment;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrackPoint;
 
+import com.example.trekking_app.entity.WayPoint;
 import com.example.trekking_app.exception.route.FileParsingFailedException;
 import com.example.trekking_app.model.GpxSegmentStatus;
 import com.example.trekking_app.repository.GpxSegmentRepository;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
+import com.example.trekking_app.repository.WayPointRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -39,22 +41,24 @@ public class GpxParserService {
 
     private static final GeometryFactory GF = new GeometryFactory(new PrecisionModel(), 4326);
     private final RouteRepository routeRepo;
+    private final WayPointRepository wayPointRepo;
     private final GpxSegmentRepository gpxSegmentRepo;
 
     @Transactional
-    public GpxImportResponse parse(MultipartFile file, Route route, Integer nextOrder) {
-        try {
-            byte[] gpxBytes = file.getBytes();
-            String filename = file.getOriginalFilename();
-            String sha256 = sha256(gpxBytes);
+    public GpxImportResponse parseTrackPoints(MultipartFile file, Route route, Integer nextOrder) {
 
+        String filename = file.getOriginalFilename();
+        if(filename == null || !filename.endsWith(".gpx")) throw new RuntimeException("invalid file ! only gpx file allowed");
+        try{
+            byte[] gpxBytes = file.getBytes();
+            String sha256 = sha256(gpxBytes);
             GpxSegment gpxSegment = GpxSegment.builder()
                     .sourceFileName(filename)
                     .sourceFileHash(sha256)
                     .user(route.getUser())
                     .orderIndex(nextOrder)
                     .route(route)
-                    .status(GpxSegmentStatus.ACTIVE)
+                    .segmentStatus(GpxSegmentStatus.TRACKPOINT)
                     .build();
 
             String xml = new String(gpxBytes, StandardCharsets.UTF_8)
@@ -68,6 +72,11 @@ public class GpxParserService {
             doc.getDocumentElement().normalize();
 
             NodeList wptNodes = doc.getElementsByTagName("wpt");
+                if(wptNodes.getLength()==0)
+                    wptNodes = doc.getElementsByTagName("trkpt");
+
+                if(wptNodes.getLength()==0) throw new FileParsingFailedException("no trackpoints to collect");
+
             List<TrackPoint> trackPoints = new ArrayList<>();
 
             int localSequence = 0;
@@ -133,15 +142,117 @@ public class GpxParserService {
                     .segmentId(gpxSegment.getId())
                     .segmentName(gpxSegment.getSourceFileName())
                     .totalTrackPoints(wptNodesLength)
+                    .totalWayPoints(0)
                     .totalDistanceInKm(totalDist)
                     .build();
 
         } catch (Exception e) {
-            log.error("GPX parse failed for {}", file.getOriginalFilename(), e);
-            throw new FileParsingFailedException("Invalid GPX file: " + file.getOriginalFilename());
+            log.error("GPX file parsing failed for extracting trackpoints{}", file.getOriginalFilename(), e.getLocalizedMessage());
+            throw new FileParsingFailedException("Invalid GPX file for extraction of trackpoints: " + file.getOriginalFilename());
         }
     }
 
+    @Transactional
+    public GpxImportResponse parseWayPoints(MultipartFile file , Route route ,Integer nextOrder)
+    {
+        String filename = file.getOriginalFilename();
+        if(filename == null || !filename.endsWith(".gpx")) throw new RuntimeException("invalid file ! only gpx file allowed");
+        try{
+            byte[] gpxBytes = file.getBytes();
+            String sha256 = sha256(gpxBytes);
+            GpxSegment gpxSegment = GpxSegment.builder()
+                    .sourceFileName(filename)
+                    .sourceFileHash(sha256)
+                    .user(route.getUser())
+                    .orderIndex(nextOrder)
+                    .route(route)
+                    .segmentStatus(GpxSegmentStatus.WAYPOINT)
+                    .build();
+
+            String xml = new String(gpxBytes, StandardCharsets.UTF_8)
+                    .replaceFirst("^\\uFEFF", "")  // remove BOM
+                    .trim();                      // remove leading space (YOUR ISSUE)
+
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder documentBuilder = factory.newDocumentBuilder();
+
+            Document doc = documentBuilder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+            doc.getDocumentElement().normalize();
+
+            NodeList wptNodes = doc.getElementsByTagName("wpt");
+            if(wptNodes.getLength()==0) throw new FileParsingFailedException("no trackpoints to collect");
+
+            List<WayPoint> wayPoints = new ArrayList<>();
+
+            int localSequence = 0;
+            LocalDateTime timeStamp = null;
+            double latitude , longitude , elevation = 0 ;
+
+            int wptNodesLength = wptNodes.getLength();
+
+            GpxSegment savedGpxSegment = gpxSegmentRepo.save(gpxSegment);
+
+            for(int i=0; i<wptNodesLength ; i++)
+            {
+                Element wpt = (Element) wptNodes.item(i);
+
+                if(wpt.getAttribute("lat").isEmpty() || wpt.getAttribute("lon").isEmpty() )
+                    throw new FileParsingFailedException("Unsupported file");
+
+                latitude = Double.parseDouble(wpt.getAttribute("lat"));
+                longitude = Double.parseDouble(wpt.getAttribute("lon"));
+
+                NodeList eleNodes = wpt.getElementsByTagName("ele");
+                if (eleNodes.getLength() > 0) {
+                    elevation = Double.parseDouble(eleNodes.item(0).getTextContent());
+                }
+                NodeList timeNodes = wpt.getElementsByTagName("time");
+                if (timeNodes.getLength() > 0) {
+                    timeStamp = ZonedDateTime.parse(timeNodes.item(0).getTextContent()).toLocalDateTime();
+                }
+                localSequence = i + 1;
+                NodeList nameNodes = wpt.getElementsByTagName("name");
+                if (nameNodes.getLength() > 0) {
+                    try { localSequence = Integer.parseInt(nameNodes.item(0).getTextContent().trim()); }
+                    catch (NumberFormatException ignored) {}
+                }
+                Point point = GF.createPoint(new Coordinate(longitude,latitude));
+
+                WayPoint wayPoint = WayPoint.builder()
+                        .route(route)
+                        .gpxSegment(savedGpxSegment)
+                        .name(nameNodes.item(0).getTextContent())
+                        .latitude(latitude)
+                        .longitude(longitude)
+                        .elevation(elevation)
+                        .localSequence(localSequence)
+                        .geom(point)
+                        .recordedAt(timeStamp)
+                        .build();
+
+                wayPoints.add(wayPoint);
+            }
+            savedGpxSegment.setRecordedAt(wayPoints.getFirst().getRecordedAt());
+            savedGpxSegment.setRecordedUntil(wayPoints.getLast().getRecordedAt());
+            gpxSegmentRepo.save(savedGpxSegment);
+
+            //clear and save track points
+            wayPointRepo.saveAll(wayPoints);
+
+            return GpxImportResponse.builder()
+                    .routeId(route.getId())
+                    .segmentId(gpxSegment.getId())
+                    .segmentName(gpxSegment.getSourceFileName())
+                    .totalWayPoints(wptNodesLength)
+                    .totalTrackPoints(0)
+                    .totalDistanceInKm(0.0)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("GPX file parsing failed for extracting waypoints{}", file.getOriginalFilename(), e.getLocalizedMessage());
+            throw new FileParsingFailedException("Invalid GPX file for extraction of waypoints: " + file.getOriginalFilename());
+        }
+    }
 
     /** Helper methods */
 

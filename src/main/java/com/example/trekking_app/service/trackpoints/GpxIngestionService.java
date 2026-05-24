@@ -6,13 +6,14 @@ import com.example.trekking_app.dto.gpx.GpxSegmentOrderRequest;
 import com.example.trekking_app.dto.gpx.GpxSegmentResponse;
 import com.example.trekking_app.entity.GpxSegment;
 import com.example.trekking_app.entity.Route;
-import com.example.trekking_app.exception.resource.ResourceDeletionFailedException;
-import com.example.trekking_app.exception.resource.ResourceNotFoundException;
+import com.example.trekking_app.exception.resource.*;
+import com.example.trekking_app.exception.route.FileParsingFailedException;
 import com.example.trekking_app.mapper.GpxSegmentMapper;
-import com.example.trekking_app.model.RouteStatus;
+import com.example.trekking_app.model.GpxSegmentStatus;
 import com.example.trekking_app.repository.GpxSegmentRepository;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
+import com.example.trekking_app.repository.WayPointRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +24,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 @Slf4j
 @Service
@@ -34,44 +34,53 @@ public class GpxIngestionService {
     private final GpxSegmentRepository gpxSegmentRepo;
     private final GpxParserService gpxParserService;
     private final TrackPointRepository trackPointRepo;
+    private final WayPointRepository wayPointRepo;
     private final GpxMergeService gpxMergeService;
     private final GpxSegmentMapper gpxSegmentMapper = new GpxSegmentMapper();
 
 
-    public ApiResponse<List<GpxImportResponse>> uploadGpxFiles(@NonNull Integer routeId , List<MultipartFile> files) throws IOException {
+    @Transactional
+    public ApiResponse<List<GpxImportResponse>> uploadGpxFiles(@NonNull Integer routeId , List<MultipartFile> files ,@NonNull GpxSegmentStatus segmentStatus) throws IOException {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
-        int nextOrder = gpxSegmentRepo.findByRoute_IdOrderByOrderIndexAsc(routeId).stream().mapToInt(GpxSegment::getOrderIndex).max().orElse(0)+1;
+        int nextOrder =  gpxSegmentRepo.findByRoute_IdAndSegmentStatusOrderByOrderIndexAsc(routeId,segmentStatus).stream().mapToInt(GpxSegment::getOrderIndex).max().orElse(0)+1;
+
         List<GpxImportResponse> gpxImportResponses = new ArrayList<>();
+        GpxImportResponse gpxImportResponse = new GpxImportResponse();
         for(MultipartFile file : files)
         {
-          GpxImportResponse gpxImportResponse =  gpxParserService.parse(file,route,nextOrder);
-           nextOrder++;
+            if(segmentStatus.equals(GpxSegmentStatus.TRACKPOINT))
+            gpxImportResponse =  gpxParserService.parseTrackPoints(file,route,nextOrder);
+            else if (segmentStatus.equals(GpxSegmentStatus.WAYPOINT))
+                gpxImportResponse = gpxParserService.parseWayPoints(file,route,nextOrder);
+            nextOrder++;
            gpxImportResponses.add(gpxImportResponse);
         }
-        gpxMergeService.mergeTrackPoints(routeId);
-        return new ApiResponse<>(gpxImportResponses,"gpx file uploaded",201);
+        if (segmentStatus.equals(GpxSegmentStatus.TRACKPOINT))
+         gpxMergeService.mergeTrackPoints(route.getId());
+        else if(segmentStatus.equals(GpxSegmentStatus.WAYPOINT))
+            gpxMergeService.mergeWayPoints(route.getId());
+
+        String message = segmentStatus.equals(GpxSegmentStatus.TRACKPOINT) ? "gpx segments uploaded for trackpoints " : "gpx segments uploaded for waypoints";
+        return new ApiResponse<>(gpxImportResponses,message,201);
 
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<List<GpxSegmentResponse>> getAllGpxSegment(@NonNull Integer routeId)
+    public ApiResponse<List<GpxSegmentResponse>> getAllGpxSegment(@NonNull Integer routeId,GpxSegmentStatus segmentStatus)
     {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
 
-        List<GpxSegment> gpxSegmentList = gpxSegmentRepo.findByRoute(route).orElseThrow(
+        List<GpxSegment> gpxSegmentList = gpxSegmentRepo.findByRouteAndSegmentStatus(route,segmentStatus).orElseThrow(
                 () -> new ResourceNotFoundException("gpx segments","route id",routeId) );
 
-          List<GpxSegmentResponse> gpxSegmentResponseList = new ArrayList<>();
-
-          gpxSegmentList.forEach(gpxSegment ->
-                  gpxSegmentResponseList.add(gpxSegmentMapper.toGpxSegmentResponse(gpxSegment)
-                  ));
-
-          return new ApiResponse<>(gpxSegmentResponseList,"gpx segments fetched",200);
+          if(gpxSegmentList.isEmpty()) throw new NoResourceFoundException("gpx segments");
+        List<GpxSegmentResponse> gpxSegmentResponseList = gpxSegmentList.stream().map(gpxSegmentMapper::toGpxSegmentResponse).toList();
+        String message = segmentStatus.equals(GpxSegmentStatus.TRACKPOINT) ? "gpx segment fetched for trackpoints" : "gpx segment fetched for waypoints";
+        return new ApiResponse<>(gpxSegmentResponseList,message,200);
 
     }
     @Transactional(readOnly = true)
@@ -80,8 +89,8 @@ public class GpxIngestionService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
-        GpxSegment gpxSegment = gpxSegmentRepo.findByIdAndRoute_Id(routeId,gpxSegmentId).orElseThrow(
-                () -> new ResourceNotFoundException("gpx segments","id",gpxSegmentId)
+        GpxSegment gpxSegment = gpxSegmentRepo.findByIdAndRoute_Id(gpxSegmentId,routeId).orElseThrow(
+                () -> new ResourceNotFoundException("gpx segment","id",gpxSegmentId)
         );
         GpxSegmentResponse segmentResponse = gpxSegmentMapper.toGpxSegmentResponse(gpxSegment);
         return new ApiResponse<>(segmentResponse, "gpx segment fetched",200);
@@ -89,34 +98,47 @@ public class GpxIngestionService {
     }
 
     @Transactional
-    public ApiResponse<Void> reorderGpxSegment(@NonNull GpxSegmentOrderRequest segmentOrderRequest , @NonNull Integer routeId)
+    public ApiResponse<Void> reorderGpxSegment(@NonNull GpxSegmentOrderRequest segmentOrderRequest , @NonNull Integer routeId, @NonNull GpxSegmentStatus segmentStatus)
     {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
-        List<GpxSegment> gpxSegments = gpxSegmentRepo.findByRoute(route).orElseThrow(
+        List<GpxSegment> gpxSegments = gpxSegmentRepo.findByRouteAndSegmentStatus(route,segmentStatus).orElseThrow(
                 () -> new ResourceNotFoundException("gpx segments","route id",routeId)
         );
         gpxSegments.forEach(gpxSegment -> gpxSegment.setOrderIndex(segmentOrderRequest.getSegmentIdWithOrder().get(gpxSegment.getId())));
         gpxSegmentRepo.saveAll(gpxSegments);
-        gpxMergeService.mergeTrackPoints(routeId);
-        return new ApiResponse<>(null,"gpx segments reordered",200);
+        if (segmentStatus.equals(GpxSegmentStatus.TRACKPOINT))
+            gpxMergeService.mergeTrackPoints(route.getId());
+        else if(segmentStatus.equals(GpxSegmentStatus.WAYPOINT))
+            gpxMergeService.mergeWayPoints(route.getId());
+        String message = segmentStatus.equals(GpxSegmentStatus.TRACKPOINT) ? "gpx segments reordered for trackpoints " : "gpx segments reordered for waypoints";
+        return new ApiResponse<>(null,message,200);
     }
 
     @Transactional
-    public ApiResponse<Void> deleteGpxSegment(@NonNull Integer gpxSegmentId,@NonNull Integer routeId)
+    public ApiResponse<Void> deleteGpxSegment(@NonNull Integer gpxSegmentId,@NonNull Integer routeId,@NonNull GpxSegmentStatus segmentStatus)
     {
+
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
-        GpxSegment gpxSegment = gpxSegmentRepo.findById(gpxSegmentId).orElseThrow(
+        GpxSegment gpxSegment = gpxSegmentRepo.findByIdAndRoute_Id(gpxSegmentId,route.getId()).orElseThrow(
                 () -> new ResourceNotFoundException("gpx segment","id",gpxSegmentId)
         );
         try {
-            trackPointRepo.deleteAllByGpxSegment_Id(gpxSegment.getId());
+            if(segmentStatus.equals(GpxSegmentStatus.TRACKPOINT))
+                trackPointRepo.deleteAllByGpxSegment_Id(gpxSegment.getId());
+            else
+                wayPointRepo.deleteAllByGpxSegment_Id(gpxSegment.getId());
             gpxSegmentRepo.deleteById(gpxSegment.getId());
-            gpxMergeService.mergeTrackPoints(routeId);
-            return new ApiResponse<>(null,"gpx segment deleted",200);
+            if (segmentStatus.equals(GpxSegmentStatus.TRACKPOINT))
+                gpxMergeService.mergeTrackPoints(route.getId());
+            else if(segmentStatus.equals(GpxSegmentStatus.WAYPOINT))
+                gpxMergeService.mergeWayPoints(route.getId());
+            String message = segmentStatus.equals(GpxSegmentStatus.TRACKPOINT) ? "gpx segment deleted for trackpoints " : "gpx segment deleted for waypoints";
+
+            return new ApiResponse<>(null,message,200);
         }
         catch (Exception e)
         {
@@ -124,12 +146,18 @@ public class GpxIngestionService {
         }
     }
 
-    public ApiResponse<Void> remergeGpxSegment(Integer routeId)
+    public ApiResponse<Void> remergeGpxSegment(Integer routeId,@NonNull GpxSegmentStatus segmentStatus)
     {
+
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
-        gpxMergeService.mergeTrackPoints(route.getId());
+        if (segmentStatus.equals(GpxSegmentStatus.TRACKPOINT))
+            gpxMergeService.mergeTrackPoints(route.getId());
+        else if(segmentStatus.equals(GpxSegmentStatus.WAYPOINT))
+            gpxMergeService.mergeWayPoints(route.getId());
+        String message = segmentStatus.equals(GpxSegmentStatus.TRACKPOINT) ? "gpx segments merged for trackpoints " : "gpx segments merged for waypoints";
+
         return new ApiResponse<>(null,"gpx segments merged successfully",200);
     }
 }

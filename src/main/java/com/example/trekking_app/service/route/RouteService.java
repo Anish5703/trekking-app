@@ -88,7 +88,7 @@ public class RouteService {
                 () -> new UserNotFoundException("No user found with id " + userId)
         );
         Destination destination = destinationRepo.findById(routeRequest.getDestinationId()).orElseThrow(
-                () -> new DestinationNotFoundException("No destination found with id " + routeRequest.getDestinationId())
+                () -> new ResourceNotFoundException("destination","id", routeRequest.getDestinationId())
         );
 
         Route route = routeMapper.toEntity(routeRequest, user, destination);

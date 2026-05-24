@@ -1,6 +1,9 @@
 package com.example.trekking_app.entity;
 
 
+import com.example.trekking_app.model.GpxSegmentStatus;
+import com.example.trekking_app.model.TrackPointStatus;
+import com.example.trekking_app.model.WayPointStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.locationtech.jts.geom.Point;
@@ -23,7 +26,7 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
-public class WayPoint {
+public class WayPoint extends BaseEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -56,18 +59,33 @@ public class WayPoint {
     @Column(name = "local_sequence" , nullable = false)
     private Integer localSequence;
 
-    @Column(name="global_sequence" , nullable = false)
-    private Integer globalSequence;
+    @Column(name="global_sequence")
+    private Integer globalSequence = 0;
 
     @Column(name="location" , columnDefinition = "Geometry(Point, 4326)")
     private Point location;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name ="status")
+    @Builder.Default
+    private WayPointStatus status = WayPointStatus.ACTIVE;
+
     @Column(name = "recorded_At")
     private LocalDateTime recordedAt;
+
+    @Column(name = "is_deleted")
+    @Builder.Default
+    private Boolean isDeleted = false;
+
 
     @Column(name = "geom", columnDefinition = "geometry(Point, 4326)")
     private Point geom;
 
     @OneToMany(mappedBy = "wayPoint" ,cascade = CascadeType.ALL,orphanRemoval = true ,fetch = FetchType.LAZY)
     private List<POI> pois = new ArrayList<>();
+
+    public Boolean getIsDeleted()
+    {
+        return status != null && status.equals(WayPointStatus.SOFT_DELETED);
+    }
 }

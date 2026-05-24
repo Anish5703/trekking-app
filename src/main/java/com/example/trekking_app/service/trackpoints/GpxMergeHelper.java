@@ -3,9 +3,11 @@ package com.example.trekking_app.service.trackpoints;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrackPoint;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
+import com.example.trekking_app.model.GpxSegmentStatus;
 import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
+import com.example.trekking_app.repository.WayPointRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
@@ -24,10 +26,17 @@ public class GpxMergeHelper {
 
     private final TrackPointRepository trackPointRepo;
     private final RouteRepository routeRepo;
+    private final WayPointRepository wayPointRepo;
 
     @Transactional                          // short transaction — one UPDATE, releases immediately
-    public void assignGlobalSequences(Integer routeId) {
+    public void assignTrackPointGlobalSequences(Integer routeId) {
         trackPointRepo.updateGlobalSequences(routeId);
+    }
+
+    @Transactional
+    public void assignWayPointGlobalSequences(Integer routeId)
+    {
+        wayPointRepo.updateGlobalSequences(routeId);
     }
 
     @Transactional                          // short transaction — load, compute, save, release
