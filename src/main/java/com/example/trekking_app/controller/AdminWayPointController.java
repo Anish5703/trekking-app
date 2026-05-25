@@ -1,6 +1,7 @@
 package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.waypoint.WayPointRequest;
 import com.example.trekking_app.dto.waypoint.WayPointResponse;
 import com.example.trekking_app.service.waypoint.WayPointService;
 import lombok.NonNull;
@@ -45,9 +46,10 @@ public class AdminWayPointController {
     }
     @PutMapping("/{wayPointId}")
     public ResponseEntity<ApiResponse<WayPointResponse>> handleUpdateWayPoint(@PathVariable Integer routeId,
-                                                                              @PathVariable Integer wayPointId)
+                                                                              @PathVariable Integer wayPointId,
+                                                                              @NonNull @RequestBody WayPointRequest wayPointRequest)
     {
-        ApiResponse<WayPointResponse> response = wayPointService.updateWayPoint(routeId,wayPointId);
+        ApiResponse<WayPointResponse> response = wayPointService.updateWayPoint(routeId,wayPointId,wayPointRequest);
         return ResponseEntity.status(200).body(response);
     }
 
