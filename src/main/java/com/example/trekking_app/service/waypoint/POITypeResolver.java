@@ -23,7 +23,7 @@ public class POITypeResolver {
             if (stop.contains("restroom") || stop.contains("toilet")) return POIType.RESTROOM;
             if (stop.contains("trash")) return POIType.TRASH_CAN;
             if (stop.contains("checkpoint") || stop.contains("check post")) return POIType.CHECKPOINT;
-            if (stop.contains("view")) return POIType.VIEW_POINT;
+            if (stop.contains("view")) return POIType.VIEWPOINT;
             if (stop.contains("health")) return POIType.HEALTH_POST;
             if (stop.contains("hospital")) return POIType.HOSPITAL;
 
@@ -31,7 +31,7 @@ public class POITypeResolver {
             if (containsAny(name, "hotel", "lodge", "guest house", "guesthouse")) return POIType.HOTEL;
             if (containsAny(name, "tea house", "teahouse", "tea-house")) return POIType.TEA_HOUSE;
             if (containsAny(name, "mandir", "temple", "ashram", "stupa", "gompa")) return POIType.TEMPLE;
-            if (containsAny(name, "viewpoint", "view point")) return POIType.VIEW_POINT;
+            if (containsAny(name, "viewpoint", "view point")) return POIType.VIEWPOINT;
             if (containsAny(name, "well", "tap", "spring", "river")) return POIType.WATER_SOURCE;
             if (containsAny(name, "health post", "clinic")) return POIType.HEALTH_POST;
 

@@ -10,7 +10,7 @@ import org.locationtech.jts.geom.LineString;
 @Table(name = "trail_segments" , indexes = {
         @Index(name = "idx_trail_seg_route" , columnList = "route_id"),
         @Index(name = "idx_trail_seg_type" , columnList = "route_id , type"),
-        @Index(name = "idx_trail_seg_geom" , columnList = "segment_geometry")
+        @Index(name = "idx_trail_seg_path" , columnList = "path")
 })
 @Getter
 @Setter
@@ -42,8 +42,9 @@ public class TrailSegment extends BaseEntity{
     @Column(length = 10)
     private String color;
 
-    @Column(name = "segment_group" , length = 100)
-    private String segmentGroup;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "gpx_segment_id")
+    private GpxSegment gpxSegment;
 
 
     @Column(name = "estimated_time_minutes")
@@ -53,6 +54,6 @@ public class TrailSegment extends BaseEntity{
     @Column(name = "distance")
     private Double distanceInMeter;
 
-    @Column(name = "segment_geometry" , columnDefinition = "geometry(LineString, 4326)")
-    private LineString segmentGeometry;
+    @Column(name = "path" , columnDefinition = "geometry(LineString, 4326)")
+    private LineString path;
 }

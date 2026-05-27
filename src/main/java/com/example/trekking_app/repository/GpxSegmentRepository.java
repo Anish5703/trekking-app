@@ -6,6 +6,7 @@ import com.example.trekking_app.model.GpxSegmentStatus;
 import lombok.NonNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -19,4 +20,8 @@ public interface GpxSegmentRepository extends JpaRepository<GpxSegment,Integer> 
     Optional<GpxSegment> findByRoute_IdAndSegmentStatusOrderByOrderIndexAsc(@NonNull Integer routeId, GpxSegmentStatus segmentStatus);
 
     Optional<List<GpxSegment>> findByRouteAndSegmentStatus(Route route, GpxSegmentStatus segmentStatus);
+
+
+
+    Optional<GpxSegment> findByRoute_IdAndSegmentStatusAndOrderIndex(Integer id, GpxSegmentStatus gpxSegmentStatus, Integer gpxOrderIndex);
 }

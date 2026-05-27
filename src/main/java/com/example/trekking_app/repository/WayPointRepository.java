@@ -1,7 +1,7 @@
 package com.example.trekking_app.repository;
 
+import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.WayPoint;
-import com.example.trekking_app.model.GpxSegmentStatus;
 import lombok.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -71,4 +72,9 @@ public interface WayPointRepository extends JpaRepository<WayPoint,Integer> {
     Page<WayPoint> findByRoute_IdAndIsDeletedTrueOrderByUpdatedAtAsc(Integer routeId, Pageable pageable);
 
     Optional<WayPoint> findByIdAndRoute_Id(@NonNull Integer wayPointId, Integer id);
+
+
+    Optional<List<WayPoint>> findByRoute_IdAndGpxSegment_Id(Integer routeId, Integer gpxSegmentId);
+
+    Optional<WayPoint> findByRoute_IdAndGpxSegment_IdAndLocalSequence(Integer routeId, Integer gpxSegmentId,Integer localSequence);
 }

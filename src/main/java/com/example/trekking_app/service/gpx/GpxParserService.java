@@ -221,7 +221,7 @@ public class GpxParserService {
                 WayPoint wayPoint = WayPoint.builder()
                         .route(route)
                         .gpxSegment(savedGpxSegment)
-                        .name(nameNodes.item(0).getTextContent())
+                        .name(String.valueOf(localSequence))
                         .latitude(latitude)
                         .longitude(longitude)
                         .elevation(elevation)

@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "hotel_details")
+@Table(name = "accommodations")
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter

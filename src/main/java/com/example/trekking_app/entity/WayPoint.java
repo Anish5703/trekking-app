@@ -43,10 +43,6 @@ public class WayPoint extends BaseEntity{
     @Column(nullable = false , length = 100)
     private String name;
 
-    /** XLSX join key — string to preserve leading zeros (e.g. "001"). */
-    @Column(name = "waypoint_number", length = 32)
-    private String waypointNumber;
-
     @Column(nullable = false)
     private Double latitude;
 
