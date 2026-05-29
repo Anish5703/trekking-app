@@ -11,9 +11,7 @@ import java.time.LocalDateTime;
 @Table(name = "track_points" , indexes = {
         @Index(name  = "idx_track_points_route_seq" , columnList = "route_id , global_sequence"),
         @Index(name = "idx_track_points_route_deleted_seq",
-                columnList = "route_id, is_deleted, global_sequence"),
-        @Index(name = "idx_track_points_geom" , columnList = "geom")
-})
+                columnList = "route_id, is_deleted, global_sequence")})
 @Getter
 @Setter
 @NoArgsConstructor

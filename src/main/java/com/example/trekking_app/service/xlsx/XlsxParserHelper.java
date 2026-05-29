@@ -51,7 +51,7 @@ public class XlsxParserHelper {
 
     public XlsxParserResult parseRow(Row row, Map<String, Integer> indexMap, Route route, Integer gpxOrderIndex)
     {
-        try {
+
             String wpNum = str(row, indexMap, WAYPOINT_NUMBER);
             if (wpNum == null) return null;
             GpxSegment gpxSegment = gpxSegmentRepo.findByRoute_IdAndSegmentStatusAndOrderIndex(route.getId(), GpxSegmentStatus.WAYPOINT, gpxOrderIndex).orElseThrow(
@@ -60,6 +60,7 @@ public class XlsxParserHelper {
             WayPoint wayPoint = wayPointRepo.findByRoute_IdAndGpxSegment_IdAndLocalSequence(route.getId(), gpxSegment.getId(),Integer.parseInt(wpNum)).orElseThrow(
                     () -> new ResourceNotFoundException("waypoint", "route id , gpx segment id and waypoint name", String.format("%d , %d and %s respectively. failed at row %d", route.getId(), gpxSegment.getId(),wpNum,row.getRowNum()))
             );
+            try{
 
             String trailPath = str(row, indexMap, TRAIL_PATH);
             String startOrEnd = str(row, indexMap, START_OR_END);
@@ -98,7 +99,7 @@ public class XlsxParserHelper {
         }
         catch (Exception e)
         {
-            log.error("exception thrown from method XlsxParserHelper.parseRow at row {}",row.getRowNum(),e);
+            log.error("exception thrown from method XlsxParserHelper.parseRow at row {}",row.getRowNum(),e.getLocalizedMessage());
             throw new FileParsingFailedException("failed to parse xlsx file");
         }
     }

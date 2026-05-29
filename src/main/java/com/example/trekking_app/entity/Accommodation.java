@@ -16,7 +16,7 @@ public class Accommodation extends POI{
     @Column(length = 500)
     private String address;
 
-    @Column(name = "contact_number" , length = 20)
+    @Column(name = "contact_number" , length = 50)
     private String contactNumber;
 
     @Column(name = "total_rooms")
@@ -29,11 +29,11 @@ public class Accommodation extends POI{
     private Double priceForeigner;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "electricity_source" , length = 20)
+    @Column(name = "electricity_source" , length = 50)
     private ElectricitySource electricitySource;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "water_source" , length = 20)
+    @Column(name = "water_source" , length = 50)
     private WaterSource waterSource;
 
     @Column(name = "has_first_aid")

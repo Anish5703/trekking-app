@@ -59,6 +59,10 @@ public class XlsxParser {
 
                 // ── GPX segment boundary: waypoint number went backwards ───────
                 Double wpNum = helper.dbl(row, indexMap, WAYPOINT_NUMBER);
+                if(wpNum!=null && wpNum==0) {
+                    gpxOrderIndex++;
+                    continue;
+                }
                 if (wpNum != null && prevWpNum >= 0 && wpNum < prevWpNum) {
                     gpxOrderIndex++;
                 }
