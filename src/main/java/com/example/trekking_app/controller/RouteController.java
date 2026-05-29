@@ -39,9 +39,9 @@ public class RouteController {
     }
 
     @GetMapping("/{routeId}/path")
-    public ResponseEntity<ApiResponse<GeoJsonFeatureCollection>> handleGetRoutePath(@NonNull @PathVariable Integer routeId)
+    public ResponseEntity<GeoJsonFeatureCollection> handleGetRoutePath(@NonNull @PathVariable Integer routeId)
     {
-        ApiResponse<GeoJsonFeatureCollection> response = routeService.getRoutePath(routeId);
+        GeoJsonFeatureCollection response = routeService.getRoutePath(routeId);
         return ResponseEntity.status(200).body(response);
     }
 

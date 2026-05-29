@@ -12,6 +12,7 @@ import com.example.trekking_app.repository.AccommodationRepository;
 import com.example.trekking_app.repository.POIRepository;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrailSegmentRepository;
+import com.example.trekking_app.service.gpx.GpxMergeService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,8 @@ public class XlsxIngestionService {
     private final POIRepository poiRepo;
     private final AccommodationRepository accommodationRepo;
     private final TrailSegmentRepository trailSegmentRepo;
+    private final GpxMergeService gpxMergeService;
+
 
     public ApiResponse<XlsxImportResponse> uploadXlsx(@NonNull Integer routeId, @NonNull MultipartFile file) {
         Route route = routeRepo.findById(routeId).orElseThrow(
@@ -47,6 +50,8 @@ public class XlsxIngestionService {
                 .numberOfTrailSegment(trailSegmentCount)
                 .numberOfWayPoint(parserOutput.wayPoints().size())
                 .build();
+           gpxMergeService.mergeTrackPoints(routeId);
+           gpxMergeService.mergeWayPoints(routeId);
         return new ApiResponse<>(importResponse, "xlsx file parsed successfully", 200);
 
     }
