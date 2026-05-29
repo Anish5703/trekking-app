@@ -34,6 +34,31 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
      Optional<TrackPoint> findByIdAndRoute_Id(Integer trackPointId, Integer routeId);
 
     Page<TrackPoint> findByRoute_IdAndIsDeletedTrueOrderByUpdatedAtAsc(@NonNull Integer routeId, Pageable pageable);
+    @Query(value = """
+    SELECT * FROM track_points
+    WHERE route_id = :routeId
+      AND is_deleted = false
+    ORDER BY ST_Distance(geom, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326))
+    LIMIT 1
+    """, nativeQuery = true)
+    Optional<TrackPoint> findNearestToCoordinatesInRoute(
+            @Param("routeId") Integer routeId,
+            @Param("lat") Double lat,
+            @Param("lon") Double lon
+    );
+
+    @Query("""
+    SELECT t FROM TrackPoint t
+    WHERE t.route.id = :routeId
+      AND t.isDeleted = false
+      AND t.globalSequence BETWEEN :startSeq AND :endSeq
+    ORDER BY t.globalSequence ASC
+    """)
+    List<TrackPoint> findBetweenGlobalSequences(
+            @Param("routeId") Integer routeId,
+            @Param("startSeq") Integer startSeq,
+            @Param("endSeq") Integer endSeq
+    );
 
      // Replaces the entire for-loop
      @Modifying
@@ -77,4 +102,6 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
       AND tp.elevation IS NOT NULL
     """)
      Optional<Double> findMaxElevation(@Param("routeId") Integer routeId);
+
+    Optional<TrackPoint> findByLongitudeAndLatitude(Double longitude, Double latitude);
 }

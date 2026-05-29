@@ -1,5 +1,6 @@
 package com.example.trekking_app.controller;
 import com.example.trekking_app.dto.geoJson.GeoJsonFeature;
+import com.example.trekking_app.dto.geoJson.GeoJsonFeatureCollection;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.RouteDetails;
 import com.example.trekking_app.dto.route.RouteRequest;
@@ -38,9 +39,9 @@ public class RouteController {
     }
 
     @GetMapping("/{routeId}/path")
-    public ResponseEntity<ApiResponse<GeoJsonFeature>> handleGetRoutePath(@NonNull @PathVariable Integer routeId)
+    public ResponseEntity<ApiResponse<GeoJsonFeatureCollection>> handleGetRoutePath(@NonNull @PathVariable Integer routeId)
     {
-        ApiResponse<GeoJsonFeature> response = routeService.getRoutePath(routeId);
+        ApiResponse<GeoJsonFeatureCollection> response = routeService.getRoutePath(routeId);
         return ResponseEntity.status(200).body(response);
     }
 
@@ -50,4 +51,5 @@ public class RouteController {
         ApiResponse<Page<RouteDetails>> response = routeService.getAllRoutes(page,size);
         return ResponseEntity.status(200).body(response);
     }
+
 }

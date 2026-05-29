@@ -5,6 +5,7 @@ import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.route.FileParsingFailedException;
 import com.example.trekking_app.model.*;
 import com.example.trekking_app.repository.GpxSegmentRepository;
+import com.example.trekking_app.repository.TrackPointRepository;
 import com.example.trekking_app.repository.WayPointRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,9 +23,11 @@ import static com.example.trekking_app.service.xlsx.XlsxParserColumnDependency.*
 @Service
 @RequiredArgsConstructor
 public class XlsxParserHelper {
+    private static final GeometryFactory GF = new GeometryFactory(new PrecisionModel(), 4326);
 
     private final WayPointRepository wayPointRepo;
     private final GpxSegmentRepository gpxSegmentRepo;
+    private final TrackPointRepository trackPointRepo;
 
 
     private static final Set<String> ACCOMMODATION_STOPS = Set.of("hotel", "tea house");
@@ -47,26 +50,17 @@ public class XlsxParserHelper {
         try {
             String wpNum = str(row, indexMap, WAYPOINT_NUMBER);
             if (wpNum == null) return null;
+            GpxSegment gpxSegment = gpxSegmentRepo.findByRoute_IdAndSegmentStatusAndOrderIndex(route.getId(), GpxSegmentStatus.WAYPOINT, gpxOrderIndex).orElseThrow(
+                    () -> new ResourceNotFoundException("gpx segment", "route id and order index", String.format("%d and %d respectively", route.getId(), gpxOrderIndex))
+            );
+            WayPoint wayPoint = wayPointRepo.findByRoute_IdAndGpxSegment_IdAndLocalSequence(route.getId(), gpxSegment.getId(),Integer.parseInt(wpNum)).orElseThrow(
+                    () -> new ResourceNotFoundException("waypoint", "route id , gpx segment id and waypoint name", String.format("%d , %d and %s respectively. failed at row %d", route.getId(), gpxSegment.getId(),wpNum,row.getRowNum()))
+            );
+
             String trailPath = str(row, indexMap, TRAIL_PATH);
             String startOrEnd = str(row, indexMap, START_OR_END);
             String importantStops = str(row, indexMap, IMPORTANT_STOPS);
             String other = str(row, indexMap, OTHER);
-
-            GpxSegment gpxSegment = gpxSegmentRepo.findByRoute_IdAndSegmentStatusAndOrderIndex(route.getId(), GpxSegmentStatus.WAYPOINT, gpxOrderIndex).orElseThrow(
-                    () -> new ResourceNotFoundException("gpx segment", "route id and order index", String.format("%d and %d respectively", route.getId(), gpxOrderIndex))
-            );
-           //Ignoring saving with no waypoint in db instead of throwing exception
-            /*WayPoint wayPoint = wayPointRepo.findByRoute_IdAndGpxSegment_IdAndLocalSequence(route.getId(), gpxSegment.getId(),Integer.parseInt(wpNum)).orElseThrow(
-                    () -> new ResourceNotFoundException("waypoint", "route id , gpx segment id and waypoint name", String.format("%d , %d and %s respectively", route.getId(), gpxSegment.getId(),wpNum))
-            );
-             */
-            Optional<WayPoint> wayPoint = wayPointRepo.findByRoute_IdAndGpxSegment_IdAndLocalSequence(route.getId(), gpxSegment.getId(),Integer.parseInt(wpNum));
-
-            if (wayPoint.isEmpty())
-            {
-                log.warn("skipping saving row with route id {}  , gpx segment id {} ,waypoint number {} since the associated waypoint not found in db", route.getId(), gpxSegment.getId(), wpNum);
-                return null;
-            }
 
             boolean isTrailPath = trailPath != null && !trailPath.trim().equalsIgnoreCase(PATH_OTHER);
 
@@ -77,29 +71,30 @@ public class XlsxParserHelper {
                         .gpxSegment(gpxSegment)
                         .build();
 
-                if (START_TOKEN.equalsIgnoreCase(startOrEnd.trim())) trailSegment.setStartWaypoint(wayPoint.get());
-                else trailSegment.setEndWaypoint(wayPoint.get());
+                if (START_TOKEN.equalsIgnoreCase(startOrEnd.trim())) trailSegment.setStartWaypoint(wayPoint);
+                else
+                    trailSegment.setEndWaypoint(wayPoint);
 
-                return XlsxParserResult.ofTrailSegment(wayPoint.get(), trailSegment, gpxOrderIndex);
+                return XlsxParserResult.ofTrailSegment(wayPoint, trailSegment, gpxOrderIndex);
             }
             String stopKey = importantStops != null ? importantStops.trim().toLowerCase() : null;
 
             if (ACCOMMODATION_STOPS.contains(stopKey)) {
                 String poiName = resolvePoiName(row, indexMap, importantStops, other);
-                Accommodation acc = buildAccommodation(row, indexMap, poiName, stopKey, wayPoint.get(), route);
-                return XlsxParserResult.ofAccommodation(wayPoint.get(), acc, gpxOrderIndex);
+                Accommodation acc = buildAccommodation(row, indexMap, poiName, stopKey, wayPoint, route);
+                return XlsxParserResult.ofAccommodation(wayPoint, acc, gpxOrderIndex);
             }
 
             //Plain POI
             String poiName = resolvePoiName(row, indexMap, importantStops, other);
             if (poiName == null && stopKey == null) return null;
 
-            POI poi = dispatchPlainPOI(row, indexMap, poiName, stopKey, trailPath, wayPoint.get(), route);
-            return XlsxParserResult.ofPOI(wayPoint.get(), poi, gpxOrderIndex);
+            POI poi = dispatchPlainPOI(row, indexMap, poiName, stopKey, trailPath, wayPoint, route);
+            return XlsxParserResult.ofPOI(wayPoint, poi, gpxOrderIndex);
         }
         catch (Exception e)
         {
-            log.error("exception thrown from method XlsxParserHelper.parseRow : {}",e.getLocalizedMessage());
+            log.error("exception thrown from method XlsxParserHelper.parseRow at row {}",row.getRowNum(),e);
             throw new FileParsingFailedException("failed to parse xlsx file");
         }
     }
@@ -129,8 +124,9 @@ public class XlsxParserHelper {
                         if(startStub != null)
                         {
                             startStub.setEndWaypoint(stub.getEndWaypoint());
+                            LineString path = generateTrailSegmentPath(startStub.getStartWaypoint(),startStub.getEndWaypoint(),route);
+                            startStub.setPath(path);
                             trailSegments.add(startStub);
-                            copySegment(r.getTrailSegment(),startStub);
                         }
                     }
                 }
@@ -141,33 +137,45 @@ public class XlsxParserHelper {
         return new ParseOutput(rawRows,wayPoints,pois,accommodations,trailSegments);
     }
 
-    private void copySegment(TrailSegment dst, TrailSegment src) {
-        dst.setRoute(src.getRoute());
-        dst.setType(src.getType());
-        dst.setStartWaypoint(src.getStartWaypoint());
-        dst.setEndWaypoint(src.getEndWaypoint());
-        dst.setGpxSegment(src.getGpxSegment());
+    public LineString generateTrailSegmentPath(WayPoint start, WayPoint end, Route route) {
+       // Optional<TrackPoint> startTp = trackPointRepo.findByLongitudeAndLatitude(start.getLongitude(),start.getLatitude());
+        TrackPoint nearestToStart = trackPointRepo
+                .findNearestToCoordinatesInRoute(route.getId(), start.getLatitude(), start.getLongitude())
+                .orElse(null);
+        TrackPoint nearestToEnd = trackPointRepo
+                .findNearestToCoordinatesInRoute(route.getId(), end.getLatitude(), end.getLongitude())
+                .orElse(null);
 
-        List<WayPoint> waypoints = new ArrayList<>();
-        waypoints.add(dst.getStartWaypoint());
-        waypoints.add(dst.getEndWaypoint());
-        LineString path = generateTrailSegmentPath(waypoints);
-
-        dst.setPath(path);
-    }
-    public LineString generateTrailSegmentPath(List<WayPoint> wayPoints)
-    {
-        if (wayPoints.size() < 2) {
-            return null;
+        if (nearestToStart == null || nearestToEnd == null) {
+            log.warn("Could not find nearest trackpoints for route {}, falling back to straight line", route.getId());
+            return straightLine(start, end);
         }
 
-        GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
+        Integer startSeq = nearestToStart.getGlobalSequence();
+        Integer endSeq   = nearestToEnd.getGlobalSequence();
 
-        Coordinate[] coordinates = wayPoints.stream()
+        if (startSeq > endSeq) { Integer tmp = startSeq; startSeq = endSeq; endSeq = tmp; }
+
+        List<TrackPoint> points = trackPointRepo.findBetweenGlobalSequences(route.getId(), startSeq, endSeq);
+
+        if (points.size() < 2) {
+            log.warn("Not enough trackpoints ({}) between globalSeq {} and {} for route {}",
+                    points.size(), startSeq, endSeq, route.getId());
+            return straightLine(start, end);
+        }
+
+        Coordinate[] coords = points.stream()
                 .map(tp -> new Coordinate(tp.getLongitude(), tp.getLatitude()))
                 .toArray(Coordinate[]::new);
 
-        return geometryFactory.createLineString(coordinates);
+        return GF.createLineString(coords);
+    }
+
+    private LineString straightLine(WayPoint start, WayPoint end) {
+        return GF.createLineString(new Coordinate[]{
+                new Coordinate(start.getLongitude(), start.getLatitude()),
+                new Coordinate(end.getLongitude(), end.getLatitude())
+        });
     }
     public void validateRequiredColumns(Map<String, Integer> idx) {
         List<String> missing = REQUIRED_COLUMNS.stream()

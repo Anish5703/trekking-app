@@ -19,7 +19,8 @@ import java.util.List;
 
 },
         indexes = {
-                @Index(name = "idx_wp_route_number", columnList = "route_id, waypoint_number")})
+                @Index(name = "idx_route_gpx_wp_name", columnList = "route_id,gpx_segment_id,name"),
+                @Index(name="idx_route_gpx_wp_localsequece",columnList = "route_id,gpx_segment_id,local_sequence")})
 
 @NoArgsConstructor
 @AllArgsConstructor

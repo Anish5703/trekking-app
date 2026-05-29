@@ -88,7 +88,7 @@ public class GpxIngestionService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
-        GpxSegment gpxSegment = gpxSegmentRepo.findByIdAndRoute_Id(gpxSegmentId,routeId).orElseThrow(
+        GpxSegment gpxSegment = gpxSegmentRepo.findByIdAndRoute_Id(gpxSegmentId,route.getId()).orElseThrow(
                 () -> new ResourceNotFoundException("gpx segment","id",gpxSegmentId)
         );
         GpxSegmentResponse segmentResponse = gpxSegmentMapper.toGpxSegmentResponse(gpxSegment);

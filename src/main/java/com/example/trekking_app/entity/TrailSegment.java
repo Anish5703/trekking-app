@@ -23,6 +23,9 @@ public class TrailSegment extends BaseEntity{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column
+    private String name;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "route_id", nullable = false)
     private Route route;

@@ -1,6 +1,7 @@
 package com.example.trekking_app.service.route;
 
 import com.example.trekking_app.dto.geoJson.GeoJsonFeature;
+import com.example.trekking_app.dto.geoJson.GeoJsonFeatureCollection;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.RouteDetails;
 import com.example.trekking_app.dto.route.RouteRequest;
@@ -11,14 +12,10 @@ import com.example.trekking_app.exception.resource.NoResourceFoundException;
 import com.example.trekking_app.exception.resource.ResourceDeletionFailedException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.route.CreateRouteFailedException;
-import com.example.trekking_app.exception.destination.DestinationNotFoundException;
 import com.example.trekking_app.mapper.GeoJsonMapper;
 import com.example.trekking_app.mapper.RouteMapper;
 import com.example.trekking_app.model.RouteStatus;
-import com.example.trekking_app.repository.DestinationRepository;
-import com.example.trekking_app.repository.GpxSegmentRepository;
-import com.example.trekking_app.repository.RouteRepository;
-import com.example.trekking_app.repository.UserRepository;
+import com.example.trekking_app.repository.*;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +40,7 @@ public class RouteService {
     private final RouteMapper routeMapper = new RouteMapper();
     private final GeoJsonMapper geoJsonMapper = new GeoJsonMapper();
     private final GpxSegmentRepository gpxSegmentRepo;
+
 
 
     @Transactional(readOnly = true)
@@ -103,10 +101,11 @@ public class RouteService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<GeoJsonFeature> getRoutePath(@NonNull Integer routeId) {
+    public ApiResponse<GeoJsonFeatureCollection> getRoutePath(@NonNull Integer routeId) {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
+        if(route.getPath()==null) throw new CreateRouteFailedException("no path created for this route");
         switch (route.getRouteStatus()) {
             case IDLE ->
                     throw new ResourceNotFoundException("No path available — route has no merged track points yet");
@@ -119,7 +118,7 @@ public class RouteService {
                     throw new IllegalStateException("Unexpected route status: " + route.getRouteStatus());
         }
         try {
-            GeoJsonFeature feature = geoJsonMapper.toGeoJson(route);
+            GeoJsonFeatureCollection feature = geoJsonMapper.toGeoJson(route);
             return new ApiResponse<>(feature, "route path fetched", 200);
         } catch (Exception e) {
             log.error("failed to convert route path to geo json : {}", e.getLocalizedMessage());

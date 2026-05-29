@@ -79,6 +79,12 @@ public class Route extends BaseEntity{
     private List<GpxSegment> gpxSegments = new ArrayList<>();
 
     @OneToMany(mappedBy = "route" ,cascade = CascadeType.ALL , orphanRemoval = true , fetch = FetchType.LAZY)
+    private List<TrailSegment> trailSegments = new ArrayList<>();
+
+    @OneToMany(mappedBy = "route" ,cascade = CascadeType.ALL , orphanRemoval = true , fetch = FetchType.LAZY)
+    private List<Accommodation> accommodations = new ArrayList<>();
+
+    @OneToMany(mappedBy = "route" ,cascade = CascadeType.ALL , orphanRemoval = true , fetch = FetchType.LAZY)
     private List<POI> pois = new ArrayList<>();
 
     @OneToMany(mappedBy = "route" ,cascade = CascadeType.ALL , orphanRemoval = true , fetch = FetchType.LAZY)
