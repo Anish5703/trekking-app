@@ -2,8 +2,8 @@ package com.example.trekking_app.config;
 
 
 
-import com.example.trekking_app.service.JwtService;
-import com.example.trekking_app.service.MyUserDetailsService;
+import com.example.trekking_app.service.auth.JwtService;
+import com.example.trekking_app.service.user.MyUserDetailsService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;

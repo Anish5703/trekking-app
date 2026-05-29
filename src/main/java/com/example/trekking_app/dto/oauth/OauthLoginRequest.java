@@ -13,7 +13,7 @@ public class OauthLoginRequest {
 
     @NonNull
     @Size(min = 20 , message = "token is too short")
-    private String token;
+    private String id_token;
     @NotBlank
     @Size(min = 3 , max = 20 , message = "provider name must be between 3 - 20 characters")
     private String provider;

@@ -18,4 +18,12 @@ public class ResourceDeletionFailedException extends RuntimeException {
         this.fieldName = fieldName;
         this.fieldValue = fieldValue;
     }
+
+    public ResourceDeletionFailedException(String message)
+    {
+        super(message);
+        resourceName = "";
+        fieldName = "";
+        fieldValue = "";
+    }
 }

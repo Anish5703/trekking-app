@@ -1,4 +1,4 @@
-package com.example.trekking_app.service;
+package com.example.trekking_app.service.user;
 
 import com.example.trekking_app.dto.admin.AccountStatusResetRequest;
 import com.example.trekking_app.dto.global.ApiResponse;
@@ -51,8 +51,7 @@ public class AdminService {
             User user = userRepo.findById(id)
                     .orElseThrow(() -> new UserNotFoundException("User not found"));
             Optional<Token> token = tokenRepo.findByUser_Id(user.getId());
-            if (token.isPresent())
-                tokenRepo.delete(token.get());
+            token.ifPresent(tokenRepo::delete);
             userRepo.delete(user);
             UserDetails userDetails = userMapper.toUserDetails(user);
             String message = "User removed";
@@ -69,7 +68,7 @@ public class AdminService {
     {
         Pageable pageable = PageRequest.of(page,size);
       Page<UserDetails> inactiveUsers = userRepo.findByRoleAndIsActiveFalseOrderByTimeStampDesc(role,pageable).map(userMapper::toUserDetails);
-      String message = inactiveUsers.isEmpty() ? String.format("no inactive %s found",role) : String.format("deactivated %s fetched",role);
+      String message = inactiveUsers.isEmpty() ? String.format("no inactive %s found",role) : String.format("inactive %s fetched",role);
       return new ApiResponse<>(inactiveUsers,message,200);
 
     }

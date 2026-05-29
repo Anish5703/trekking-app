@@ -1,4 +1,4 @@
-package com.example.trekking_app.service;
+package com.example.trekking_app.service.auth;
 
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.oauth.OauthLoginRequest;
@@ -15,6 +15,7 @@ import com.example.trekking_app.model.Role;
 import com.example.trekking_app.model.UserPrincipal;
 import com.example.trekking_app.repository.OauthUserRepository;
 import com.example.trekking_app.repository.UserRepository;
+import com.example.trekking_app.service.user.TokenService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.http.Cookie;
@@ -126,14 +127,14 @@ public class OauthService {
     @Transactional
     public ApiResponse<OauthLoginResponse> getAppOauthLogin(@NonNull OauthLoginRequest loginRequest)
     {
-        if(loginRequest.getToken().isEmpty() || loginRequest.getProvider().isEmpty()) throw new IllegalArgumentException("token and provider field required");
+        if(loginRequest.getId_token().isEmpty() || loginRequest.getProvider().isEmpty()) throw new IllegalArgumentException("token and provider field required");
 
         OauthUserInfo userInfo;
 
         switch(loginRequest.getProvider().toUpperCase())
         {
-            case "GOOGLE" -> userInfo = googleOauthProvider.verify(loginRequest.getToken());
-            case "FACEBOOK" -> userInfo = facebookOauthProvider.verify(loginRequest.getToken());
+            case "GOOGLE" -> userInfo = googleOauthProvider.verify(loginRequest.getId_token());
+            case "FACEBOOK" -> userInfo = facebookOauthProvider.verify(loginRequest.getId_token());
             default -> throw new IllegalArgumentException("Unknown oauth provider : " + loginRequest.getProvider());
         }
            boolean isExistingUser = oauthUserRepo.existsByProviderAndProviderId(userInfo.getProvider(), userInfo.getProviderId());

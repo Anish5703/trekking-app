@@ -1,6 +1,7 @@
 package com.example.trekking_app.dto.route;
 
 import com.example.trekking_app.model.DifficultyLevel;
+import com.example.trekking_app.model.RouteStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,5 +21,6 @@ public class RouteDetails {
     private Double maxElevation;
     private Double minElevation;
     private Double totalDistanceInKm;
+    private RouteStatus routeStatus;
 
 }

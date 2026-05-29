@@ -2,7 +2,7 @@ package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.destination.DestinationResponse;
 import com.example.trekking_app.dto.global.ApiResponse;
-import com.example.trekking_app.service.DestinationService;
+import com.example.trekking_app.service.route.DestinationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

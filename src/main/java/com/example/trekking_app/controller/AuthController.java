@@ -5,8 +5,8 @@ import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.token.AccessTokenRequest;
 import com.example.trekking_app.dto.token.AccessTokenResponse;
 import com.example.trekking_app.model.UserPrincipal;
-import com.example.trekking_app.service.AuthService;
-import com.example.trekking_app.service.TokenService;
+import com.example.trekking_app.service.auth.AuthService;
+import com.example.trekking_app.service.user.TokenService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -159,7 +159,7 @@ public class AuthController {
                     )
             )
     })
-    @GetMapping("/signup/verify")
+    @GetMapping("/signup/confirmation")
     public ResponseEntity<ApiResponse<SignupResponse>> handleSignupConfirmation(
             @Parameter(
                     name = "token",
@@ -373,22 +373,12 @@ public class AuthController {
         return ResponseEntity.status(200).headers(buildSecureHeaders(requestId)).body(response);
     }
 
-    @PostMapping("/forgot-password/reset/verify")
+    @PostMapping("/forgot-password/reset/confirmation")
     public ResponseEntity<ApiResponse<ForgotPasswordResetResponse>> handleVerifyForgotPasswordReset(@Valid @RequestBody ForgotPasswordResetRequest resetRequest)
     {
         String requestId = UUID.randomUUID().toString();
         ApiResponse<ForgotPasswordResetResponse> response = authService.VerifyForgotPasswordReset(resetRequest);
         return ResponseEntity.status(200).headers(buildSecureHeaders(requestId)).body(response);
-    }
-
-    @PutMapping("/password/reset")
-    public ResponseEntity<ApiResponse<PasswordResetResponse>> handlePasswordReset(@Valid @RequestBody PasswordResetRequest passwordResetRequest,
-                                                                                  @AuthenticationPrincipal UserPrincipal user)
-
-    {
-        String requestId = UUID.randomUUID().toString();
-        ApiResponse<PasswordResetResponse> response = authService.passwordReset(passwordResetRequest,user.getId());
-        return ResponseEntity.status(HttpStatus.OK).headers(buildSecureHeaders(requestId)).body(response);
     }
 
 

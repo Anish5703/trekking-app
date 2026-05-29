@@ -1,4 +1,4 @@
-package com.example.trekking_app.service;
+package com.example.trekking_app.service.auth;
 
 import com.example.trekking_app.dto.auth.*;
 import com.example.trekking_app.dto.global.ApiResponse;
@@ -14,6 +14,8 @@ import com.example.trekking_app.model.Role;
 import com.example.trekking_app.repository.OauthUserRepository;
 import com.example.trekking_app.repository.TokenRepository;
 import com.example.trekking_app.repository.UserRepository;
+import com.example.trekking_app.service.user.MailService;
+import com.example.trekking_app.service.user.TokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.NonNull;

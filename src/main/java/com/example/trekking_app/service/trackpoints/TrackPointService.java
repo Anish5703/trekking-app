@@ -1,4 +1,4 @@
-package com.example.trekking_app.service;
+package com.example.trekking_app.service.trackpoints;
 
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.trackpoint.TrackPointRequest;
@@ -9,9 +9,11 @@ import com.example.trekking_app.exception.resource.ResourceDeletionFailedExcepti
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
 import com.example.trekking_app.mapper.TrackPointMapper;
+import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.model.TrackPointStatus;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
+import com.example.trekking_app.service.gpx.GpxMergeService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -87,7 +89,7 @@ public class TrackPointService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<Void> updateTrackPoint(@NonNull Integer routeId , @NonNull Integer trackPointId , @NonNull TrackPointRequest trackPointRequest)
+    public ApiResponse<TrackPointResponse> updateTrackPoint(@NonNull Integer routeId , @NonNull Integer trackPointId , @NonNull TrackPointRequest trackPointRequest)
     {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
@@ -95,22 +97,13 @@ public class TrackPointService {
         TrackPoint trackPoint = trackPointRepo.findByIdAndRoute_Id(trackPointId,routeId).orElseThrow(
                 () -> new ResourceNotFoundException("trackpoint","id",trackPointId)
         );
-        boolean isLocalSequenceSame = trackPoint.getLocalSequence().equals(trackPointRequest.getLocalSequence());
+        if(route.getRouteStatus().equals(RouteStatus.MERGING)) throw new ResourceUpdateFailedException("failed to update trackpoint since the associated routes trackpoints are merging");
         try {
-            trackPoint.setLongitude(trackPointRequest.getLongitude());
-            trackPoint.setLatitude(trackPointRequest.getLatitude());
-            trackPoint.setElevation(trackPointRequest.getElevation());
-            trackPoint.setStatus(trackPointRequest.getStatus());
-            trackPoint.setIsDeleted(trackPoint.getStatus().equals(TrackPointStatus.SOFT_DELETED));
-            trackPoint.setLocalSequence(trackPointRequest.getLocalSequence());
-            Point point = GF.createPoint(new Coordinate(trackPointRequest.getLongitude(), trackPointRequest.getLatitude()));
-            trackPoint.setGeom(point);
+            trackPoint = trackPointMapper.toUpdateTrackPoint(trackPoint,trackPointRequest);
             trackPointRepo.save(trackPoint);
-
-            if (!isLocalSequenceSame)
-                gpxMergeService.mergeTrackPoints(routeId);
-
-            return new ApiResponse<>(null, "trackpoint updated", 200);
+            TrackPointResponse tpResponse = trackPointMapper.toTrackPointResponse(trackPoint);
+             gpxMergeService.mergeTrackPoints(routeId);
+            return new ApiResponse<>(tpResponse, "trackpoint updated", 200);
         }
         catch (Exception e)
         {
@@ -134,7 +127,7 @@ public class TrackPointService {
             trackPoint.setIsDeleted(true);
             trackPoint.setStatus(TrackPointStatus.SOFT_DELETED);
             trackPointRepo.save(trackPoint);
-            gpxMergeService.mergeTrackPoints(routeId);
+            gpxMergeService.mergeTrackPoints(route.getId());
             return new ApiResponse<>(null, "trackpoint deleted", 200);
         } catch (Exception e) {
             throw new ResourceDeletionFailedException("trackpoint", "id", trackPointId);

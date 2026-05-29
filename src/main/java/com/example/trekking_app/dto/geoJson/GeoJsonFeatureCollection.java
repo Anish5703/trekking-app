@@ -12,10 +12,12 @@ import java.util.List;
 @NoArgsConstructor
 @Data
 @Builder
-public class GeoJsonFeatureCollection {
+public class GeoJsonFeatureCollection
+{
 
+    @Builder.Default
     @JsonProperty("type")
-    private String type;
+    private String type = "FeatureCollection";
     @JsonProperty("features")
     private List<GeoJsonFeature> features;
 

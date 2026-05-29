@@ -1,4 +1,4 @@
-package com.example.trekking_app.service;
+package com.example.trekking_app.service.user;
 
 
 import com.example.trekking_app.entity.User;
@@ -8,7 +8,6 @@ import com.example.trekking_app.repository.UserRepository;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 @Service

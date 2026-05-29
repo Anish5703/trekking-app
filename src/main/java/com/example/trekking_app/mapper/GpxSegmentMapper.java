@@ -13,9 +13,11 @@ public class GpxSegmentMapper {
                 .sourceFilename(gpxSegment.getSourceFileName())
                 .orderIndex(gpxSegment.getOrderIndex())
                 .trackPointCount(gpxSegment.getTrackPoints().size())
-                .status(gpxSegment.getStatus())
+                .wayPointCount(gpxSegment.getWayPoints().size())
+                .status(gpxSegment.getSegmentStatus())
                 .minTime(gpxSegment.getRecordedAt())
                 .maxTime(gpxSegment.getRecordedUntil())
+                .distanceInKm(gpxSegment.getRoute().getDistanceInKm())
                 .build();
     }
 }

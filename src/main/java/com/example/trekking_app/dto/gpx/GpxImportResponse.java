@@ -16,7 +16,7 @@ public class GpxImportResponse {
     private Integer routeId;
     private Integer segmentId;
     private String  segmentName;
-    private int totalTrackPoints;
-    private int totalWayPoints;
-    private double totalDistanceInKm;
+    private Integer totalTrackPoints;
+    private Integer totalWayPoints;
+    private Double totalDistanceInKm;
 }

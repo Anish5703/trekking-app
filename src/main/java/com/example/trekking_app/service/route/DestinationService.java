@@ -1,4 +1,4 @@
-package com.example.trekking_app.service;
+package com.example.trekking_app.service.route;
 
 import com.example.trekking_app.dto.destination.DestinationRequest;
 import com.example.trekking_app.dto.destination.DestinationResponse;

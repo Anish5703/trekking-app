@@ -3,7 +3,7 @@ package com.example.trekking_app.controller;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.trackpoint.TrackPointRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointResponse;
-import com.example.trekking_app.service.TrackPointService;
+import com.example.trekking_app.service.trackpoints.TrackPointService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,8 +22,8 @@ public class AdminTrackPointController {
 
 @GetMapping("/list")
 public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoints(@PathVariable Integer routeId,
-                                                                                    Integer page ,
-                                                                                    Integer size)
+                                                                                   @NonNull Integer page ,
+                                                                                   @NonNull Integer size)
     {
        ApiResponse<Page<TrackPointResponse>> response = trackPointService.getAllTrackPoints(routeId,page,size);
        return ResponseEntity.status(200).body(response);
@@ -46,11 +46,11 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
     }
 
     @PutMapping
-    public ResponseEntity<ApiResponse<Void>> updateTrackPoint(@PathVariable Integer routeId,
+    public ResponseEntity<ApiResponse<TrackPointResponse>> updateTrackPoint(@PathVariable Integer routeId,
                                                               @NonNull @RequestParam Integer trackPointId,
                                                               @NonNull @RequestBody TrackPointRequest trackPointRequest)
     {
-        ApiResponse<Void> response = trackPointService.updateTrackPoint(routeId,trackPointId,trackPointRequest);
+        ApiResponse<TrackPointResponse> response = trackPointService.updateTrackPoint(routeId,trackPointId,trackPointRequest);
         return ResponseEntity.status(200).body(response);
     }
     @DeleteMapping
