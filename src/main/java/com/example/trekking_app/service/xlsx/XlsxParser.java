@@ -10,6 +10,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
@@ -30,7 +31,7 @@ public class XlsxParser {
     private final String SHEET_NAME = "Trail Map";
 
 
-
+   @Transactional
     public ParseOutput parse(@NonNull MultipartFile file ,@NonNull Route route)
     {
         String filename = file.getOriginalFilename();

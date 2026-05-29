@@ -7,6 +7,8 @@ import com.example.trekking_app.model.*;
 import com.example.trekking_app.repository.GpxSegmentRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
 import com.example.trekking_app.repository.WayPointRepository;
+import com.example.trekking_app.service.gpx.GpxMergeHelper;
+import com.example.trekking_app.service.gpx.GpxMergeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
@@ -14,6 +16,7 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.locationtech.jts.geom.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -28,6 +31,7 @@ public class XlsxParserHelper {
     private final WayPointRepository wayPointRepo;
     private final GpxSegmentRepository gpxSegmentRepo;
     private final TrackPointRepository trackPointRepo;
+    private final GpxMergeHelper gpxMergeHelper;
 
 
     private static final Set<String> ACCOMMODATION_STOPS = Set.of("hotel", "tea house");
@@ -138,26 +142,23 @@ public class XlsxParserHelper {
     }
 
     public LineString generateTrailSegmentPath(WayPoint start, WayPoint end, Route route) {
-       // Optional<TrackPoint> startTp = trackPointRepo.findByLongitudeAndLatitude(start.getLongitude(),start.getLatitude());
-        TrackPoint nearestToStart = trackPointRepo
-                .findNearestToCoordinatesInRoute(route.getId(), start.getLatitude(), start.getLongitude())
-                .orElse(null);
-        TrackPoint nearestToEnd = trackPointRepo
-                .findNearestToCoordinatesInRoute(route.getId(), end.getLatitude(), end.getLongitude())
-                .orElse(null);
 
-        if (nearestToStart == null || nearestToEnd == null) {
-            log.warn("Could not find nearest trackpoints for route {}, falling back to straight line", route.getId());
+        TrackPoint startTp = resolveOrInsertTrackPoint(start, route);
+        TrackPoint endTp   = resolveOrInsertTrackPoint(end, route);
+
+        if (startTp == null || endTp == null) {
+            log.warn("Could not resolve trackpoints for start/end waypoints on route {}, falling back to straight line", route.getId());
             return straightLine(start, end);
         }
 
-        Integer startSeq = nearestToStart.getGlobalSequence();
-        Integer endSeq   = nearestToEnd.getGlobalSequence();
-
+        Integer startSeq = startTp.getGlobalSequence();
+        Integer endSeq   = endTp.getGlobalSequence();
         if (startSeq > endSeq) { Integer tmp = startSeq; startSeq = endSeq; endSeq = tmp; }
 
-        List<TrackPoint> points = trackPointRepo.findBetweenGlobalSequences(route.getId(), startSeq, endSeq);
+        //update global sequence
+        gpxMergeHelper.assignTrackPointGlobalSequences(route.getId());
 
+        List<TrackPoint> points = trackPointRepo.findBetweenGlobalSequences(route.getId(), startSeq, endSeq);
         if (points.size() < 2) {
             log.warn("Not enough trackpoints ({}) between globalSeq {} and {} for route {}",
                     points.size(), startSeq, endSeq, route.getId());
@@ -167,8 +168,54 @@ public class XlsxParserHelper {
         Coordinate[] coords = points.stream()
                 .map(tp -> new Coordinate(tp.getLongitude(), tp.getLatitude()))
                 .toArray(Coordinate[]::new);
-
         return GF.createLineString(coords);
+    }
+
+    /**
+     * Returns existing TrackPoint if coordinates already persisted,
+     * otherwise finds predecessor, inserts new TP, shifts sequences.
+     */
+    @Transactional
+    private TrackPoint resolveOrInsertTrackPoint(WayPoint wayPoint, Route route) {
+
+        // 1. Check if already exists
+        Optional<TrackPoint> existing = trackPointRepo
+                .findByLatitudeAndLongitude(wayPoint.getLatitude(), wayPoint.getLongitude());
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        // 2. Find the trackpoint just before this waypoint's position
+        TrackPoint predecessor = trackPointRepo
+                .findPredecessorByCoordinates(route.getId(), wayPoint.getLatitude(), wayPoint.getLongitude())
+                .orElse(null);
+
+        if (predecessor == null) {
+            log.warn("No predecessor trackpoint found for waypoint [{},{}] on route {}",
+                    wayPoint.getLatitude(), wayPoint.getLongitude(), route.getId());
+            return null;
+        }
+
+        // 3. Shift localSequence of all TPs in same segment after predecessor
+        trackPointRepo.shiftLocalSequencesAfter(
+                predecessor.getGpxSegment().getId(),
+                predecessor.getLocalSequence()
+        );
+
+        // 4. Insert new trackpoint
+        TrackPoint newTp = TrackPoint.builder()
+                .latitude(wayPoint.getLatitude())
+                .longitude(wayPoint.getLongitude())
+                .localSequence(predecessor.getLocalSequence() + 1)
+                .gpxSegment(predecessor.getGpxSegment())
+                .route(route)
+                .build();
+
+        TrackPoint saved = trackPointRepo.save(newTp);
+        log.info("Inserted new TrackPoint id={} at localSequence={} in segment={}",
+                saved.getId(), saved.getLocalSequence(), saved.getGpxSegment().getId());
+
+        return saved;
     }
 
     private LineString straightLine(WayPoint start, WayPoint end) {

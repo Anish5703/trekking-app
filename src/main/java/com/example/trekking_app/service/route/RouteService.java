@@ -1,6 +1,5 @@
 package com.example.trekking_app.service.route;
 
-import com.example.trekking_app.dto.geoJson.GeoJsonFeature;
 import com.example.trekking_app.dto.geoJson.GeoJsonFeatureCollection;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.RouteDetails;
@@ -95,13 +94,14 @@ public class RouteService {
             RouteResponse routeResponse = routeMapper.toRouteResponse(newRoute);
             return new ApiResponse<>(routeResponse, "New route created", 201);
         } catch (Exception ex) {
+            if(routeRepo.existsByNameAndDestination_Id(routeRequest.getName(),destination.getId())) throw new CreateRouteFailedException("route with this name and destination already exists");
             log.error("Failed to create new route : {}", ex.getLocalizedMessage());
             throw new CreateRouteFailedException("Failed to create new route");
         }
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<GeoJsonFeatureCollection> getRoutePath(@NonNull Integer routeId) {
+    public GeoJsonFeatureCollection getRoutePath(@NonNull Integer routeId) {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
@@ -118,8 +118,8 @@ public class RouteService {
                     throw new IllegalStateException("Unexpected route status: " + route.getRouteStatus());
         }
         try {
-            GeoJsonFeatureCollection feature = geoJsonMapper.toGeoJson(route);
-            return new ApiResponse<>(feature, "route path fetched", 200);
+            return geoJsonMapper.toGeoJson(route);
+
         } catch (Exception e) {
             log.error("failed to convert route path to geo json : {}", e.getLocalizedMessage());
             throw new CreateRouteFailedException("failed to create route path");

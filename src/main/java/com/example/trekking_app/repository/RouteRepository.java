@@ -19,4 +19,6 @@ Optional<List<Route>> findAllByDestination_Id(int destinationId);
 Boolean existsByName(Integer routeName);
 Page<Route> findAll(@NonNull Pageable pageable);
 long count();
+
+    boolean existsByNameAndDestination_Id(String name, Integer id);
 }

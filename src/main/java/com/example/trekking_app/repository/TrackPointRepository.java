@@ -33,6 +33,45 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
 
      Optional<TrackPoint> findByIdAndRoute_Id(Integer trackPointId, Integer routeId);
 
+    // Find the trackpoint just before the waypoint coordinates (by globalSequence)
+    @Query("""
+    SELECT t FROM TrackPoint t
+    WHERE t.route.id = :routeId
+      AND t.gpxSegment.segmentStatus = com.example.trekking_app.model.GpxSegmentStatus.TRACKPOINT
+      AND t.globalSequence = (
+            SELECT MAX(t2.globalSequence)
+            FROM TrackPoint t2
+            WHERE t2.route.id = :routeId
+              AND t2.gpxSegment.segmentStatus = com.example.trekking_app.model.GpxSegmentStatus.TRACKPOINT
+              AND t2.globalSequence < (
+                    SELECT t3.globalSequence
+                    FROM TrackPoint t3
+                    WHERE t3.route.id = :routeId
+                      AND t3.gpxSegment.segmentStatus = com.example.trekking_app.model.GpxSegmentStatus.TRACKPOINT
+                    ORDER BY (
+                        ABS(t3.latitude - :lat) +
+                        ABS(t3.longitude - :lon)
+                    ) ASC
+                    LIMIT 1
+              )
+      )
+""")
+    Optional<TrackPoint> findPredecessorByCoordinates(
+            @Param("routeId") Integer routeId,
+            @Param("lat") double lat,
+            @Param("lon") double lon
+    );
+
+
+
+    @Modifying
+    @Query("UPDATE TrackPoint t SET t.localSequence = t.localSequence + 1 " +
+            "WHERE t.gpxSegment.id = :segmentId AND t.localSequence > :afterSequence")
+    void shiftLocalSequencesAfter(@Param("segmentId") Integer segmentId,
+                                  @Param("afterSequence") int afterSequence);
+
+    boolean existsByLatitudeAndLongitude(double latitude, double longitude);
+
     Page<TrackPoint> findByRoute_IdAndIsDeletedTrueOrderByUpdatedAtAsc(@NonNull Integer routeId, Pageable pageable);
     @Query(value = """
     SELECT * FROM track_points
@@ -103,5 +142,5 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
     """)
      Optional<Double> findMaxElevation(@Param("routeId") Integer routeId);
 
-    Optional<TrackPoint> findByLongitudeAndLatitude(Double longitude, Double latitude);
+    Optional<TrackPoint> findByLatitudeAndLongitude(Double latitude, Double longitude);
 }
