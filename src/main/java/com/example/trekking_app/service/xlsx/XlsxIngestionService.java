@@ -50,8 +50,6 @@ public class XlsxIngestionService {
                 .numberOfTrailSegment(trailSegmentCount)
                 .numberOfWayPoint(parserOutput.wayPoints().size())
                 .build();
-           gpxMergeService.mergeTrackPoints(routeId);
-           gpxMergeService.mergeWayPoints(routeId);
         return new ApiResponse<>(importResponse, "xlsx file parsed successfully", 200);
 
     }
