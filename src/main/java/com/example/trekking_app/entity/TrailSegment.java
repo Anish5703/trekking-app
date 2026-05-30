@@ -10,7 +10,6 @@ import org.locationtech.jts.geom.LineString;
 @Table(name = "trail_segments" , indexes = {
         @Index(name = "idx_trail_seg_route" , columnList = "route_id"),
         @Index(name = "idx_trail_seg_type" , columnList = "route_id , type"),
-        @Index(name = "idx_trail_seg_path" , columnList = "path")
 })
 @Getter
 @Setter

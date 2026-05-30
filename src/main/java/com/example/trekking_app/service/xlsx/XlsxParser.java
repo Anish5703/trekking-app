@@ -1,5 +1,6 @@
 package com.example.trekking_app.service.xlsx;
 
+import com.example.trekking_app.entity.GpxSegment;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.exception.route.FileParsingFailedException;
 import lombok.NonNull;
@@ -14,10 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static com.example.trekking_app.service.xlsx.XlsxParserColumnDependency.WAYPOINT_NUMBER;
 
@@ -59,10 +57,12 @@ public class XlsxParser {
 
                 // ── GPX segment boundary: waypoint number went backwards ───────
                 Double wpNum = helper.dbl(row, indexMap, WAYPOINT_NUMBER);
+
                 if(wpNum!=null && wpNum==0) {
                     gpxOrderIndex++;
                     continue;
                 }
+
                 if (wpNum != null && prevWpNum >= 0 && wpNum < prevWpNum) {
                     gpxOrderIndex++;
                 }

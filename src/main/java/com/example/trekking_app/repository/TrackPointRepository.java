@@ -100,7 +100,10 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
     );
 
      // Replaces the entire for-loop
-     @Modifying
+     @Modifying(
+             flushAutomatically = true,
+             clearAutomatically = true
+     )
      @Transactional
      @Query(value = """
     UPDATE track_points tp

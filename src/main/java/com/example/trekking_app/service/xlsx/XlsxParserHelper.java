@@ -18,6 +18,7 @@ import org.locationtech.jts.geom.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static com.example.trekking_app.service.xlsx.XlsxParserColumnDependency.*;
@@ -54,9 +55,9 @@ public class XlsxParserHelper {
 
             String wpNum = str(row, indexMap, WAYPOINT_NUMBER);
             if (wpNum == null) return null;
-            GpxSegment gpxSegment = gpxSegmentRepo.findByRoute_IdAndSegmentStatusAndOrderIndex(route.getId(), GpxSegmentStatus.WAYPOINT, gpxOrderIndex).orElseThrow(
-                    () -> new ResourceNotFoundException("gpx segment", "route id and order index", String.format("%d and %d respectively", route.getId(), gpxOrderIndex))
-            );
+                GpxSegment gpxSegment = gpxSegmentRepo.findByRoute_IdAndSegmentStatusAndOrderIndex(route.getId(), GpxSegmentStatus.WAYPOINT, gpxOrderIndex).orElseThrow(
+                        () -> new ResourceNotFoundException("gpx segment", "route id and order index", String.format("%d and %d respectively", route.getId(), gpxOrderIndex))
+                );
             WayPoint wayPoint = wayPointRepo.findByRoute_IdAndGpxSegment_IdAndLocalSequence(route.getId(), gpxSegment.getId(),Integer.parseInt(wpNum)).orElseThrow(
                     () -> new ResourceNotFoundException("waypoint", "route id , gpx segment id and waypoint name", String.format("%d , %d and %s respectively. failed at row %d", route.getId(), gpxSegment.getId(),wpNum,row.getRowNum()))
             );
@@ -151,13 +152,18 @@ public class XlsxParserHelper {
             log.warn("Could not resolve trackpoints for start/end waypoints on route {}, falling back to straight line", route.getId());
             return straightLine(start, end);
         }
-
-        Integer startSeq = startTp.getGlobalSequence();
-        Integer endSeq   = endTp.getGlobalSequence();
-        if (startSeq > endSeq) { Integer tmp = startSeq; startSeq = endSeq; endSeq = tmp; }
-
         //update global sequence
         gpxMergeHelper.assignTrackPointGlobalSequences(route.getId());
+
+        Integer startSeq = trackPointRepo.findById(startTp.getId()).map(TrackPoint::getGlobalSequence).orElseThrow(
+                () -> new FileParsingFailedException("failed to create trail segment between wp :"+start+"and"+end)
+        );
+
+        Integer endSeq   = trackPointRepo.findById(endTp.getId()).map(TrackPoint::getGlobalSequence).orElseThrow(
+                () -> new FileParsingFailedException("failed to create trail segment between wp :"+start+"and"+end)
+        );
+
+        if (startSeq > endSeq) { Integer tmp = startSeq; startSeq = endSeq; endSeq = tmp; }
 
         List<TrackPoint> points = trackPointRepo.findBetweenGlobalSequences(route.getId(), startSeq, endSeq);
         if (points.size() < 2) {
