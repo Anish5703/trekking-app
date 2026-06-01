@@ -16,6 +16,7 @@ import com.example.trekking_app.service.gpx.GpxMergeService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -55,6 +56,7 @@ public class XlsxIngestionService {
     }
 
     @Transactional
+    @Async(value = "generalTaskExecutor")
     public Integer saveAllPOI(List<POI> pois)
     {
         try{
@@ -63,12 +65,13 @@ public class XlsxIngestionService {
         }
         catch (Exception e)
         {
-            log.error("exception thrown while saving pois");
+            log.error("exception thrown while saving pois : {} : {}",e.getClass(),e.getLocalizedMessage());
             throw new FileParsingFailedException("failed to save pois");
         }
     }
 
     @Transactional
+    @Async(value = "generalTaskExecutor")
     public Integer saveAllAccommodation(List<Accommodation> acc)
     {
         try{
@@ -77,12 +80,13 @@ public class XlsxIngestionService {
         }
         catch (Exception e)
         {
-            log.error("exception thrown while saving accommodation");
+            log.error("exception thrown while saving accommodation : {} : {}",e.getClass(),e.getLocalizedMessage());
             throw new FileParsingFailedException("failed to save accommodation");
         }
     }
 
     @Transactional
+    @Async(value = "generalTaskExecutor")
     public Integer saveAllTrailSegment(List<TrailSegment> trailSegments)
     {
         try{
@@ -91,7 +95,7 @@ public class XlsxIngestionService {
         }
         catch (Exception e)
         {
-            log.error("exception thrown while saving trail segments");
+            log.error("exception thrown while saving trail segments : {} : {}",e.getClass(),e.getLocalizedMessage());
             throw new FileParsingFailedException("failed to save segments");
         }
     }

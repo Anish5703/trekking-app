@@ -50,17 +50,32 @@ public class XlsxParserHelper {
     private static final String YES = "yes";
 
 
-    public XlsxParserResult parseRow(Row row, Map<String, Integer> indexMap, Route route, Integer gpxOrderIndex)
+    public XlsxParserResult parseRow(Row row, Map<String, Integer> indexMap, Route route, Integer gpxOrderIndex,
+                                     Map<String,GpxSegment> gpxSegmentCache ,
+                                     Map<String,WayPoint> wayPointCache)
     {
-
             String wpNum = str(row, indexMap, WAYPOINT_NUMBER);
             if (wpNum == null) return null;
-                GpxSegment gpxSegment = gpxSegmentRepo.findByRoute_IdAndSegmentStatusAndOrderIndex(route.getId(), GpxSegmentStatus.WAYPOINT, gpxOrderIndex).orElseThrow(
+
+        String segmentCacheKey = route.getId()+":"+gpxOrderIndex;
+        GpxSegment gpxSegment = null;
+
+            if(!gpxSegmentCache.containsKey(segmentCacheKey)) {
+                gpxSegment = gpxSegmentRepo.findByRoute_IdAndSegmentStatusAndOrderIndex(route.getId(), GpxSegmentStatus.WAYPOINT, gpxOrderIndex).orElseThrow(
                         () -> new ResourceNotFoundException("gpx segment", "route id and order index", String.format("%d and %d respectively", route.getId(), gpxOrderIndex))
                 );
-            WayPoint wayPoint = wayPointRepo.findByRoute_IdAndGpxSegment_IdAndLocalSequence(route.getId(), gpxSegment.getId(),Integer.parseInt(wpNum)).orElseThrow(
+            }
+            else gpxSegment = gpxSegmentCache.get(segmentCacheKey);
+
+            String wayPointCacheKey = route.getId()+":"+gpxSegment.getId()+":"+wpNum;
+            WayPoint wayPoint = null;
+
+            if(!wayPointCache.containsKey(wayPointCacheKey))
+                wayPoint = wayPointRepo.findByRoute_IdAndGpxSegment_IdAndLocalSequence(route.getId(), gpxSegment.getId(),Integer.parseInt(wpNum)).orElseThrow(
                     () -> new ResourceNotFoundException("waypoint", "route id , gpx segment id and waypoint name", String.format("%d , %d and %s respectively. failed at row %d", route.getId(), gpxSegment.getId(),wpNum,row.getRowNum()))
             );
+            else wayPoint = wayPointCache.get(wayPointCacheKey);
+
             try{
 
             String trailPath = str(row, indexMap, TRAIL_PATH);
