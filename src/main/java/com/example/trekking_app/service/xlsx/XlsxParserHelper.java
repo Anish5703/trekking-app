@@ -69,10 +69,10 @@ public class XlsxParserHelper {
 
             String wayPointCacheKey = route.getId()+":"+gpxSegment.getId()+":"+wpNum;
             WayPoint wayPoint = null;
-
+            int gpxSegmentId = gpxSegment.getId();
             if(!wayPointCache.containsKey(wayPointCacheKey))
                 wayPoint = wayPointRepo.findByRoute_IdAndGpxSegment_IdAndLocalSequence(route.getId(), gpxSegment.getId(),Integer.parseInt(wpNum)).orElseThrow(
-                    () -> new ResourceNotFoundException("waypoint", "route id , gpx segment id and waypoint name", String.format("%d , %d and %s respectively. failed at row %d", route.getId(), gpxSegment.getId(),wpNum,row.getRowNum()))
+                    () -> new ResourceNotFoundException("waypoint", "route id , gpx segment id and waypoint name", String.format("%d , %d and %s respectively. failed at row %d", route.getId(), gpxSegmentId,wpNum,row.getRowNum()))
             );
             else wayPoint = wayPointCache.get(wayPointCacheKey);
 
@@ -115,7 +115,7 @@ public class XlsxParserHelper {
         }
         catch (Exception e)
         {
-            log.error("exception thrown from method XlsxParserHelper.parseRow at row {}",row.getRowNum(),e.getLocalizedMessage());
+            log.error("exception thrown from method XlsxParserHelper.parseRow at row {} : {}",row.getRowNum(),e.getLocalizedMessage());
             throw new FileParsingFailedException("failed to parse xlsx file");
         }
     }
@@ -126,8 +126,8 @@ public class XlsxParserHelper {
         List<POI>           pois           = new ArrayList<>();
         List<Accommodation> accommodations = new ArrayList<>();
         List<TrailSegment>  trailSegments       = new ArrayList<>();
-
         Map<String,TrailSegment> pendingStarts = new LinkedHashMap<>();
+        Map<WayPoint,WayPoint> pendingTrailSegments = new LinkedHashMap<>();
         for(XlsxParserResult r : rawRows)
         {
             wayPoints.add(r.getWayPoint());
@@ -157,6 +157,7 @@ public class XlsxParserHelper {
         }
         return new ParseOutput(rawRows,wayPoints,pois,accommodations,trailSegments);
     }
+
 
     public LineString generateTrailSegmentPath(WayPoint start, WayPoint end, Route route) {
 

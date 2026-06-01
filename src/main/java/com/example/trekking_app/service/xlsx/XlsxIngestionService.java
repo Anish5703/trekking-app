@@ -42,7 +42,7 @@ public class XlsxIngestionService {
         CompletableFuture<Integer> poiCount = computeService.saveAllPOI(parserOutput.pois());
         CompletableFuture<Integer> accommodationCount = computeService.saveAllAccommodation(parserOutput.accommodations());
         CompletableFuture<Integer> trailSegmentCount = computeService.saveAllTrailSegment(parserOutput.trailSegments());
-        CompletableFuture.allOf(poiCount,accommodationCount,trailSegmentCount);
+        CompletableFuture.allOf(poiCount,accommodationCount,trailSegmentCount).join();
         XlsxImportResponse importResponse = XlsxImportResponse.builder()
                 .numberOfRows(parserOutput.rawRows().size())
                 .numberOfPOI(poiCount.join())

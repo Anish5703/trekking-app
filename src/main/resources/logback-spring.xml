@@ -3,60 +3,29 @@
 
     <!--
         CONSOLE appender
-        only show WARN and ERROR here — nobody wants to read
-        hundreds of debug lines scrolling past in terminal
+        Shows INFO and above — enough signal without flooding Railway's
+        log pipeline (500 logs/sec rate limit)
     -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>WARN</level>
+            <level>INFO</level>
         </filter>
         <encoder>
-            <!-- keep it short for console, just time + level + message -->
             <pattern>%d{HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
     <!--
-        FILE appender — this gets everything (DEBUG and above)
-        uses rolling policy so the file doesn't grow forever
-        rotates daily AND whenever it hits 10MB
+        FILE appender — INFO and above, rolling daily / 50 MB
     -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>logs/app.log</file>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- rolled files look like: app-2025-05-17.1.log -->
             <fileNamePattern>logs/app-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxFileSize>50MB</maxFileSize>
-            <maxHistory>30</maxHistory>          <!-- keep last 30 days, then auto-delete -->
-            <totalSizeCap>500MB</totalSizeCap>   <!-- total folder cap just in case -->
-        </rollingPolicy>
-
-        <encoder>
-            <!-- more detailed pattern for files — easier to grep later -->
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{50} - %msg%n</pattern>
-        </encoder>
-    </appender>
-
-    <!--
-        ERROR FILE — separate file for errors only
-        really useful in prod when something breaks and you just
-        want to find exceptions fast without grepping through app.log
-    -->
-    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/error.log</file>
-
-        <!-- strict filter — only ERROR, nothing else gets in here -->
-        <filter class="ch.qos.logback.classic.filter.LevelFilter">
-            <level>ERROR</level>
-            <onMatch>ACCEPT</onMatch>
-            <onMismatch>DENY</onMismatch>
-        </filter>
-
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>logs/error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <maxFileSize>50MB</maxFileSize>
-            <maxHistory>60</maxHistory>   <!-- keep errors longer than general logs -->
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
         </rollingPolicy>
 
         <encoder>
@@ -67,26 +36,21 @@
 
     <!--
          DEV PROFILE
-         in dev we want to see everything including SQL —
-         makes debugging way easier locally
-          -->
+         In dev we want to see SQL and DEBUG output locally.
+    -->
     <springProfile name="dev">
 
-        <!-- SQL queries visible in both console and file during dev -->
+        <!-- SQL queries visible in dev -->
         <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
         </logger>
 
-        <!--
-            bind parameters (actual values like WHERE id = 42)
-            only to file even in dev — console gets noisy enough already
-        -->
+        <!-- bind parameters only to file — console gets noisy enough already -->
         <logger name="org.hibernate.orm.jdbc.bind" level="TRACE" additivity="false">
             <appender-ref ref="FILE"/>
         </logger>
 
-        <!-- everything goes to console in dev, DEBUG and above -->
         <root level="DEBUG">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
@@ -97,16 +61,14 @@
 
     <!--
          PROD PROFILE
-         console shows only what matters (warnings, errors)
-         files get the full picture for debugging later
-          -->
+         Console and file both at INFO. Hibernate SQL silenced.
+         Spring framework noise reduced to WARN.
+         App package at INFO — no DEBUG spam in production.
+    -->
     <springProfile name="prod">
 
-        <!--
-            SQL to file only in prod — never want query details
-            showing up in whatever log aggregator we're using
-        -->
-        <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+        <!-- SQL silenced in prod — too verbose, exposes query details -->
+        <logger name="org.hibernate.SQL" level="WARN" additivity="false">
             <appender-ref ref="FILE"/>
         </logger>
 
@@ -121,24 +83,17 @@
             <appender-ref ref="FILE"/>
         </logger>
 
-        <!-- root catches everything else -->
+        <!-- Application package — INFO is sufficient in production -->
+        <logger name="com.example.trekking_app" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </logger>
+
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
-            <appender-ref ref="ERROR_FILE"/>
         </root>
 
     </springProfile>
-
-
-    <!--
-        YOUR APP PACKAGE — change this to your actual base package
-        e.g. com.mycompany.myapp
-        DEBUG to file, WARN and above to console
-    -->
-    <logger name="com.yourcompany.yourapp" level="DEBUG" additivity="false">
-        <appender-ref ref="FILE"/>
-        <appender-ref ref="CONSOLE"/>
-    </logger>
 
 </configuration>
