@@ -111,11 +111,15 @@ public class JwtFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
 
-        return path.startsWith("/note/")
+        return path.startsWith("/api/v1/auth/")
+                || path.startsWith("/api/v1/oauth/")
+                || path.startsWith("/oauth2/")
+                || path.startsWith("/login/oauth2/")
                 || path.startsWith("/video/")
                 || path.startsWith("/modelQuestion/")
                 || path.startsWith("/swagger-ui")
-                || path.startsWith("/v3/api-docs");
+                || path.startsWith("/v3/api-docs")
+                || path.equals("/error");
     }
 
 }
