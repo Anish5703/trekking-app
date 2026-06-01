@@ -2,9 +2,7 @@ package com.example.trekking_app.service.route;
 
 import com.example.trekking_app.dto.geoJson.GeoJsonFeatureCollection;
 import com.example.trekking_app.dto.global.ApiResponse;
-import com.example.trekking_app.dto.route.RouteDetails;
-import com.example.trekking_app.dto.route.RouteRequest;
-import com.example.trekking_app.dto.route.RouteResponse;
+import com.example.trekking_app.dto.route.*;
 import com.example.trekking_app.entity.*;
 import com.example.trekking_app.exception.auth.UserNotFoundException;
 import com.example.trekking_app.exception.resource.NoResourceFoundException;
@@ -125,7 +123,7 @@ public class RouteService {
             throw new CreateRouteFailedException("failed to create route path");
         }
     }
-
+   @Transactional
     public ApiResponse<RouteResponse> updateRoute(@NonNull Integer routeId, @NonNull RouteRequest routeRequest,@NonNull Integer userId) {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
@@ -145,7 +143,7 @@ public class RouteService {
         RouteResponse routeResponse = routeMapper.toRouteResponse(updatedRoute);
         return new ApiResponse<>(routeResponse,"route updated",200);
     }
-
+   @Transactional
     public ApiResponse<Void> deleteRoute(@NonNull Integer routeId)
     {
         Route route = routeRepo.findById(routeId).orElseThrow(
@@ -164,5 +162,15 @@ public class RouteService {
 
     }
 
+    @Transactional(readOnly = true)
+    public ApiResponse<List<NearbyRouteResponse>> getNearbyRoutes(NearbyRouteRequest routeRequest)
+    {
+        List<NearbyRouteProjection> nearbyRoutes = routeRepo.findNearbyRoutes(routeRequest.getLatitude(),
+                routeRequest.getLongitude(),
+                routeRequest.getRadiusMeters(),routeRequest.getLimit());
+        if(nearbyRoutes.isEmpty()) throw new NoResourceFoundException("nearby routes");
+        List<NearbyRouteResponse> routeResponses = nearbyRoutes.stream().map(routeMapper::toNearbyRouteResponse).toList();
+        return new ApiResponse<>(routeResponses,"nearby route fetched",200);
+    }
 }
 

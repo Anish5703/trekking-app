@@ -1,10 +1,14 @@
 package com.example.trekking_app.repository;
 
+import com.example.trekking_app.dto.route.NearbyRouteProjection;
+import com.example.trekking_app.dto.route.NearbyRouteResponse;
 import com.example.trekking_app.entity.Route;
 import org.jspecify.annotations.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -21,4 +25,36 @@ Page<Route> findAll(@NonNull Pageable pageable);
 long count();
 
     boolean existsByNameAndDestination_Id(String name, Integer id);
+
+    @Query(value = """
+    SELECT
+        r.id,
+        r.name,
+        r.description,
+        r.difficulty_level,
+        r.distance_in_km,
+        r.estimated_days,
+        r.route_status,
+        d.name AS destination_name,
+        ST_Distance(
+            r.path::geography,
+            ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography
+        ) AS distance_meters
+    FROM routes r
+        JOIN destinations d ON d.id = r.destination_id
+    WHERE ST_DWithin(
+        r.path::geography,
+        ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography,
+        :radiusMeters
+    )
+    AND r.route_status = 'MERGED'
+    ORDER BY distance_meters ASC
+    LIMIT :limit
+    """, nativeQuery = true)
+    List<NearbyRouteProjection> findNearbyRoutes(
+            @Param("lon") double longitude,
+            @Param("lat") double latitude,
+            @Param("radiusMeters") double radiusMeters,
+            @Param("limit") int limit
+    );
 }

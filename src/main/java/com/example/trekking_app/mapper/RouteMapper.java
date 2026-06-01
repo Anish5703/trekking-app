@@ -1,8 +1,6 @@
 package com.example.trekking_app.mapper;
 
-import com.example.trekking_app.dto.route.RouteDetails;
-import com.example.trekking_app.dto.route.RouteRequest;
-import com.example.trekking_app.dto.route.RouteResponse;
+import com.example.trekking_app.dto.route.*;
 import com.example.trekking_app.entity.Destination;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.User;
@@ -56,5 +54,18 @@ public class RouteMapper {
                  .build();
 
 
+    }
+    public NearbyRouteResponse toNearbyRouteResponse(@NonNull NearbyRouteProjection projections)
+    {
+        return NearbyRouteResponse.builder()
+                .routeId(projections.getId())
+                .routeName(projections.getName())
+                .estimatedDays(projections.getEstimatedDays())
+                .difficultyLevel(projections.getDifficultyLevel())
+                .description(projections.getDescription())
+                .routeDistanceInKm(projections.getDistanceInKm())
+                .destinationName(projections.getDestinationName())
+                .distanceToStartPoint(projections.getDistanceMeters()!=null || projections.getDistanceMeters()>1.0? projections.getDistanceMeters()/1000 : projections.getDistanceMeters())
+                .build();
     }
 }

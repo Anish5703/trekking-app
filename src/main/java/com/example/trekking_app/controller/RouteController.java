@@ -2,9 +2,7 @@ package com.example.trekking_app.controller;
 import com.example.trekking_app.dto.geoJson.GeoJsonFeature;
 import com.example.trekking_app.dto.geoJson.GeoJsonFeatureCollection;
 import com.example.trekking_app.dto.global.ApiResponse;
-import com.example.trekking_app.dto.route.RouteDetails;
-import com.example.trekking_app.dto.route.RouteRequest;
-import com.example.trekking_app.dto.route.RouteResponse;
+import com.example.trekking_app.dto.route.*;
 import com.example.trekking_app.service.route.RouteService;
 import lombok.NonNull;
 import org.springframework.data.domain.Page;
@@ -52,4 +50,16 @@ public class RouteController {
         return ResponseEntity.status(200).body(response);
     }
 
+    @GetMapping("/nearby")
+    public ResponseEntity<ApiResponse<List<NearbyRouteResponse>>> handleGetNearbyRoutes(@RequestParam Double longitude ,
+                                                                                        @RequestParam Double latitude,
+                                                                                        @RequestParam Double radiusMeters,
+                                                                                        @RequestParam Integer limit)
+    {
+        NearbyRouteRequest request = NearbyRouteRequest.builder().
+                longitude(longitude).latitude(latitude).radiusMeters(radiusMeters).limit(limit).
+                build();
+        ApiResponse<List<NearbyRouteResponse>> response = routeService.getNearbyRoutes(request);
+        return ResponseEntity.status(200).body(response);
+    }
 }

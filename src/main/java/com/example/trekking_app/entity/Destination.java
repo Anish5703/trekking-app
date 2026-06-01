@@ -3,7 +3,7 @@ package com.example.trekking_app.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-@Table(name ="destination",
+@Table(name ="destinations",
 uniqueConstraints = {
         @UniqueConstraint(columnNames = {"name","district","region"})
 })

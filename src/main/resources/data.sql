@@ -1,3 +1,4 @@
+CREATE INDEX IF NOT EXISTS idx_routes_path ON routes USING GIST(path);
 INSERT INTO users (
     name,
     email,

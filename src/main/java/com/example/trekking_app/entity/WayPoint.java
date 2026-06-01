@@ -20,7 +20,10 @@ import java.util.List;
 },
         indexes = {
                 @Index(name = "idx_route_gpx_wp_name", columnList = "route_id,gpx_segment_id,name"),
-                @Index(name="idx_route_gpx_wp_localsequece",columnList = "route_id,gpx_segment_id,local_sequence")})
+                @Index(name="idx_route_gpx_wp_localsequece",columnList = "route_id,gpx_segment_id,local_sequence"),
+                @Index(name = "idx_route_global_sequence",columnList = "route_id,global_sequence"),
+                @Index(name = "idx_route_gpx_global_sequence",columnList = "route_id,gpx_segment_id,global_sequence")})
+
 
 @NoArgsConstructor
 @AllArgsConstructor

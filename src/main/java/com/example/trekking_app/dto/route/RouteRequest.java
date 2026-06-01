@@ -21,7 +21,7 @@ public class RouteRequest {
     private String name;
 
     @NotNull(message = "route destination is required")
-    private int destinationId;
+    private Integer destinationId;
 
     @NotBlank(message = "route description cannot be null")
     private String description;
