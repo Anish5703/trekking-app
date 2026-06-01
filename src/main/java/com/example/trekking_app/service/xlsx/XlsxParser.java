@@ -51,6 +51,8 @@ public class XlsxParser {
             int gpxOrderIndex = 1;
             double prevWpNum = -1;
 
+            Map<String,GpxSegment> gpxSegmentCache = new HashMap<>();
+            Map<String, WayPoint> wayPointCache = new HashMap<>();
             for (int r = 1; r <= sheet.getLastRowNum(); r++)
             {
                 Row row = sheet.getRow(r);
@@ -58,8 +60,6 @@ public class XlsxParser {
 
                 // ── GPX segment boundary: waypoint number went backwards ───────
                 Double wpNum = helper.dbl(row, indexMap, WAYPOINT_NUMBER);
-                Map<String,GpxSegment> gpxSegmentCache = new HashMap<>();
-                Map<String, WayPoint> wayPointCache = new HashMap<>();
 
                 if(wpNum!=null && wpNum==0) {
                     gpxOrderIndex++;
