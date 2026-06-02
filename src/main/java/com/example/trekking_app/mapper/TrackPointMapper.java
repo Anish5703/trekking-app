@@ -1,5 +1,6 @@
 package com.example.trekking_app.mapper;
 
+import com.example.trekking_app.dto.trackpoint.TrackPointInfo;
 import com.example.trekking_app.dto.trackpoint.TrackPointRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointResponse;
 import com.example.trekking_app.entity.TrackPoint;
@@ -41,6 +42,16 @@ public class TrackPointMapper {
         Point point = GF.createPoint(new Coordinate(trackPointRequest.getLongitude(), trackPointRequest.getLatitude()));
         trackPoint.setGeom(point);
         return trackPoint;
+    }
+
+    public TrackPointInfo toTrackPointInfo(TrackPoint tp)
+    {
+        return TrackPointInfo.builder()
+                .id(tp.getId())
+                .longitude(tp.getLongitude())
+                .latitude(tp.getLatitude())
+                .globalSequence(tp.getGlobalSequence())
+                .build();
     }
 
 }
