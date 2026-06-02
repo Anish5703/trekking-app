@@ -119,6 +119,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 || path.startsWith("/modelQuestion/")
                 || path.startsWith("/swagger-ui")
                 || path.startsWith("/v3/api-docs")
+                || path.startsWith("/debug")
                 || path.equals("/error");
     }
 
