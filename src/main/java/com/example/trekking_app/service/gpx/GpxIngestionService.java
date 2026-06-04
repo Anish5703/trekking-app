@@ -16,6 +16,7 @@ import com.example.trekking_app.repository.WayPointRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,7 +38,7 @@ public class GpxIngestionService {
     private final GpxMergeService gpxMergeService;
     private final GpxSegmentMapper gpxSegmentMapper = new GpxSegmentMapper();
 
-
+    @CacheEvict(value = "route-geoJson" , key = "#routeId" , allEntries = true)
     @Transactional
     public ApiResponse<List<GpxImportResponse>> uploadGpxFiles(@NonNull Integer routeId , List<MultipartFile> files ,@NonNull GpxSegmentStatus segmentStatus) throws IOException {
         Route route = routeRepo.findById(routeId).orElseThrow(
@@ -96,6 +97,7 @@ public class GpxIngestionService {
 
     }
 
+    @CacheEvict(key = "route-geoJson",value = "#routeId")
     @Transactional
     public ApiResponse<Void> reorderGpxSegment(@NonNull GpxSegmentOrderRequest segmentOrderRequest , @NonNull Integer routeId, @NonNull GpxSegmentStatus segmentStatus)
     {
@@ -115,6 +117,7 @@ public class GpxIngestionService {
         return new ApiResponse<>(null,message,200);
     }
 
+    @CacheEvict(key = "route-geoJson",value = "#routeId")
     @Transactional
     public ApiResponse<Void> deleteGpxSegment(@NonNull Integer gpxSegmentId,@NonNull Integer routeId,@NonNull GpxSegmentStatus segmentStatus)
     {
@@ -145,6 +148,7 @@ public class GpxIngestionService {
         }
     }
 
+    @CacheEvict(key = "route-geoJson",value = "#routeId")
     public ApiResponse<Void> remergeGpxSegment(Integer routeId,@NonNull GpxSegmentStatus segmentStatus)
     {
 

@@ -13,9 +13,12 @@ import com.example.trekking_app.mapper.GeoJsonMapper;
 import com.example.trekking_app.mapper.RouteMapper;
 import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.repository.*;
+import jakarta.annotation.Nonnull;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -98,11 +101,13 @@ public class RouteService {
         }
     }
 
+    @Cacheable(value="route-geoJson",key ="#routeId + ':' + #tolerance" )
     @Transactional(readOnly = true)
-    public GeoJsonFeatureCollection getRoutePath(@NonNull Integer routeId) {
+    public GeoJsonFeatureCollection getRouteGeoJson(@NonNull Integer routeId,@Nonnull Double tolerance) {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
+        log.info("fetching geoJson for route {}",routeId);
         if(route.getPath()==null) throw new CreateRouteFailedException("no path created for this route");
         switch (route.getRouteStatus()) {
             case IDLE ->
@@ -116,13 +121,14 @@ public class RouteService {
                     throw new IllegalStateException("Unexpected route status: " + route.getRouteStatus());
         }
         try {
-            return geoJsonMapper.toGeoJson(route);
+            return geoJsonMapper.toGeoJson(route,tolerance);
 
         } catch (Exception e) {
             log.error("failed to convert route path to geo json : {}", e.getLocalizedMessage());
             throw new CreateRouteFailedException("failed to create route path");
         }
     }
+    @CacheEvict(value="route-geoJson",key = "#routeId" , allEntries = true)
    @Transactional
     public ApiResponse<RouteResponse> updateRoute(@NonNull Integer routeId, @NonNull RouteRequest routeRequest,@NonNull Integer userId) {
         Route route = routeRepo.findById(routeId).orElseThrow(
@@ -143,6 +149,7 @@ public class RouteService {
         RouteResponse routeResponse = routeMapper.toRouteResponse(updatedRoute);
         return new ApiResponse<>(routeResponse,"route updated",200);
     }
+    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
    @Transactional
     public ApiResponse<Void> deleteRoute(@NonNull Integer routeId)
     {

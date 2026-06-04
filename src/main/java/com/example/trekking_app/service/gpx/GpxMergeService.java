@@ -5,6 +5,7 @@ import com.example.trekking_app.model.RouteStatus;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -14,7 +15,7 @@ public class GpxMergeService {
 
    private final GpxMergeHelper mergeHelper;
 
-   public void mergeTrackPoints(@NonNull Integer routeId){
+    public void mergeTrackPoints(@NonNull Integer routeId){
     mergeHelper.updateRouteStatus(routeId, RouteStatus.MERGING);
     try {
         mergeHelper.assignTrackPointGlobalSequences(routeId);
@@ -25,7 +26,6 @@ public class GpxMergeService {
         throw new ResourceMergeFailedException("trackpoints", "route id", routeId);
     }
 }
-
 public void mergeWayPoints(@NonNull Integer routeId)
 {
     try{

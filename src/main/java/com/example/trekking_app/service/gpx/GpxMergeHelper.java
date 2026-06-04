@@ -13,6 +13,7 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.PrecisionModel;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,17 +28,20 @@ public class GpxMergeHelper {
     private final RouteRepository routeRepo;
     private final WayPointRepository wayPointRepo;
 
+    @CacheEvict(key = "route-geoJson",value = "#routeId" , allEntries = true)
     @Transactional                          // short transaction — one UPDATE, releases immediately
     public void assignTrackPointGlobalSequences(Integer routeId) {
         trackPointRepo.updateGlobalSequences(routeId);
     }
 
+    @CacheEvict(key = "route-geoJson",value = "#routeId" , allEntries = true)
     @Transactional
     public void assignWayPointGlobalSequences(Integer routeId)
     {
         wayPointRepo.updateGlobalSequences(routeId);
     }
 
+    @CacheEvict(key = "route-geoJson",value = "#routeId" , allEntries = true)
     @Transactional                          // short transaction — load, compute, save, release
     public void finalizeRoute(Integer routeId) {
         Route route = routeRepo.findById(routeId).orElseThrow(
