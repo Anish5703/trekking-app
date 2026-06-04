@@ -2,6 +2,7 @@ package com.example.trekking_app.service.xlsx;
 
 import com.example.trekking_app.entity.GpxSegment;
 import com.example.trekking_app.entity.Route;
+import com.example.trekking_app.entity.WayPoint;
 import com.example.trekking_app.exception.route.FileParsingFailedException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +51,8 @@ public class XlsxParser {
             int gpxOrderIndex = 1;
             double prevWpNum = -1;
 
+            Map<String,GpxSegment> gpxSegmentCache = new HashMap<>();
+            Map<String, WayPoint> wayPointCache = new HashMap<>();
             for (int r = 1; r <= sheet.getLastRowNum(); r++)
             {
                 Row row = sheet.getRow(r);
@@ -67,8 +70,8 @@ public class XlsxParser {
                     gpxOrderIndex++;
                 }
                 if (wpNum != null) prevWpNum = wpNum;
-
-                XlsxParserResult result = helper.parseRow(row, indexMap, route, gpxOrderIndex);
+                XlsxParserResult result = helper.parseRow(row, indexMap, route, gpxOrderIndex,
+                        gpxSegmentCache,wayPointCache);
                 if (result != null) rawRows.add(result);
             }
             return helper.partition(rawRows,route);

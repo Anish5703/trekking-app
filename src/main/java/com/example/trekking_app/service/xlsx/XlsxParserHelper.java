@@ -1,14 +1,17 @@
 package com.example.trekking_app.service.xlsx;
 
+import com.example.trekking_app.dto.trackpoint.TrackPointInfo;
 import com.example.trekking_app.entity.*;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.route.FileParsingFailedException;
+import com.example.trekking_app.mapper.TrackPointMapper;
 import com.example.trekking_app.model.*;
 import com.example.trekking_app.repository.GpxSegmentRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
 import com.example.trekking_app.repository.WayPointRepository;
 import com.example.trekking_app.service.gpx.GpxMergeHelper;
 import com.example.trekking_app.service.gpx.GpxMergeService;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
@@ -18,6 +21,7 @@ import org.locationtech.jts.geom.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -33,6 +37,7 @@ public class XlsxParserHelper {
     private final GpxSegmentRepository gpxSegmentRepo;
     private final TrackPointRepository trackPointRepo;
     private final GpxMergeHelper gpxMergeHelper;
+    private final TrackPointMapper tpMapper = new TrackPointMapper();
 
 
     private static final Set<String> ACCOMMODATION_STOPS = Set.of("hotel", "tea house");
@@ -50,17 +55,32 @@ public class XlsxParserHelper {
     private static final String YES = "yes";
 
 
-    public XlsxParserResult parseRow(Row row, Map<String, Integer> indexMap, Route route, Integer gpxOrderIndex)
+    public XlsxParserResult parseRow(Row row, Map<String, Integer> indexMap, Route route, Integer gpxOrderIndex,
+                                     Map<String,GpxSegment> gpxSegmentCache ,
+                                     Map<String,WayPoint> wayPointCache)
     {
-
             String wpNum = str(row, indexMap, WAYPOINT_NUMBER);
             if (wpNum == null) return null;
-                GpxSegment gpxSegment = gpxSegmentRepo.findByRoute_IdAndSegmentStatusAndOrderIndex(route.getId(), GpxSegmentStatus.WAYPOINT, gpxOrderIndex).orElseThrow(
+
+        String segmentCacheKey = route.getId()+":"+gpxOrderIndex;
+        GpxSegment gpxSegment = null;
+
+            if(!gpxSegmentCache.containsKey(segmentCacheKey)) {
+                gpxSegment = gpxSegmentRepo.findByRoute_IdAndSegmentStatusAndOrderIndex(route.getId(), GpxSegmentStatus.WAYPOINT, gpxOrderIndex).orElseThrow(
                         () -> new ResourceNotFoundException("gpx segment", "route id and order index", String.format("%d and %d respectively", route.getId(), gpxOrderIndex))
                 );
-            WayPoint wayPoint = wayPointRepo.findByRoute_IdAndGpxSegment_IdAndLocalSequence(route.getId(), gpxSegment.getId(),Integer.parseInt(wpNum)).orElseThrow(
-                    () -> new ResourceNotFoundException("waypoint", "route id , gpx segment id and waypoint name", String.format("%d , %d and %s respectively. failed at row %d", route.getId(), gpxSegment.getId(),wpNum,row.getRowNum()))
+            }
+            else gpxSegment = gpxSegmentCache.get(segmentCacheKey);
+
+            String wayPointCacheKey = route.getId()+":"+gpxSegment.getId()+":"+wpNum;
+            WayPoint wayPoint = null;
+            int gpxSegmentId = gpxSegment.getId();
+            if(!wayPointCache.containsKey(wayPointCacheKey))
+                wayPoint = wayPointRepo.findByRoute_IdAndGpxSegment_IdAndLocalSequence(route.getId(), gpxSegment.getId(),Integer.parseInt(wpNum)).orElseThrow(
+                    () -> new ResourceNotFoundException("waypoint", "route id , gpx segment id and waypoint name", String.format("%d , %d and %s respectively. failed at row %d", route.getId(), gpxSegmentId,wpNum,row.getRowNum()))
             );
+            else wayPoint = wayPointCache.get(wayPointCacheKey);
+
             try{
 
             String trailPath = str(row, indexMap, TRAIL_PATH);
@@ -100,7 +120,7 @@ public class XlsxParserHelper {
         }
         catch (Exception e)
         {
-            log.error("exception thrown from method XlsxParserHelper.parseRow at row {}",row.getRowNum(),e.getLocalizedMessage());
+            log.error("exception thrown from method XlsxParserHelper.parseRow at row {} : {}",row.getRowNum(),e.getLocalizedMessage());
             throw new FileParsingFailedException("failed to parse xlsx file");
         }
     }
@@ -111,8 +131,15 @@ public class XlsxParserHelper {
         List<POI>           pois           = new ArrayList<>();
         List<Accommodation> accommodations = new ArrayList<>();
         List<TrailSegment>  trailSegments       = new ArrayList<>();
-
         Map<String,TrailSegment> pendingStarts = new LinkedHashMap<>();
+
+        //store completed trail segments for batch processing
+        List<TrailSegment> completedTrailSegments = new ArrayList<>();
+
+        //store trackpoint id mappings for later use
+        Map<TrackPoint,Integer> segmentStartTpIds = new HashMap<>();
+        Map<TrackPoint,Integer> segmentEndTpsIds = new HashMap<>();
+
         for(XlsxParserResult r : rawRows)
         {
             wayPoints.add(r.getWayPoint());
@@ -130,9 +157,13 @@ public class XlsxParserHelper {
                         if(startStub != null)
                         {
                             startStub.setEndWaypoint(stub.getEndWaypoint());
+                            completedTrailSegments.add(startStub);
+                            /*
                             LineString path = generateTrailSegmentPath(startStub.getStartWaypoint(),startStub.getEndWaypoint(),route);
                             startStub.setPath(path);
                             trailSegments.add(startStub);
+
+                             */
                         }
                     }
                 }
@@ -140,9 +171,92 @@ public class XlsxParserHelper {
                 case POI -> pois.add(r.getPoi());
             }
         }
+        if(!completedTrailSegments.isEmpty())
+            trailSegments.addAll(generateAllTrailSegmentPaths(completedTrailSegments,route));
+
         return new ParseOutput(rawRows,wayPoints,pois,accommodations,trailSegments);
     }
 
+   @Transactional
+    public List<TrailSegment> generateAllTrailSegmentPaths(List<TrailSegment> segments,Route route)
+    {
+          if(segments.isEmpty())
+          {
+              log.warn("no trail segments to process");
+              return null;
+          }
+          log.info("Starting batch path generation for {} segments",segments.size());
+
+          Map<TrailSegment, TrackPointInfo> startTpInfos = new HashMap<>();
+          Map<TrailSegment,TrackPointInfo>  endTpInfos = new HashMap<>();
+
+          segments.forEach(segment -> {
+              TrackPoint startTp = resolveOrInsertTrackPoint(segment.getStartWaypoint(),route);
+              TrackPoint endTp = resolveOrInsertTrackPoint(segment.getEndWaypoint(),route);
+
+              if(startTp != null) startTpInfos.put(segment, tpMapper.toTrackPointInfo(startTp));
+
+              if (endTp != null) endTpInfos.put(segment,tpMapper.toTrackPointInfo(endTp));
+
+          });
+          log.info("Recalculating global sequences for route {}",route.getId());
+          gpxMergeHelper.assignTrackPointGlobalSequences(route.getId());
+
+          log.info("Generating Line String for trail segments {}",Instant.now());
+          for(TrailSegment segment : segments)
+          {
+                  TrackPointInfo startTpInfo = startTpInfos.get(segment);
+                  TrackPointInfo endTpInfo = endTpInfos.get(segment);
+
+                  if (startTpInfo == null || endTpInfo == null) {
+                      log.warn("Missing trackpoint info for segment {}, using straight line", segment.getId());
+                      segment.setPath(straightLine(segment.getStartWaypoint(), segment.getEndWaypoint()));
+                      continue;
+                  }
+                  Optional<TrackPoint> startTp = trackPointRepo.findById(startTpInfo.getId());
+                  Optional<TrackPoint> endTp = trackPointRepo.findById(endTpInfo.getId());
+
+                  if (startTp.isEmpty() || endTp.isEmpty()) {
+                      log.warn("Missing trackpoint from database for segment {}, using straight line", segment.getId());
+                      segment.setPath(straightLine(segment.getStartWaypoint(), segment.getEndWaypoint()));
+                      continue;
+                  }
+                  LineString path = generateTrailSegmentPath(startTp.get(), endTp.get(), route);
+                  segment.setPath(path);
+
+          }
+          log.info("Finished generating line string at {}", Instant.now());
+          return segments;
+
+    }
+    @Transactional
+    private LineString generateTrailSegmentPath(@NonNull TrackPoint startTp, @NonNull TrackPoint endTp,@NonNull Route route)
+    {
+        Integer startSeq = startTp.getGlobalSequence();
+        Integer endSeq = endTp.getGlobalSequence();
+
+        if (startSeq == null || endSeq == null) {
+            log.debug("Global sequences not yet assigned for TrackPoint ids {} and {}, using straight line",
+                    startTp.getId(), endTp.getId());
+            return straightLine(startTp,endTp);
+        }
+       if(startSeq>endSeq) {Integer temp = startSeq;startSeq = endSeq; endSeq = startSeq;}
+        List<TrackPoint> points = trackPointRepo.findBetweenGlobalSequences(route.getId(), startSeq, endSeq);
+        if (points.size() < 2)
+        {
+            log.warn("Not enough trackpoints ({}) between globalSeq {} and {} for route {}", points.size(), startSeq, endSeq, route.getId());
+            return straightLine(startTp, endTp);
+        }
+
+        Coordinate[] coords = points.stream()
+                .map(tp -> new Coordinate(tp.getLongitude(), tp.getLatitude()))
+                .toArray(Coordinate[]::new);
+        return GF.createLineString(coords);
+
+    }
+
+
+ @Deprecated(since = "version 2.0")
     public LineString generateTrailSegmentPath(WayPoint start, WayPoint end, Route route) {
 
         TrackPoint startTp = resolveOrInsertTrackPoint(start, route);
@@ -226,6 +340,12 @@ public class XlsxParserHelper {
     }
 
     private LineString straightLine(WayPoint start, WayPoint end) {
+        return GF.createLineString(new Coordinate[]{
+                new Coordinate(start.getLongitude(), start.getLatitude()),
+                new Coordinate(end.getLongitude(), end.getLatitude())
+        });
+    }
+    private LineString straightLine(TrackPoint start, TrackPoint end) {
         return GF.createLineString(new Coordinate[]{
                 new Coordinate(start.getLongitude(), start.getLatitude()),
                 new Coordinate(end.getLongitude(), end.getLatitude())
