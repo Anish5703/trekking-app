@@ -8,6 +8,12 @@ import com.example.trekking_app.entity.Accommodation;
 import com.example.trekking_app.entity.POI;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrailSegment;
+import jakarta.annotation.Nonnull;
+import lombok.NonNull;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.simplify.DouglasPeuckerSimplifier;
+import org.locationtech.jts.simplify.TopologyPreservingSimplifier;
 
 import java.util.*;
 
@@ -18,14 +24,15 @@ public class GeoJsonMapper {
     private final String TRAIL_SEGMENT_ID_PREFIX = "trail_segment:";
     private final String ACCOMMODATION_ID_PREFIX = "accommodation:";
 
-    public GeoJsonFeatureCollection toGeoJson(Route route) {
+    public GeoJsonFeatureCollection toGeoJson(@NonNull Route route, @Nonnull Double tolerance) {
         List<GeoJsonFeature> features = new ArrayList<>();
 
-        features.add(buildRouteFeature(route));
+        features.add(buildRouteFeature(route,tolerance));
 
         if (route.getTrailSegments() != null) {
             route.getTrailSegments().stream()
-                    .map(this::buildTrailSegmentFeature)
+                    .map(segment -> buildTrailSegmentFeature(segment,tolerance))
+                    .filter(Objects::nonNull)
                     .forEach(features::add);
         }
 
@@ -44,9 +51,11 @@ public class GeoJsonMapper {
         return new GeoJsonFeatureCollection("FeatureCollection", features);
     }
 
-    public GeoJsonFeature buildRouteFeature(Route route) {
-
-        List<List<Double>> coords = Arrays.stream(route.getPath().getCoordinates())
+    public GeoJsonFeature buildRouteFeature(@NonNull Route route,@NonNull Double tolerance) {
+        LineString geom = route.getPath();
+        if(geom == null) return null;
+        Geometry simplifiedGeom = TopologyPreservingSimplifier.simplify(geom,tolerance);
+        List<List<Double>> coords = Arrays.stream(simplifiedGeom.getCoordinates())
                 .map(coord -> List.of(coord.x, coord.y))
                 .toList();
 
@@ -65,10 +74,12 @@ public class GeoJsonMapper {
                 properties(properties).build();
     }
 
-    public GeoJsonFeature buildTrailSegmentFeature(TrailSegment segment)
+    public GeoJsonFeature buildTrailSegmentFeature(@NonNull TrailSegment segment,@NonNull Double tolerance)
     {
-        if(segment.getPath()==null) return null;
-        List<List<Double>> coords = Arrays.stream(segment.getPath().getCoordinates())
+        LineString geom = segment.getPath();
+        if(geom==null) return null;
+        Geometry simplifiedGeom = TopologyPreservingSimplifier.simplify(geom,tolerance);
+        List<List<Double>> coords = Arrays.stream(simplifiedGeom.getCoordinates())
                          .map(c -> List.of(c.x,c.y))
                         .toList();
 
@@ -84,7 +95,7 @@ public class GeoJsonMapper {
 
     }
 
-    private GeoJsonFeature buildPoiFeature(POI poi) {
+    private GeoJsonFeature buildPoiFeature(@NonNull POI poi) {
         List<Double> coords = List.of(
                 poi.getLongitude(),
                 poi.getLatitude()

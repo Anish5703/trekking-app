@@ -147,7 +147,7 @@ public class GpxParserService {
                     .build();
 
         } catch (Exception e) {
-            log.error("GPX file parsing failed for extracting trackpoints{}", file.getOriginalFilename(), e.getLocalizedMessage());
+            log.error("GPX file parsing failed for extracting trackpoints{} , error : {}", file.getOriginalFilename(), e.getLocalizedMessage());
             throw new FileParsingFailedException("Invalid GPX file for extraction of trackpoints: " + file.getOriginalFilename());
         }
     }

@@ -1,16 +1,19 @@
 package com.example.trekking_app.controller;
-import com.example.trekking_app.dto.geoJson.GeoJsonFeature;
 import com.example.trekking_app.dto.geoJson.GeoJsonFeatureCollection;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.*;
 import com.example.trekking_app.service.route.RouteService;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/route")
 public class RouteController {
@@ -36,10 +39,13 @@ public class RouteController {
         return ResponseEntity.status(200).body(response);
     }
 
-    @GetMapping("/{routeId}/path")
-    public ResponseEntity<GeoJsonFeatureCollection> handleGetRoutePath(@NonNull @PathVariable Integer routeId)
+    @GetMapping("/{routeId}/geoJson")
+    public ResponseEntity<GeoJsonFeatureCollection> handleGetRouteGeoJson(@NonNull @PathVariable Integer routeId,
+                                                                       @RequestParam (defaultValue = "0.00001")Double tolerance)
     {
-        GeoJsonFeatureCollection response = routeService.getRoutePath(routeId);
+        Instant startTime = Instant.now();
+        GeoJsonFeatureCollection response = routeService.getRouteGeoJson(routeId,tolerance);
+        log.info("Fetched route geJson in {} ms", Duration.between(startTime,Instant.now()).toMillis());
         return ResponseEntity.status(200).body(response);
     }
 
