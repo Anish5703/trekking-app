@@ -238,6 +238,7 @@ public class AuthService {
         User user = userRepo.findByEmail(email).orElseThrow(
                 () -> new ResourceNotFoundException("user","email",email)
         );
+        if(!user.isEmailVerified()) throw new EmailNotVerifiedException("Email not verified ! Check signup confirmation link in inbox or signup again");
         Optional<Token> token = tokenRepo.findByUser(user);
         token.ifPresent(tokenRepo::delete);
         mailService.sendForgotPasswordResetMail(user);
