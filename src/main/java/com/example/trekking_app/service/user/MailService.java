@@ -4,6 +4,13 @@ import com.example.trekking_app.entity.Token;
 import com.example.trekking_app.entity.User;
 import com.example.trekking_app.mapper.TokenMapper;
 import com.example.trekking_app.repository.TokenRepository;
+import com.sendgrid.Method;
+import com.sendgrid.Request;
+import com.sendgrid.Response;
+import com.sendgrid.SendGrid;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
 import jakarta.mail.internet.MimeMessage;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -15,15 +22,15 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class MailService {
-
-private final JavaMailSender mailSender;
+//private final JavaMailSender mailSender;
+private final SendGrid sendGrid;
 private final TokenRepository tokenRepo;
 private final TokenMapper tokenMapper = new TokenMapper();
 
@@ -35,6 +42,12 @@ private String forgotPasswordResetConfirmationUrl;
 
 @Value("${app.mail.from}")
 private String fromEmail;
+
+public MailService(TokenRepository tokenRepo,@Value("${sendgrid.api.key}") String apiKey)
+{
+    this.tokenRepo = tokenRepo;
+    this.sendGrid = new SendGrid(apiKey);
+}
 
 @Async("mailTaskExecutor")
 public void sendSignupConfirmationMail(@NonNull User user) {
@@ -48,6 +61,7 @@ public void sendSignupConfirmationMail(@NonNull User user) {
     String confirmationLink = getSignupVerificationUrl()+savedToken.getTokenName();
     String htmlContent = buildSignupConfirmationEmail(user.getName(),confirmationLink);
 
+    /*
     MimeMessage message = mailSender.createMimeMessage();
     MimeMessageHelper helper = new MimeMessageHelper(message, true);
     helper.addTo(user.getEmail());
@@ -55,6 +69,10 @@ public void sendSignupConfirmationMail(@NonNull User user) {
     helper.setSubject(subject);
     helper.setText(htmlContent,true);
     mailSender.send(message);
+     */
+
+    sendMail(user.getEmail(), subject,htmlContent);
+
     log.info("Signup confirmation mail send to {}",user.getEmail());
 }
     catch(Exception ex)
@@ -74,7 +92,7 @@ public void sendForgotPasswordResetMail(@NonNull User user)
         String subject = "Password Reset Mail";
         String confirmationLink = getResetForgotPasswordUrl() + savedToken.getTokenName();
         String htmlContent = buildResetForgotPasswordConfirmationEmail(user.getName(), confirmationLink);
-
+        /*
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true);
         helper.addTo(user.getEmail());
@@ -82,6 +100,9 @@ public void sendForgotPasswordResetMail(@NonNull User user)
         helper.setSubject(subject);
         helper.setText(htmlContent, true);
         mailSender.send(message);
+
+         */
+        sendMail(user.getEmail(), subject,htmlContent);
         log.info("Password reset mail send to {}",user.getEmail());
     }
     catch (Exception ex)
@@ -265,6 +286,26 @@ public void sendForgotPasswordResetMail(@NonNull User user)
     """, username, resetLink, resetLink, resetLink);
     }
 
+    private void sendMail(String toEmail, String subject, String htmlContent) throws IOException {
+        Email from = new Email(fromEmail);
+        Email to = new Email(toEmail);
+
+        Content content = new Content("text/html", htmlContent);
+        Mail mail = new Mail(from, subject, to, content);
+        mail.setReplyTo(new Email(fromEmail));
+
+        Request request = new Request();
+        request.setMethod(Method.POST);
+        request.setEndpoint("mail/send");
+        request.setBody(mail.build());
+
+        Response response = sendGrid.api(request);
+
+        if (response.getStatusCode() >= 400) {
+            log.error("SendGrid error: {} - {}", response.getStatusCode(), response.getBody());
+            throw new IOException("SendGrid rejected the request: " + response.getStatusCode());
+        }
+    }
 
 
     //Method to generate confirmation URL excluding token
