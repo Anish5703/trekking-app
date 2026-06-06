@@ -173,7 +173,7 @@ public class GlobalExceptionHandler {
     {
         log.error("JwtException : {}",ex.getLocalizedMessage());
         ErrorResponse data = new ErrorResponse(ErrorType.LOGIN_FAILED,ex.getMessage());
-        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),401);
         return ResponseEntity.badRequest().body(response);
     }
 

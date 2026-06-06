@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -40,6 +41,7 @@ public class RouteService {
     private final RouteMapper routeMapper = new RouteMapper();
     private final GeoJsonMapper geoJsonMapper = new GeoJsonMapper();
     private final GpxSegmentRepository gpxSegmentRepo;
+    private final RecentlyViewedRepository recentlyViewedRepo;
 
 
 
@@ -178,6 +180,56 @@ public class RouteService {
         if(nearbyRoutes.isEmpty()) throw new NoResourceFoundException("nearby routes");
         List<NearbyRouteResponse> routeResponses = nearbyRoutes.stream().map(routeMapper::toNearbyRouteResponse).toList();
         return new ApiResponse<>(routeResponses,"nearby route fetched",200);
+    }
+
+    public ApiResponse<Page<RouteDetails>> getRecentlyViewedRoutes(@NonNull Integer userId , @NonNull Integer page, @NonNull Integer size)
+    {
+        User user = userRepo.findById(userId).orElseThrow(
+                () -> new ResourceNotFoundException("user","id",userId)
+        );
+
+        Pageable pageable = PageRequest.of(page,size);
+        Page<RouteDetails> recentlyViewedRoutes = recentlyViewedRepo.findByUser_IdOrderByUpdatedAtDesc(user.getId(),pageable).
+                map(rc -> routeMapper.toRouteDetails(rc.getRoute()));
+        if(recentlyViewedRoutes.isEmpty()) throw new NoResourceFoundException("recently viewed routes");
+        return new ApiResponse<>(recentlyViewedRoutes,"recently viewed routes fetched",200);
+    }
+
+    public ApiResponse<Page<RouteDetails>> getPopularRoutes(@NonNull Integer page, @NonNull Integer size)
+    {
+        Pageable pageable = PageRequest.of(page,size);
+        Page<RouteDetails> popularRoutes = recentlyViewedRepo.findMostPopularRoutes(pageable).map(routeMapper::toRouteDetails);
+        if(popularRoutes.isEmpty()) throw new NoResourceFoundException("popular routes");
+        return new ApiResponse<>(popularRoutes,"popular routes fetched",200);
+
+    }
+
+    public void updateRecentlyViewedStatus(@NonNull  Integer userId,@NonNull Integer routeId)
+    {
+        User user = userRepo.findById(userId).orElseThrow(
+                () -> new ResourceNotFoundException("user","id",userId)
+        );
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route","id",routeId)
+        );
+        RecentlyViewed rv = recentlyViewedRepo.findByUser_IdAndRoute_Id(user.getId(),route.getId()).orElse(null);
+        if(rv!=null)
+        rv.setCounter(rv.getCounter()+1);
+        else
+        {
+            rv = RecentlyViewed.builder().
+                    user(user).route(route).counter(1).build();
+        }
+        recentlyViewedRepo.save(rv);
+        log.info("updated recently view data");
+    }
+
+    public ApiResponse<Page<RouteDetails>> searchRoutesByKeyword(@NonNull String keyword, @NonNull Integer page, @NonNull Integer size)
+    {
+        Pageable pageable = PageRequest.of(page,size);
+        Page<RouteDetails> foundRoutes = routeRepo.searchByKeyword(keyword,pageable).map(routeMapper::toRouteDetails);
+        if(foundRoutes.isEmpty()) throw new ResourceNotFoundException("route","keyword",keyword);
+        return new ApiResponse<>(foundRoutes,"searched results",200);
     }
 }
 
