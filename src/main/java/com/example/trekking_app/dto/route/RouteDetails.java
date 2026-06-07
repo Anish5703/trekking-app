@@ -21,6 +21,5 @@ public class RouteDetails {
     private Double maxElevation;
     private Double minElevation;
     private Double totalDistanceInKm;
-    private RouteStatus routeStatus;
 
 }

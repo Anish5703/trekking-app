@@ -57,4 +57,6 @@ long count();
             @Param("radiusMeters") double radiusMeters,
             @Param("limit") int limit
     );
+    @Query("SELECT r FROM Route r JOIN r.destination d WHERE LOWER(r.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(d.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<Route> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 }

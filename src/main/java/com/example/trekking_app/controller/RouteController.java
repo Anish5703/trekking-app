@@ -2,11 +2,13 @@ package com.example.trekking_app.controller;
 import com.example.trekking_app.dto.geoJson.GeoJsonFeatureCollection;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.*;
+import com.example.trekking_app.model.UserPrincipal;
 import com.example.trekking_app.service.route.RouteService;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
@@ -33,18 +35,22 @@ public class RouteController {
     }
 
     @GetMapping("/{routeId}")
-    public ResponseEntity<ApiResponse<RouteResponse>> handleGetRoute(@NonNull @PathVariable Integer routeId)
+    public ResponseEntity<ApiResponse<RouteResponse>> handleGetRoute(@NonNull @PathVariable Integer routeId,@AuthenticationPrincipal UserPrincipal user)
     {
+
         ApiResponse<RouteResponse> response = routeService.getRoute(routeId);
+        routeService.updateRecentlyViewedStatus(user.getId(),routeId);
         return ResponseEntity.status(200).body(response);
     }
 
     @GetMapping("/{routeId}/geoJson")
     public ResponseEntity<GeoJsonFeatureCollection> handleGetRouteGeoJson(@NonNull @PathVariable Integer routeId,
-                                                                       @RequestParam (defaultValue = "0.00001")Double tolerance)
+                                                                       @RequestParam (defaultValue = "0.00001")Double tolerance,
+                                                                          @AuthenticationPrincipal UserPrincipal user)
     {
         Instant startTime = Instant.now();
         GeoJsonFeatureCollection response = routeService.getRouteGeoJson(routeId,tolerance);
+        routeService.updateRecentlyViewedStatus(user.getId(),routeId);
         log.info("Fetched route geJson in {} ms", Duration.between(startTime,Instant.now()).toMillis());
         return ResponseEntity.status(200).body(response);
     }
@@ -66,6 +72,32 @@ public class RouteController {
                 longitude(longitude).latitude(latitude).radiusMeters(radiusMeters).limit(limit).
                 build();
         ApiResponse<List<NearbyRouteResponse>> response = routeService.getNearbyRoutes(request);
+        return ResponseEntity.status(200).body(response);
+    }
+
+    @GetMapping("/recentlyViewed")
+    public ResponseEntity<ApiResponse<Page<RouteDetails>>> handleGetRecentlyViewedRoutes(@AuthenticationPrincipal UserPrincipal user,
+                                                                                   @RequestParam @NonNull Integer page,
+                                                                                   @RequestParam @NonNull Integer size)
+    {
+        ApiResponse<Page<RouteDetails>> response = routeService.getRecentlyViewedRoutes(user.getId(),page,size);
+        return ResponseEntity.status(200).body(response);
+
+    }
+    @GetMapping("/popular")
+    public ResponseEntity<ApiResponse<Page<RouteDetails>>> handleGetPopularRoutes(@RequestParam @NonNull Integer page,
+                                                                                  @RequestParam @NonNull Integer size)
+    {
+        ApiResponse<Page<RouteDetails>> response = routeService.getPopularRoutes(page,size);
+        return ResponseEntity.status(200).body(response);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<Page<RouteDetails>>> handleSearchRoutesByKeyword(@RequestParam @NonNull String keyword,
+                                                                                      @RequestParam @NonNull Integer page,
+                                                                                      @RequestParam @NonNull Integer size)
+    {
+        ApiResponse<Page<RouteDetails>> response = routeService.searchRoutesByKeyword(keyword,page,size);
         return ResponseEntity.status(200).body(response);
     }
 }
