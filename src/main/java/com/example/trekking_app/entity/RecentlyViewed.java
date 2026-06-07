@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 public class RecentlyViewed extends BaseEntity{
 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
