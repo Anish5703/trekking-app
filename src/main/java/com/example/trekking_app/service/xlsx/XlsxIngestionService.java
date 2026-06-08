@@ -2,26 +2,18 @@ package com.example.trekking_app.service.xlsx;
 
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.poi.XlsxImportResponse;
-import com.example.trekking_app.entity.Accommodation;
-import com.example.trekking_app.entity.POI;
+
 import com.example.trekking_app.entity.Route;
-import com.example.trekking_app.entity.TrailSegment;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
-import com.example.trekking_app.exception.route.FileParsingFailedException;
-import com.example.trekking_app.repository.AccommodationRepository;
-import com.example.trekking_app.repository.POIRepository;
+
 import com.example.trekking_app.repository.RouteRepository;
-import com.example.trekking_app.repository.TrailSegmentRepository;
-import com.example.trekking_app.service.gpx.GpxMergeService;
+
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -54,4 +46,18 @@ public class XlsxIngestionService {
 
     }
 
+    @Transactional
+    public ApiResponse<Void> deleteXlsxImports(@NonNull Integer routeId)
+    {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route", "id", routeId)
+        );
+        CompletableFuture<Integer> poiDeleted = computeService.deleteAllPOI(route);
+        CompletableFuture<Integer> accommodationDeleted = computeService.deleteAllAccommodation(route);
+        CompletableFuture<Integer> trailSegmentDeleted = computeService.deleteAllTrailSegment(route);
+        CompletableFuture.allOf(poiDeleted,accommodationDeleted,trailSegmentDeleted).join();
+        String message = String.format("number of deletion pois : %d , accommodations : %d , trail segments : %d",poiDeleted.join(),accommodationDeleted.join(),trailSegmentDeleted.join());
+        log.info(message);
+        return new ApiResponse<>(null,message,200);
+    }
 }

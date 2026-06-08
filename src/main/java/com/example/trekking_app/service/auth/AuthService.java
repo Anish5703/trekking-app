@@ -10,6 +10,7 @@ import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
 import com.example.trekking_app.mapper.TokenMapper;
 import com.example.trekking_app.mapper.UserMapper;
+import com.example.trekking_app.model.ClientType;
 import com.example.trekking_app.model.Role;
 import com.example.trekking_app.repository.OauthUserRepository;
 import com.example.trekking_app.repository.TokenRepository;
@@ -18,6 +19,7 @@ import com.example.trekking_app.service.user.MailService;
 import com.example.trekking_app.service.user.TokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
+import jakarta.validation.constraints.Email;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,9 +60,9 @@ public class AuthService {
     */
 
     @Transactional
-    public ApiResponse<SignupResponse> signupUser(@NonNull SignupRequest request, HttpServletRequest servletRequest)
+    public ApiResponse<SignupResponse> signupUser(@NonNull SignupRequest request,@NonNull ClientType clientType)
     {
-       ApiResponse<SignupResponse> response = this.validateSignupRequest(request,servletRequest);
+       ApiResponse<SignupResponse> response = this.validateSignupRequest(request,clientType);
        if(response!=null)
            return response;
 
@@ -71,7 +73,7 @@ public class AuthService {
         if (newUser == null)
             throw new SignupFailedException("Failed to save new user : "+newUser.getName());
         else {
-            mailService.sendSignupConfirmationMail(newUser);
+            mailService.sendSignupConfirmationMail(newUser,clientType);
             SignupResponse signupResponse =userMapper.toSignupResponse(newUser);
             return new ApiResponse<>(signupResponse,"Check inbox for confirmation link",201);
         }
@@ -86,7 +88,7 @@ public class AuthService {
     * return ApiResponse<SignupResponse> dto
     */
     @Transactional
-    public ApiResponse<SignupResponse> resendSignupConfirmation(String email)
+    public ApiResponse<SignupResponse> resendSignupConfirmation(@Email String email, @NonNull ClientType clientType)
     {
 
             User user = userRepo.findByEmail(email)
@@ -95,7 +97,7 @@ public class AuthService {
                 throw new EmailAlreadyVerifiedException("Email is already verified.You can go to login page");
             try{
                 tokenRepo.deleteByUser_Email(email);
-                mailService.sendSignupConfirmationMail(user);
+                mailService.sendSignupConfirmationMail(user,clientType);
             String message = "Check mail for confirmation link";
             SignupResponse signupResponse = userMapper.toSignupResponse(user);
             return new ApiResponse<>(signupResponse,message,200);
@@ -139,7 +141,7 @@ public class AuthService {
     * Method for validating SignupRequest dto for empty fields and duplicate email
     * throws exception if violates any terms else returns void
      */
-    public ApiResponse<SignupResponse> validateSignupRequest(SignupRequest request,HttpServletRequest servletRequest)
+    public ApiResponse<SignupResponse> validateSignupRequest(SignupRequest request,ClientType clientType)
     {
 
             if (request.getName().isEmpty() || request.getEmail().isEmpty() || request.getPassword().isEmpty())
@@ -151,7 +153,7 @@ public class AuthService {
                 if(user.isPresent())
                 {
                     if (!user.get().isEmailVerified())
-                       return resendSignupConfirmation(user.get().getEmail());
+                       return resendSignupConfirmation(user.get().getEmail(),clientType);
                     else
                     {
                 log.error("User with email {} already exists", request.getEmail());
@@ -233,7 +235,7 @@ public class AuthService {
     }
 
     @Transactional
-    public ApiResponse<Void> forgotPasswordReset(@NonNull String email)
+    public ApiResponse<Void> forgotPasswordReset(@NonNull String email,@NonNull ClientType clientType)
     {
         User user = userRepo.findByEmail(email).orElseThrow(
                 () -> new ResourceNotFoundException("user","email",email)
@@ -241,7 +243,7 @@ public class AuthService {
         if(!user.isEmailVerified()) throw new EmailNotVerifiedException("Email not verified ! Check signup confirmation link in inbox or signup again");
         Optional<Token> token = tokenRepo.findByUser(user);
         token.ifPresent(tokenRepo::delete);
-        mailService.sendForgotPasswordResetMail(user);
+        mailService.sendForgotPasswordResetMail(user,clientType);
         return new ApiResponse<>(null,"Check inbox for password reset confirmation link ! link will be expired in 5 minutes",200);
 
     }

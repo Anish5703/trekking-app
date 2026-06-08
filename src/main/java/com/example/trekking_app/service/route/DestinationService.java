@@ -7,6 +7,7 @@ import com.example.trekking_app.entity.Destination;
 import com.example.trekking_app.exception.resource.*;
 import com.example.trekking_app.mapper.DestinationMapper;
 import com.example.trekking_app.repository.DestinationRepository;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,5 +94,15 @@ public class DestinationService {
             log.error("Failed to delete destination "+ destinationId);
             throw new ResourceDeletionFailedException("destination" ,"id" ,destinationId);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<DestinationResponse> getDestination(@NonNull Integer destinationId)
+    {
+        Destination destination = destinationRepo.findById(destinationId).orElseThrow(
+                () -> new ResourceNotFoundException("destination","id",destinationId)
+        );
+        DestinationResponse dstResponse = destinationMapper.toResponse(destination);
+        return new ApiResponse<>(dstResponse,"destination fetched",200);
     }
 }

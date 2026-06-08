@@ -52,8 +52,6 @@ public class POI extends BaseEntity{
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @OneToMany(mappedBy = "poi" , cascade = CascadeType.ALL , orphanRemoval = true,fetch = FetchType.LAZY)
-    private List<Image> images = new ArrayList<>();
 
 
 

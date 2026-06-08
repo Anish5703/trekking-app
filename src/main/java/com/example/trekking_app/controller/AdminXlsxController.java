@@ -8,10 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
@@ -28,6 +25,13 @@ public class AdminXlsxController {
     {
         ApiResponse<XlsxImportResponse> response = xlsxIngestionService.uploadXlsx(routeId,file);
         return ResponseEntity.status(201).body(response);
+    }
+
+    @DeleteMapping
+    public ResponseEntity<ApiResponse<Void>> handleDeleteXlsxImports(@PathVariable Integer routeId)
+    {
+        ApiResponse<Void> response = xlsxIngestionService.deleteXlsxImports(routeId);
+        return ResponseEntity.status(200).body(response);
     }
 
 }

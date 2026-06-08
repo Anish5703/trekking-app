@@ -3,6 +3,7 @@ package com.example.trekking_app.service.user;
 import com.example.trekking_app.entity.Token;
 import com.example.trekking_app.entity.User;
 import com.example.trekking_app.mapper.TokenMapper;
+import com.example.trekking_app.model.ClientType;
 import com.example.trekking_app.repository.TokenRepository;
 import com.sendgrid.Method;
 import com.sendgrid.Request;
@@ -11,14 +12,10 @@ import com.sendgrid.SendGrid;
 import com.sendgrid.helpers.mail.Mail;
 import com.sendgrid.helpers.mail.objects.Content;
 import com.sendgrid.helpers.mail.objects.Email;
-import jakarta.mail.internet.MimeMessage;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailSendException;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -34,13 +31,26 @@ private final SendGrid sendGrid;
 private final TokenRepository tokenRepo;
 private final TokenMapper tokenMapper = new TokenMapper();
 
-@Value("${frontend.signup.confirmation.url}")
-private String signupConfirmationUrl;
+@Value("${dev.signup.confirmation.url}")
+private String devSignupConfirmationUrl;
 
-@Value("${frontend.reset.forgot-password.confirmation.url}")
-private String forgotPasswordResetConfirmationUrl;
+@Value("${dev.reset.forgot-password.confirmation.url}")
+private String devForgotPasswordResetConfirmationUrl;
 
-@Value("${app.mail.from}")
+    @Value("${mobile.signup.confirmation.url}")
+    private String mobileSignupConfirmationUrl;
+
+    @Value("${mobile.reset.forgot-password.confirmation.url}")
+    private String mobileForgotPasswordResetConfirmationUrl;
+
+    @Value("${web.signup.confirmation.url}")
+    private String webSignupConfirmationUrl;
+
+    @Value("${web.reset.forgot-password.confirmation.url}")
+    private String webForgotPasswordResetConfirmationUrl;
+
+
+    @Value("${app.mail.from}")
 private String fromEmail;
 
 public MailService(TokenRepository tokenRepo,@Value("${sendgrid.api.key}") String apiKey)
@@ -50,7 +60,7 @@ public MailService(TokenRepository tokenRepo,@Value("${sendgrid.api.key}") Strin
 }
 
 @Async("mailTaskExecutor")
-public void sendSignupConfirmationMail(@NonNull User user) {
+public void sendSignupConfirmationMail(@NonNull User user, ClientType clientType) {
     try
 {
     String tokenName = generateToken();
@@ -58,7 +68,7 @@ public void sendSignupConfirmationMail(@NonNull User user) {
     Token savedToken = tokenRepo.save(token);
 
     String subject = "Signup Confirmation Mail";
-    String confirmationLink = getSignupVerificationUrl()+savedToken.getTokenName();
+    String confirmationLink = getSignupVerificationUrl(clientType)+savedToken.getTokenName();
     String htmlContent = buildSignupConfirmationEmail(user.getName(),confirmationLink);
 
     /*
@@ -82,7 +92,7 @@ public void sendSignupConfirmationMail(@NonNull User user) {
     }
 }
 @Async("mailTaskExecutor")
-public void sendForgotPasswordResetMail(@NonNull User user)
+public void sendForgotPasswordResetMail(@NonNull User user,@NonNull ClientType clientType)
 {
     try {
         String tokenName = generateToken();
@@ -90,7 +100,7 @@ public void sendForgotPasswordResetMail(@NonNull User user)
         Token savedToken = tokenRepo.save(token);
 
         String subject = "Password Reset Mail";
-        String confirmationLink = getResetForgotPasswordUrl() + savedToken.getTokenName();
+        String confirmationLink = getResetForgotPasswordUrl(clientType) + savedToken.getTokenName();
         String htmlContent = buildResetForgotPasswordConfirmationEmail(user.getName(), confirmationLink);
         /*
         MimeMessage message = mailSender.createMimeMessage();
@@ -309,14 +319,37 @@ public void sendForgotPasswordResetMail(@NonNull User user)
 
 
     //Method to generate confirmation URL excluding token
-    public String getSignupVerificationUrl()
+    public String getSignupVerificationUrl(ClientType clientType)
     {
-        return  signupConfirmationUrl;
+        String redirectUrl;
+        switch (clientType)
+        {
+            case MOBILE -> redirectUrl = mobileSignupConfirmationUrl;
+            case WEB -> redirectUrl = webSignupConfirmationUrl;
+            case DEV -> redirectUrl = devSignupConfirmationUrl;
+            default -> redirectUrl = devSignupConfirmationUrl;
+        }
+
+        if(redirectUrl.equals("undefined"))
+            redirectUrl = devSignupConfirmationUrl;
+
+        return redirectUrl;
     }
 
-    public String getResetForgotPasswordUrl()
+    public String getResetForgotPasswordUrl(ClientType clientType)
     {
-        return forgotPasswordResetConfirmationUrl;
+        String redirectUrl;
+        switch (clientType)
+        {
+            case MOBILE -> redirectUrl = mobileForgotPasswordResetConfirmationUrl;
+            case WEB -> redirectUrl = webForgotPasswordResetConfirmationUrl;
+            case DEV -> redirectUrl = devForgotPasswordResetConfirmationUrl;
+
+            default -> redirectUrl = devForgotPasswordResetConfirmationUrl;
+        }
+        if(redirectUrl.equals("undefined")) redirectUrl = devForgotPasswordResetConfirmationUrl;
+
+        return redirectUrl;
     }
 
     //Method to generate random token
