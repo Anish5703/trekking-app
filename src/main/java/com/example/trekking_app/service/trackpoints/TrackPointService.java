@@ -17,9 +17,7 @@ import com.example.trekking_app.service.gpx.GpxMergeService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -115,15 +113,14 @@ public class TrackPointService {
     }
 
 
-    @Transactional
     public ApiResponse<Void> deleteTrackPoint(Integer routeId, Integer trackPointId) {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
-        try {
             TrackPoint trackPoint = trackPointRepo.findById(trackPointId).orElseThrow(
                     () -> new ResourceNotFoundException("trackpoint","id",trackPointId)
             );
+            try{
             trackPoint.setIsDeleted(true);
             trackPoint.setStatus(TrackPointStatus.SOFT_DELETED);
             trackPointRepo.save(trackPoint);
@@ -132,5 +129,21 @@ public class TrackPointService {
         } catch (Exception e) {
             throw new ResourceDeletionFailedException("trackpoint", "id", trackPointId);
         }
+    }
+
+    @Transactional
+    public ApiResponse<Void> recoverTrackPoint(@NonNull Integer routeId, @NonNull Integer trackPointId)
+    {
+        TrackPoint tp = trackPointRepo.findByIdAndRoute_Id(trackPointId,routeId).orElseThrow(
+                () -> new ResourceNotFoundException("trackpoint","route id and trackpoint id",String.format("%d and %d respectively",routeId,trackPointId))
+        );
+        if(!tp.getIsDeleted() || !tp.getStatus().equals(TrackPointStatus.SOFT_DELETED))
+            throw new ResourceUpdateFailedException("trackpoint recovery failed ! it was never deleted");
+        tp.setStatus(TrackPointStatus.RECOVERED);
+        tp.setIsDeleted(false);
+        trackPointRepo.save(tp);
+        return new ApiResponse<>(null,"trackpoint recovered",200);
+
+
     }
 }

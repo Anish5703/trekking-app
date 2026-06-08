@@ -4,6 +4,7 @@ import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.trackpoint.TrackPointRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointResponse;
 import com.example.trekking_app.service.trackpoints.TrackPointService;
+import jakarta.validation.Valid;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -45,19 +46,26 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
         return ResponseEntity.status(200).body(response);
     }
 
-    @PutMapping
+    @PutMapping("/{trackPointId}")
     public ResponseEntity<ApiResponse<TrackPointResponse>> updateTrackPoint(@PathVariable Integer routeId,
-                                                              @NonNull @RequestParam Integer trackPointId,
-                                                              @NonNull @RequestBody TrackPointRequest trackPointRequest)
+                                                                            @PathVariable Integer trackPointId,
+                                                              @Valid @RequestBody TrackPointRequest trackPointRequest)
     {
         ApiResponse<TrackPointResponse> response = trackPointService.updateTrackPoint(routeId,trackPointId,trackPointRequest);
         return ResponseEntity.status(200).body(response);
     }
-    @DeleteMapping
+    @DeleteMapping("/{trackPointId}")
     public ResponseEntity<ApiResponse<Void>> handleDeleteTrackPoint(@PathVariable Integer routeId ,
-                                                                   @NonNull @RequestParam Integer trackPointId)
+                                                                   @PathVariable Integer trackPointId)
     {
         ApiResponse<Void> response = trackPointService.deleteTrackPoint(routeId,trackPointId);
+        return ResponseEntity.status(200).body(response);
+    }
+    @PutMapping("/{trackPointId}/recover")
+    public ResponseEntity<ApiResponse<Void>> handleUndoDeleteTrackPoint(@PathVariable Integer routeId,
+                                                                        @PathVariable Integer trackPointId)
+    {
+        ApiResponse<Void> response = trackPointService.recoverTrackPoint(routeId,trackPointId);
         return ResponseEntity.status(200).body(response);
     }
 }

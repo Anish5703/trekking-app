@@ -12,7 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 @Data
 @Builder
-public class POIUploadResponse {
+public class PoiUploadResponse {
 
     private Integer routeId;
     private Integer gpxSegmentId;

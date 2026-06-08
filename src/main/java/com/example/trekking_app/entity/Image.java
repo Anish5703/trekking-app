@@ -1,5 +1,6 @@
 package com.example.trekking_app.entity;
 
+import com.example.trekking_app.model.EntityType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,26 +14,27 @@ import lombok.*;
 public class Image extends BaseEntity{
 
     @Id
-    @GeneratedValue(strategy =  GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(length = 100)
-    private String title;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "route_id" , nullable = false)
-    private Route route;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "poi_id" ,nullable = false)
-    private POI poi;
-
-    @Column(nullable = false)
+    @Column(name = "url", nullable = false)
     private String url;
 
+    @Column(name="original_name")
+    private String originalName;
 
+    @Column(name = "public_id") // cloudinary public_id for deletion
+    private String publicId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "entity_type", nullable = false)
+    private EntityType entityType; // ROUTE, DESTINATION, POI, USER
 
+    @Column(name = "entity_id", nullable = false)
+    private Integer entityId;
+
+    @Column(name = "is_primary")
+    private Boolean isPrimary = false;
 
 
 }

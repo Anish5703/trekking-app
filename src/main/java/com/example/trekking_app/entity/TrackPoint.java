@@ -1,6 +1,7 @@
 package com.example.trekking_app.entity;
 
 import com.example.trekking_app.model.TrackPointStatus;
+import com.example.trekking_app.model.WayPointStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.locationtech.jts.geom.Point;
@@ -65,6 +66,11 @@ public class TrackPoint extends BaseEntity{
     @Column(name = "is_deleted")
     @Builder.Default
     private Boolean isDeleted = false;
+
+    public Boolean getIsDeleted()
+    {
+        return status != null && status.equals(TrackPointStatus.SOFT_DELETED);
+    }
 
 
 }

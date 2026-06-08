@@ -90,9 +90,6 @@ public class Route extends BaseEntity{
     @OneToMany(mappedBy = "route" ,cascade = CascadeType.ALL , orphanRemoval = true , fetch = FetchType.LAZY)
     private List<DangerZone> dangerZones = new ArrayList<>();
 
-    @OneToMany(mappedBy = "route", cascade = CascadeType.ALL , orphanRemoval = true , fetch = FetchType.LAZY)
-    private List<Image> images = new ArrayList<>();
-
    @OneToMany(mappedBy = "route" , cascade = CascadeType.ALL , orphanRemoval = true )
    private List<OfflineRegion> offlineRegions = new ArrayList<>();
 
