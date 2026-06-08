@@ -108,7 +108,7 @@ public class GlobalExceptionHandler {
         log.error("Email not registered : {}",ex.getLocalizedMessage());
         ErrorResponse data = new ErrorResponse(ErrorType.EMAIL_NOT_FOUND,ex.getMessage());
         ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),404);
-        return ResponseEntity.badRequest().body(response);
+        return ResponseEntity.status(404).body(response);
     }
 
     @ExceptionHandler(LoginFailedException.class)
@@ -116,8 +116,8 @@ public class GlobalExceptionHandler {
     {
         log.error("Login failed : {}",ex.getLocalizedMessage());
         ErrorResponse data = new ErrorResponse(ErrorType.LOGIN_FAILED,ex.getMessage());
-        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
-        return ResponseEntity.badRequest().body(response);
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),401);
+        return ResponseEntity.status(401).body(response);
     }
 
     @ExceptionHandler(DeleteUserFailedException.class)
@@ -174,7 +174,7 @@ public class GlobalExceptionHandler {
         log.error("JwtException : {}",ex.getLocalizedMessage());
         ErrorResponse data = new ErrorResponse(ErrorType.LOGIN_FAILED,ex.getMessage());
         ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),401);
-        return ResponseEntity.badRequest().body(response);
+        return ResponseEntity.status(401).body(response);
     }
 
 

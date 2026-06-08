@@ -10,7 +10,6 @@ import com.example.trekking_app.repository.GpxSegmentRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
 import com.example.trekking_app.repository.WayPointRepository;
 import com.example.trekking_app.service.gpx.GpxMergeHelper;
-import com.example.trekking_app.service.gpx.GpxMergeService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.*;
 
 import static com.example.trekking_app.service.xlsx.XlsxParserColumnDependency.*;
@@ -301,7 +299,7 @@ public class XlsxParserHelper {
 
         // 1. Check if already exists
         Optional<TrackPoint> existing = trackPointRepo
-                .findByLatitudeAndLongitude(wayPoint.getLatitude(), wayPoint.getLongitude());
+                .findFirstByLatitudeAndLongitude(wayPoint.getLatitude(), wayPoint.getLongitude());
         if (existing.isPresent()) {
             return existing.get();
         }

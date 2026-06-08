@@ -4,6 +4,8 @@ import com.example.trekking_app.dto.destination.DestinationRequest;
 import com.example.trekking_app.dto.destination.DestinationResponse;
 import com.example.trekking_app.entity.Destination;
 
+import java.util.List;
+
 public class DestinationMapper {
 
     public Destination toEntity(DestinationRequest destinationRequest)
@@ -16,6 +18,15 @@ public class DestinationMapper {
     }
 
     public DestinationResponse toResponse(Destination destination)
+    {
+        return DestinationResponse.builder()
+                .id(destination.getId())
+                .name(destination.getName())
+                .district(destination.getDistrict())
+                .region(destination.getRegion())
+                .build();
+    }
+    public DestinationResponse toResponse(Destination destination, List<String> imageUrls)
     {
         return DestinationResponse.builder()
                 .id(destination.getId())
