@@ -97,7 +97,7 @@ public class GpxIngestionService {
 
     }
 
-    @CacheEvict(key = "route-geoJson",value = "#routeId")
+    @CacheEvict(value = "route-geoJson",key = "#routeId")
     @Transactional
     public ApiResponse<Void> reorderGpxSegment(@NonNull GpxSegmentOrderRequest segmentOrderRequest , @NonNull Integer routeId, @NonNull GpxSegmentStatus segmentStatus)
     {
@@ -117,7 +117,7 @@ public class GpxIngestionService {
         return new ApiResponse<>(null,message,200);
     }
 
-    @CacheEvict(key = "route-geoJson",value = "#routeId")
+    @CacheEvict(value = "route-geoJson",key = "#routeId")
     @Transactional
     public ApiResponse<Void> deleteGpxSegment(@NonNull Integer gpxSegmentId,@NonNull Integer routeId,@NonNull GpxSegmentStatus segmentStatus)
     {
@@ -148,7 +148,7 @@ public class GpxIngestionService {
         }
     }
 
-    @CacheEvict(key = "route-geoJson",value = "#routeId")
+    @CacheEvict(value = "route-geoJson",key = "#routeId")
     public ApiResponse<Void> remergeGpxSegment(Integer routeId,@NonNull GpxSegmentStatus segmentStatus)
     {
 

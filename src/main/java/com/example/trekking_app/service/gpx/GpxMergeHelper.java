@@ -28,20 +28,20 @@ public class GpxMergeHelper {
     private final RouteRepository routeRepo;
     private final WayPointRepository wayPointRepo;
 
-    @CacheEvict(key = "route-geoJson",value = "#routeId" , allEntries = true)
+    @CacheEvict(value = "route-geoJson",key = "#routeId" , allEntries = true)
     @Transactional                          // short transaction — one UPDATE, releases immediately
     public void assignTrackPointGlobalSequences(Integer routeId) {
         trackPointRepo.updateGlobalSequences(routeId);
     }
 
-    @CacheEvict(key = "route-geoJson",value = "#routeId" , allEntries = true)
+    @CacheEvict(value = "route-geoJson",key = "#routeId" , allEntries = true)
     @Transactional
     public void assignWayPointGlobalSequences(Integer routeId)
     {
         wayPointRepo.updateGlobalSequences(routeId);
     }
 
-    @CacheEvict(key = "route-geoJson",value = "#routeId" , allEntries = true)
+    @CacheEvict(value = "route-geoJson",key = "#routeId" , allEntries = true)
     @Transactional                          // short transaction — load, compute, save, release
     public void finalizeRoute(Integer routeId) {
         Route route = routeRepo.findById(routeId).orElseThrow(

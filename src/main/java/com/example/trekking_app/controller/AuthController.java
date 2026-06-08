@@ -4,6 +4,7 @@ import com.example.trekking_app.dto.auth.*;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.token.AccessTokenRequest;
 import com.example.trekking_app.dto.token.AccessTokenResponse;
+import com.example.trekking_app.model.ClientType;
 import com.example.trekking_app.model.UserPrincipal;
 import com.example.trekking_app.service.auth.AuthService;
 import com.example.trekking_app.service.user.TokenService;
@@ -106,10 +107,10 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<SignupResponse>> handleUserSignup(
             @Valid @RequestBody SignupRequest signupRequest,
-            HttpServletRequest servletRequest)
+            @RequestHeader(value = "X-Client-Type",defaultValue="DEV")ClientType clientType)
     {
         String requestId = UUID.randomUUID().toString();
-        ApiResponse<SignupResponse> response = authService.signupUser(signupRequest, servletRequest);
+        ApiResponse<SignupResponse> response = authService.signupUser(signupRequest,clientType);
         return ResponseEntity.status(HttpStatus.CREATED).headers(buildSecureHeaders(requestId)).body(response);
     }
 
@@ -259,11 +260,11 @@ public class AuthController {
                     example = "garunddigital@gmail.com"
             )
 
-            @RequestParam(name="email") @Email @NotBlank String email,
-            HttpServletRequest servletRequest)
+            @RequestParam(name="email") @Email @NotBlank String email,  @RequestHeader(value = "X-Client-Type",defaultValue="DEV")ClientType clientType
+            )
     {
         String requestId = UUID.randomUUID().toString();
-        ApiResponse<SignupResponse> response = authService.resendSignupConfirmation(email);
+        ApiResponse<SignupResponse> response = authService.resendSignupConfirmation(email,clientType);
         HttpHeaders headers = new HttpHeaders();
         headers.set("Content-Type","application/json");
         return ResponseEntity.status(HttpStatus.OK).headers(buildSecureHeaders(requestId)).body(response);
@@ -366,10 +367,11 @@ public class AuthController {
 
 
     @PostMapping("/forgot-password/reset")
-    public ResponseEntity<ApiResponse<Void>> handleResetForgotPassword(@NotBlank @Email String email)
+    public ResponseEntity<ApiResponse<Void>> handleResetForgotPassword(@NotBlank @Email String email,
+                                                                       @RequestHeader(value = "X-Client-Type",defaultValue="DEV")ClientType clientType)
     {
         String requestId = UUID.randomUUID().toString();
-        ApiResponse<Void> response = authService.forgotPasswordReset(email);
+        ApiResponse<Void> response = authService.forgotPasswordReset(email,clientType);
         return ResponseEntity.status(200).headers(buildSecureHeaders(requestId)).body(response);
     }
 
