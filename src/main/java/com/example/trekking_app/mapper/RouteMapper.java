@@ -5,6 +5,7 @@ import com.example.trekking_app.entity.Destination;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.User;
 import lombok.NonNull;
+import org.locationtech.jts.geom.Point;
 
 public class RouteMapper {
 
@@ -21,7 +22,7 @@ public class RouteMapper {
 
     }
 
-    public RouteResponse toRouteResponse(@NonNull Route route)
+    public RouteResponse toRouteResponse(@NonNull Route route, Point startCoords,Point endCoords)
     {
          return RouteResponse.builder()
                  .id(route.getId())
@@ -32,6 +33,10 @@ public class RouteMapper {
                  .estimatedDays(route.getEstimatedDays())
                  .maxElevation(route.getMaxElevation())
                  .minElevation(route.getMinElevation())
+                 .startLongitude(!startCoords.isEmpty() ? startCoords.getX():null)
+                 .startLatitude(!startCoords.isEmpty() ? startCoords.getY() : null)
+                 .endLongitude(!endCoords.isEmpty() ? endCoords.getX():null)
+                 .endLatitude(!endCoords.isEmpty() ? endCoords.getY() : null)
                  .totalDistanceInKm(route.getDistanceInKm())
                  .timeStamp(route.getTimeStamp())
                  .build();
