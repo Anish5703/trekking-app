@@ -2,7 +2,6 @@ package com.example.trekking_app.repository;
 
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrackPoint;
-import com.example.trekking_app.model.GpxSegmentStatus;
 import lombok.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -145,5 +144,5 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
     """)
      Optional<Double> findMaxElevation(@Param("routeId") Integer routeId);
 
-    Optional<TrackPoint> findByLatitudeAndLongitude(Double latitude, Double longitude);
+    Optional<TrackPoint> findFirstByLatitudeAndLongitude(Double latitude, Double longitude);
 }

@@ -6,27 +6,28 @@ import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.entity.Destination;
 import com.example.trekking_app.exception.resource.*;
 import com.example.trekking_app.mapper.DestinationMapper;
+import com.example.trekking_app.model.EntityType;
 import com.example.trekking_app.repository.DestinationRepository;
+import com.example.trekking_app.service.image.ImageService;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DestinationService {
 
     private final DestinationRepository destinationRepo;
-    private final DestinationMapper destinationMapper;
+    private final DestinationMapper destinationMapper = new DestinationMapper();
 
 
-    public DestinationService(DestinationRepository destinationRepo) {
-        this.destinationRepo = destinationRepo;
-        this.destinationMapper = new DestinationMapper();
-    }
 
     @Transactional(readOnly = true)
     public ApiResponse<List<DestinationResponse>> getAllDestination()
@@ -40,16 +41,19 @@ public class DestinationService {
     }
 
     @Transactional
-    public ApiResponse<DestinationResponse> createDestination(DestinationRequest destinationRequest) {
+    public ApiResponse<DestinationResponse> createDestination(DestinationRequest destinationRequest)
+    {
 
             boolean isDuplicate = destinationRepo.existsByNameAndDistrictAndRegion(destinationRequest.getName(),
                     destinationRequest.getDistrict(), destinationRequest.getRegion());
+
             if (isDuplicate) throw new DuplicateResourceFoundException("destination","name, district, region",
                     String.format("%s , %s , %s",destinationRequest.getName(),destinationRequest.getDistrict() , destinationRequest.getRegion()));
 
-            try{
+            try {
             Destination destination = destinationRepo.save(destinationMapper.toEntity(destinationRequest));
-            DestinationResponse destinationResponse = destinationMapper.toResponse(destination);
+                List<String> imagesUrl = new ArrayList<>();
+            DestinationResponse destinationResponse = destinationMapper.toResponse(destination,imagesUrl);
             return new ApiResponse<>(destinationResponse, "New destination created", 201);
 
         } catch (Exception ex) {

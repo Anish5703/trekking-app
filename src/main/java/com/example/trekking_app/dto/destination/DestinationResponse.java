@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
@@ -15,4 +17,5 @@ public class DestinationResponse {
     private String name;
     private String district;
     private String region;
+    List<String> imageUrls;
 }

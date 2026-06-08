@@ -5,12 +5,16 @@ import com.example.trekking_app.dto.destination.DestinationResponse;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.service.route.DestinationService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/admin/destination")
@@ -35,8 +39,8 @@ public class AdminDestinationController {
             })
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PostMapping
-    public ResponseEntity<ApiResponse<DestinationResponse>> handleCreateDestination(@Valid @RequestBody DestinationRequest destinationRequest)
+    @PostMapping()
+    public ResponseEntity<ApiResponse<DestinationResponse>> handleCreateDestination( @RequestBody DestinationRequest destinationRequest)
     {
         ApiResponse<DestinationResponse> response = destinationService.createDestination(destinationRequest);
         return ResponseEntity.status(201).body(response);

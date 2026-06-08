@@ -9,7 +9,9 @@ import org.locationtech.jts.geom.Point;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "track_points" , indexes = {
+@Table(name = "track_points" , uniqueConstraints = @UniqueConstraint(
+        columnNames = {"latitude", "longitude", "gpx_segment_id"}
+), indexes = {
         @Index(name  = "idx_track_points_route_seq" , columnList = "route_id , global_sequence"),
         @Index(name = "idx_track_points_route_deleted_seq",
                 columnList = "route_id, is_deleted, global_sequence"),
