@@ -6,6 +6,7 @@ import com.example.trekking_app.dto.poi.PoiResponse;
 import com.example.trekking_app.service.poi.PoiService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,22 @@ public class AdminPoiController {
 
     private final PoiService poiService;
 
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<PoiResponse>>> handleGetAllPoi(@PathVariable Integer routeId,
+                                                                          @RequestParam Integer page ,
+                                                                          @RequestParam Integer size)
+    {
+        ApiResponse<Page<PoiResponse>> response = poiService.getAllPoi(routeId,page,size);
+        return ResponseEntity.status(200).body(response);
+    }
+
+    @GetMapping("/{poiId}")
+    public ResponseEntity<ApiResponse<PoiResponse>> handleGetPoi(@PathVariable Integer routeId,
+                                                                 @PathVariable Integer poiId)
+    {
+        ApiResponse<PoiResponse> response = poiService.getPoi(routeId, poiId);
+        return ResponseEntity.status(200).body(response);
+    }
 
     @PostMapping
     public ResponseEntity<ApiResponse<PoiResponse>> handleCreatePoi(@PathVariable Integer routeId,
