@@ -23,6 +23,7 @@ public class PoiMapper {
     public PoiResponse toPoiResponse(POI poi)
     {
         return PoiResponse.builder().
+                id(poi.getId()).
                 routeId(poi.getRoute().getId()).
                 name(poi.getName()).
                 latitude(poi.getLatitude()).

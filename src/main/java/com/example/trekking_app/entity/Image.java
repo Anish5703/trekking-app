@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "images")
+@Table(name = "images" , indexes = @Index(name = "idx_image_entity", columnList = "entity_type, entity_id"))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -33,6 +33,7 @@ public class Image extends BaseEntity{
     @Column(name = "entity_id", nullable = false)
     private Integer entityId;
 
+    @Builder.Default
     @Column(name = "is_primary")
     private Boolean isPrimary = false;
 
