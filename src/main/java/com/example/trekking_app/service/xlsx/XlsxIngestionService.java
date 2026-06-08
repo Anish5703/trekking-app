@@ -30,7 +30,6 @@ public class XlsxIngestionService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
-        deleteXlsxImports(routeId);  //replacing old xlsx imports
         ParseOutput parserOutput = parser.parse(file, route);
         CompletableFuture<Integer> poiCount = computeService.saveAllPOI(parserOutput.pois());
         CompletableFuture<Integer> accommodationCount = computeService.saveAllAccommodation(parserOutput.accommodations());

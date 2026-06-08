@@ -145,4 +145,7 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
      Optional<Double> findMaxElevation(@Param("routeId") Integer routeId);
 
     Optional<TrackPoint> findFirstByLatitudeAndLongitude(Double latitude, Double longitude);
+
+    Optional<TrackPoint> findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceAsc(Integer routeId);
+    Optional<TrackPoint> findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(Integer routeId);
 }

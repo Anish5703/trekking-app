@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.Point;
 
 import java.time.LocalDateTime;
 
@@ -26,5 +27,9 @@ public class RouteResponse {
     private Double maxElevation;
     private Double minElevation;
     private Double totalDistanceInKm;
+    private Double startLongitude;
+    private Double startLatitude;
+    private Double endLongitude;
+    private Double endLatitude;
 
 }

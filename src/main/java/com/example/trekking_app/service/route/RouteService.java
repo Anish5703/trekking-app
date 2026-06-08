@@ -17,6 +17,7 @@ import jakarta.annotation.Nonnull;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.locationtech.jts.geom.Point;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.sound.midi.Track;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -42,6 +44,7 @@ public class RouteService {
     private final GeoJsonMapper geoJsonMapper = new GeoJsonMapper();
     private final GpxSegmentRepository gpxSegmentRepo;
     private final RecentlyViewedRepository recentlyViewedRepo;
+    private final TrackPointRepository trackPointRepo;
 
 
 
@@ -53,7 +56,11 @@ public class RouteService {
                 () -> new ResourceNotFoundException("route", "id", routeId)
 
         );
-        RouteResponse routeResponse = routeMapper.toRouteResponse(route);
+        TrackPoint tp1 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceAsc(route.getId()).orElse(null);
+        TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+        Point startCoords = tp1!=null ? tp1.getGeom() : null;
+        Point endCoords = tp2!=null ? tp2.getGeom() : null;
+        RouteResponse routeResponse = routeMapper.toRouteResponse(route,startCoords,endCoords);
         return new ApiResponse<>(routeResponse, "route fetched", 200);
     }
 
@@ -94,7 +101,7 @@ public class RouteService {
         Route route = routeMapper.toEntity(routeRequest, user, destination);
         try {
             Route newRoute = routeRepo.save(route);
-            RouteResponse routeResponse = routeMapper.toRouteResponse(newRoute);
+            RouteResponse routeResponse = routeMapper.toRouteResponse(newRoute,null,null);
             return new ApiResponse<>(routeResponse, "New route created", 201);
         } catch (Exception ex) {
             if(routeRepo.existsByNameAndDestination_Id(routeRequest.getName(),destination.getId())) throw new CreateRouteFailedException("route with this name and destination already exists");
@@ -148,7 +155,12 @@ public class RouteService {
         newRoute.setDistanceInKm(route.getDistanceInKm());
         newRoute.setId(route.getId());
         Route updatedRoute = routeRepo.save(newRoute);
-        RouteResponse routeResponse = routeMapper.toRouteResponse(updatedRoute);
+        TrackPoint tp1 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceAsc(route.getId()).orElse(null);
+        TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+        Point startCoords = tp1!=null ? tp1.getGeom() : null;
+        Point endCoords = tp2!=null ? tp2.getGeom() : null;
+
+        RouteResponse routeResponse = routeMapper.toRouteResponse(updatedRoute,startCoords,endCoords);
         return new ApiResponse<>(routeResponse,"route updated",200);
     }
     @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
