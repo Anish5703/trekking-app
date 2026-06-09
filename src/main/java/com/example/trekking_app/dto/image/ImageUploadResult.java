@@ -1,4 +1,4 @@
-package com.example.trekking_app.dto;
+package com.example.trekking_app.dto.image;
 
 import lombok.*;
 

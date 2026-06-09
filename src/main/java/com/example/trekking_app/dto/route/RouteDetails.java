@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -15,11 +17,12 @@ public class RouteDetails {
     private Integer id;
     private String name;
     private int destinationId;
-    private String description;
     private DifficultyLevel difficultyLevel;
     private Integer estimatedDays;
     private Double maxElevation;
-    private Double minElevation;
+    private Double endLongitude;
+    private Double endLatitude;
     private Double totalDistanceInKm;
+    private List<String> imageUrls;
 
 }

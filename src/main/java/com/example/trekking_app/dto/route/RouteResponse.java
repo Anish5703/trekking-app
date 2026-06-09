@@ -10,6 +10,7 @@ import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.Point;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -31,5 +32,6 @@ public class RouteResponse {
     private Double startLatitude;
     private Double endLongitude;
     private Double endLatitude;
+    private List<String> imageUrls;
 
 }

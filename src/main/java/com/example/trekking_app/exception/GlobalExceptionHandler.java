@@ -19,6 +19,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.net.UnknownHostException;
 import java.util.NoSuchElementException;
 
 /*
@@ -224,16 +225,16 @@ public class GlobalExceptionHandler {
     {
         log.error(ex.getMessage());
         ErrorResponse data = new ErrorResponse(ErrorType.NO_RESOURCE_FOUND,ex.getMessage());
-        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
-        return ResponseEntity.status(400).body(response);
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),404);
+        return ResponseEntity.status(404).body(response);
     }
     @ExceptionHandler(DuplicateResourceFoundException.class)
     public ResponseEntity<ApiResponse<ErrorResponse>> handleDuplicateResourceFound(DuplicateResourceFoundException ex)
     {
         log.error(ex.getMessage());
         ErrorResponse data = new ErrorResponse(ErrorType.DUPLICATE_RESOURCE_FOUND,ex.getMessage());
-        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
-        return ResponseEntity.status(400).body(response);
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),409);
+        return ResponseEntity.status(409).body(response);
     }
 
     @ExceptionHandler(NullPointerException.class)
@@ -263,6 +264,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(400).body(response);
     }
 
+    @ExceptionHandler(UnknownHostException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleUnknownHostException(UnknownHostException ex)
+    {
+        log.error(ex.getMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.CONNECTION_FAILURE, ex.getLocalizedMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,"Host Connection Failure",500);
+        return ResponseEntity.status(500).body(response);
+    }
 
     @ExceptionHandler(CommandAcceptanceException.class)
     public void handleCommandAcceptanceFailed(CommandAcceptanceException ex)

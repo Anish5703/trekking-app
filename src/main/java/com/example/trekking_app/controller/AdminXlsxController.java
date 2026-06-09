@@ -5,6 +5,7 @@ import com.example.trekking_app.dto.poi.XlsxImportResponse;
 import com.example.trekking_app.service.xlsx.XlsxIngestionService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,6 +20,7 @@ public class AdminXlsxController {
 
     private final XlsxIngestionService xlsxIngestionService;
 
+    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<XlsxImportResponse>> handleUploadXlsx(@PathVariable Integer routeId,
                                                            @NonNull MultipartFile file)
@@ -27,6 +29,7 @@ public class AdminXlsxController {
         return ResponseEntity.status(201).body(response);
     }
 
+    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
     @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> handleDeleteXlsxImports(@PathVariable Integer routeId)
     {

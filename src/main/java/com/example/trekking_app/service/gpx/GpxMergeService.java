@@ -15,6 +15,7 @@ public class GpxMergeService {
 
    private final GpxMergeHelper mergeHelper;
 
+    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
     public void mergeTrackPoints(@NonNull Integer routeId){
     mergeHelper.updateRouteStatus(routeId, RouteStatus.MERGING);
     try {
@@ -26,6 +27,7 @@ public class GpxMergeService {
         throw new ResourceMergeFailedException("trackpoints", "route id", routeId);
     }
 }
+    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
 public void mergeWayPoints(@NonNull Integer routeId)
 {
     try{

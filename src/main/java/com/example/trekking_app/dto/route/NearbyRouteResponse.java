@@ -19,5 +19,5 @@ public class NearbyRouteResponse {
     private String destinationName;
     private Integer estimatedDays;
     private Double routeDistanceInKm;
-    private Double distanceToStartPoint;
+    private Double distanceMetersFromCurrent;
 }

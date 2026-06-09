@@ -4,10 +4,12 @@ import com.example.trekking_app.dto.destination.DestinationRequest;
 import com.example.trekking_app.dto.destination.DestinationResponse;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.entity.Destination;
+import com.example.trekking_app.entity.Image;
 import com.example.trekking_app.exception.resource.*;
 import com.example.trekking_app.mapper.DestinationMapper;
 import com.example.trekking_app.model.EntityType;
 import com.example.trekking_app.repository.DestinationRepository;
+import com.example.trekking_app.repository.ImageRepository;
 import com.example.trekking_app.service.image.ImageService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +28,7 @@ public class DestinationService {
 
     private final DestinationRepository destinationRepo;
     private final DestinationMapper destinationMapper = new DestinationMapper();
-
+   private final ImageRepository imageRepo;
 
 
     @Transactional(readOnly = true)
@@ -36,7 +38,10 @@ public class DestinationService {
         if(destinationList.isEmpty())
             throw new NoResourceFoundException("destination");
         List<DestinationResponse> destinationResponseList = new ArrayList<>();
-        destinationList.forEach(destination -> destinationResponseList.add(destinationMapper.toResponse(destination)));
+        destinationList.forEach(destination -> {
+                List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.DESTINATION,destination.getId()).stream().map(Image::getUrl).toList();
+                destinationResponseList.add(destinationMapper.toResponse(destination,imageUrls));}
+        );
         return new ApiResponse<>(destinationResponseList,"all destination fetched",200);
     }
 
@@ -106,7 +111,8 @@ public class DestinationService {
         Destination destination = destinationRepo.findById(destinationId).orElseThrow(
                 () -> new ResourceNotFoundException("destination","id",destinationId)
         );
-        DestinationResponse dstResponse = destinationMapper.toResponse(destination);
+        List<String> imagesUrl = imageRepo.findByEntityTypeAndEntityId(EntityType.DESTINATION,destination.getId()).stream().map(Image::getUrl).toList();
+        DestinationResponse dstResponse = destinationMapper.toResponse(destination,imagesUrl);
         return new ApiResponse<>(dstResponse,"destination fetched",200);
     }
 }

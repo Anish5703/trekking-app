@@ -7,6 +7,8 @@ import com.example.trekking_app.entity.User;
 import lombok.NonNull;
 import org.locationtech.jts.geom.Point;
 
+import java.util.List;
+
 public class RouteMapper {
 
     public Route toEntity(@NonNull RouteRequest routeRequest, User user , Destination destination)
@@ -22,7 +24,7 @@ public class RouteMapper {
 
     }
 
-    public RouteResponse toRouteResponse(@NonNull Route route, Point startCoords,Point endCoords)
+    public RouteResponse toRouteResponse(@NonNull Route route, Point startCoords, Point endCoords, List<String> imageUrls)
     {
          return RouteResponse.builder()
                  .id(route.getId())
@@ -38,23 +40,25 @@ public class RouteMapper {
                  .endLongitude(!endCoords.isEmpty() ? endCoords.getX():null)
                  .endLatitude(!endCoords.isEmpty() ? endCoords.getY() : null)
                  .totalDistanceInKm(route.getDistanceInKm())
+                 .imageUrls(imageUrls)
                  .timeStamp(route.getTimeStamp())
                  .build();
 
     }
 
-    public RouteDetails toRouteDetails(@NonNull Route route)
+    public RouteDetails toRouteDetails(@NonNull Route route,Point endCoords,List<String> imageUrls)
     {
          return RouteDetails.builder()
                  .id(route.getId())
                  .name(route.getName())
                  .destinationId(route.getDestination().getId())
-                 .description(route.getDescription())
                  .estimatedDays(route.getEstimatedDays())
                  .difficultyLevel(route.getDifficultyLevel())
-                 .minElevation(route.getMinElevation())
                  .maxElevation(route.getMaxElevation())
                  .totalDistanceInKm(route.getDistanceInKm())
+                 .endLongitude(!endCoords.isEmpty() ? endCoords.getX():null)
+                 .endLatitude(!endCoords.isEmpty() ? endCoords.getY() : null)
+                 .imageUrls(imageUrls)
                  .build();
 
 
@@ -66,10 +70,9 @@ public class RouteMapper {
                 .routeName(projections.getName())
                 .estimatedDays(projections.getEstimatedDays())
                 .difficultyLevel(projections.getDifficultyLevel())
-                .description(projections.getDescription())
                 .routeDistanceInKm(projections.getDistanceInKm())
                 .destinationName(projections.getDestinationName())
-                .distanceToStartPoint(projections.getDistanceMeters()!=null || projections.getDistanceMeters()>1.0? projections.getDistanceMeters()/1000 : projections.getDistanceMeters())
+                .distanceMetersFromCurrent(projections.getDistanceMeters()!=null || projections.getDistanceMeters()>1.0? projections.getDistanceMeters()/1000 : projections.getDistanceMeters())
                 .build();
     }
 }
