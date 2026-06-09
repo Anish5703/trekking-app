@@ -26,6 +26,20 @@ public class RouteMapper {
 
     public RouteResponse toRouteResponse(@NonNull Route route, Point startCoords, Point endCoords, List<String> imageUrls)
     {
+        double startLong = 0.0;
+        double startLat = 0.0;
+        double endLong = 0.0;
+        double endLat = 0.0;
+        if(startCoords!=null ) {
+            startLong = startCoords.getX();
+            startLat = startCoords.getY();
+        }
+        if(endCoords!=null) {
+            endLong = endCoords.getX();
+            endLat = endCoords.getY();
+        }
+
+
 
          return RouteResponse.builder()
                  .id(route.getId())
@@ -36,10 +50,10 @@ public class RouteMapper {
                  .estimatedDays(route.getEstimatedDays())
                  .maxElevation(route.getMaxElevation())
                  .minElevation(route.getMinElevation())
-                 .startLongitude(!startCoords.isEmpty() ? startCoords.getX():0.0)
-                 .startLatitude(!startCoords.isEmpty() ? startCoords.getY() : 0.0)
-                 .endLongitude(!endCoords.isEmpty() ? endCoords.getX():0.0)
-                 .endLatitude(!endCoords.isEmpty() ? endCoords.getY() : 0.0)
+                 .startLongitude(startLong)
+                 .startLatitude(startLat)
+                 .endLongitude(endLong)
+                 .endLatitude(endLat)
                  .totalDistanceInKm(route.getDistanceInKm())
                  .imageUrls(imageUrls)
                  .timeStamp(route.getTimeStamp())
@@ -49,7 +63,14 @@ public class RouteMapper {
 
     public RouteDetails toRouteDetails(@NonNull Route route,Point endCoords,List<String> imageUrls)
     {
-         return RouteDetails.builder()
+        double endLong = 0.0;
+        double endLat = 0.0;
+        if(endCoords!=null) {
+            endLong = endCoords.getX();
+            endLat = endCoords.getY();
+        }
+
+        return RouteDetails.builder()
                  .id(route.getId())
                  .name(route.getName())
                  .destinationId(route.getDestination().getId())
@@ -57,8 +78,8 @@ public class RouteMapper {
                  .difficultyLevel(route.getDifficultyLevel())
                  .maxElevation(route.getMaxElevation())
                  .totalDistanceInKm(route.getDistanceInKm())
-                 .endLongitude(!endCoords.isEmpty() ? endCoords.getX():0.0)
-                 .endLatitude(!endCoords.isEmpty() ? endCoords.getY() : 0.0)
+                 .endLongitude(endLong)
+                 .endLatitude(endLat)
                  .imageUrls(imageUrls)
                  .build();
 
