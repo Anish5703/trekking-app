@@ -26,6 +26,7 @@ public class RouteMapper {
 
     public RouteResponse toRouteResponse(@NonNull Route route, Point startCoords, Point endCoords, List<String> imageUrls)
     {
+
          return RouteResponse.builder()
                  .id(route.getId())
                  .name(route.getName())
@@ -35,10 +36,10 @@ public class RouteMapper {
                  .estimatedDays(route.getEstimatedDays())
                  .maxElevation(route.getMaxElevation())
                  .minElevation(route.getMinElevation())
-                 .startLongitude(!startCoords.isEmpty() ? startCoords.getX():null)
-                 .startLatitude(!startCoords.isEmpty() ? startCoords.getY() : null)
-                 .endLongitude(!endCoords.isEmpty() ? endCoords.getX():null)
-                 .endLatitude(!endCoords.isEmpty() ? endCoords.getY() : null)
+                 .startLongitude(!startCoords.isEmpty() ? startCoords.getX():0.0)
+                 .startLatitude(!startCoords.isEmpty() ? startCoords.getY() : 0.0)
+                 .endLongitude(!endCoords.isEmpty() ? endCoords.getX():0.0)
+                 .endLatitude(!endCoords.isEmpty() ? endCoords.getY() : 0.0)
                  .totalDistanceInKm(route.getDistanceInKm())
                  .imageUrls(imageUrls)
                  .timeStamp(route.getTimeStamp())
@@ -56,8 +57,8 @@ public class RouteMapper {
                  .difficultyLevel(route.getDifficultyLevel())
                  .maxElevation(route.getMaxElevation())
                  .totalDistanceInKm(route.getDistanceInKm())
-                 .endLongitude(!endCoords.isEmpty() ? endCoords.getX():null)
-                 .endLatitude(!endCoords.isEmpty() ? endCoords.getY() : null)
+                 .endLongitude(!endCoords.isEmpty() ? endCoords.getX():0.0)
+                 .endLatitude(!endCoords.isEmpty() ? endCoords.getY() : 0.0)
                  .imageUrls(imageUrls)
                  .build();
 
@@ -72,7 +73,7 @@ public class RouteMapper {
                 .difficultyLevel(projections.getDifficultyLevel())
                 .routeDistanceInKm(projections.getDistanceInKm())
                 .destinationName(projections.getDestinationName())
-                .distanceMetersFromCurrent(projections.getDistanceMeters()!=null || projections.getDistanceMeters()>1.0? projections.getDistanceMeters()/1000 : projections.getDistanceMeters())
+                .distanceMetersFromCurrent(projections.getDistanceMeters()!=null || projections.getDistanceMeters()>1.0? projections.getDistanceMeters() : 0.0)
                 .build();
     }
 }
