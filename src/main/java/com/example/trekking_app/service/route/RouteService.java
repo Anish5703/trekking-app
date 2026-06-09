@@ -11,6 +11,7 @@ import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.route.CreateRouteFailedException;
 import com.example.trekking_app.mapper.GeoJsonMapper;
 import com.example.trekking_app.mapper.RouteMapper;
+import com.example.trekking_app.model.EntityType;
 import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.repository.*;
 import jakarta.annotation.Nonnull;
@@ -26,10 +27,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.sound.midi.Track;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -45,6 +44,7 @@ public class RouteService {
     private final GpxSegmentRepository gpxSegmentRepo;
     private final RecentlyViewedRepository recentlyViewedRepo;
     private final TrackPointRepository trackPointRepo;
+    private final ImageRepository imageRepo;
 
 
 
@@ -60,7 +60,8 @@ public class RouteService {
         TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
         Point startCoords = tp1!=null ? tp1.getGeom() : null;
         Point endCoords = tp2!=null ? tp2.getGeom() : null;
-        RouteResponse routeResponse = routeMapper.toRouteResponse(route,startCoords,endCoords);
+        List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()).stream().map(Image::getUrl).toList();
+        RouteResponse routeResponse = routeMapper.toRouteResponse(route,startCoords,endCoords,imageUrls);
         return new ApiResponse<>(routeResponse, "route fetched", 200);
     }
 
@@ -76,7 +77,13 @@ public class RouteService {
         );
         List<RouteDetails> routeResponseList = new ArrayList<>();
         routeList.forEach(
-                route -> routeResponseList.add(routeMapper.toRouteDetails(route))
+                route ->
+                {
+                    List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()).stream().map(Image::getUrl).toList();
+                    TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+                    Point endCoords = tp2!=null ? tp2.getGeom() : null;
+                    routeResponseList.add(routeMapper.toRouteDetails(route,endCoords,imageUrls));
+                }
         );
         return new ApiResponse<>(routeResponseList, "routes fetched ", 200);
     }
@@ -85,7 +92,13 @@ public class RouteService {
     public ApiResponse<Page<RouteDetails>> getAllRoutes(Integer page, Integer size) {
         Pageable pageable = PageRequest.of(page, size);
         if (routeRepo.count() < 1) throw new NoResourceFoundException("routes");
-        Page<RouteDetails> routeDetails = routeRepo.findAll(pageable).map(routeMapper::toRouteDetails);
+        Page<RouteDetails> routeDetails = routeRepo.findAll(pageable).map(route ->
+        {
+            List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()).stream().map(Image::getUrl).toList();
+            TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+            Point endCoords = tp2!=null ? tp2.getGeom() : null;
+            return routeMapper.toRouteDetails(route,endCoords,imageUrls);
+        });
         return new ApiResponse<>(routeDetails, "routes fetched", 200);
     }
 
@@ -101,7 +114,7 @@ public class RouteService {
         Route route = routeMapper.toEntity(routeRequest, user, destination);
         try {
             Route newRoute = routeRepo.save(route);
-            RouteResponse routeResponse = routeMapper.toRouteResponse(newRoute,null,null);
+            RouteResponse routeResponse = routeMapper.toRouteResponse(newRoute,null,null,null);
             return new ApiResponse<>(routeResponse, "New route created", 201);
         } catch (Exception ex) {
             if(routeRepo.existsByNameAndDestination_Id(routeRequest.getName(),destination.getId())) throw new CreateRouteFailedException("route with this name and destination already exists");
@@ -159,8 +172,8 @@ public class RouteService {
         TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
         Point startCoords = tp1!=null ? tp1.getGeom() : null;
         Point endCoords = tp2!=null ? tp2.getGeom() : null;
-
-        RouteResponse routeResponse = routeMapper.toRouteResponse(updatedRoute,startCoords,endCoords);
+        List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()).stream().map(Image::getUrl).toList();
+        RouteResponse routeResponse = routeMapper.toRouteResponse(updatedRoute,startCoords,endCoords,imageUrls);
         return new ApiResponse<>(routeResponse,"route updated",200);
     }
     @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
@@ -184,7 +197,7 @@ public class RouteService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<List<NearbyRouteResponse>> getNearbyRoutes(NearbyRouteRequest routeRequest)
+    public ApiResponse<List<NearbyRouteResponse>> getNearbyRoutes(NearbyRequest routeRequest)
     {
         List<NearbyRouteProjection> nearbyRoutes = routeRepo.findNearbyRoutes(routeRequest.getLatitude(),
                 routeRequest.getLongitude(),
@@ -202,7 +215,14 @@ public class RouteService {
 
         Pageable pageable = PageRequest.of(page,size);
         Page<RouteDetails> recentlyViewedRoutes = recentlyViewedRepo.findByUser_IdOrderByUpdatedAtDesc(user.getId(),pageable).
-                map(rc -> routeMapper.toRouteDetails(rc.getRoute()));
+                map(rc ->
+                {
+                    Route route = rc.getRoute();
+                    List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()).stream().map(Image::getUrl).toList();
+                    TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+                    Point endCoords = tp2!=null ? tp2.getGeom() : null;
+                    return routeMapper.toRouteDetails(route,endCoords,imageUrls);
+                });
         if(recentlyViewedRoutes.isEmpty()) throw new NoResourceFoundException("recently viewed routes");
         return new ApiResponse<>(recentlyViewedRoutes,"recently viewed routes fetched",200);
     }
@@ -210,7 +230,13 @@ public class RouteService {
     public ApiResponse<Page<RouteDetails>> getPopularRoutes(@NonNull Integer page, @NonNull Integer size)
     {
         Pageable pageable = PageRequest.of(page,size);
-        Page<RouteDetails> popularRoutes = recentlyViewedRepo.findMostPopularRoutes(pageable).map(routeMapper::toRouteDetails);
+        Page<RouteDetails> popularRoutes = recentlyViewedRepo.findMostPopularRoutes(pageable).map(route ->
+        {
+            List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()).stream().map(Image::getUrl).toList();
+            TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+            Point endCoords = tp2!=null ? tp2.getGeom() : null;
+            return routeMapper.toRouteDetails(route,endCoords,imageUrls);
+        });
         if(popularRoutes.isEmpty()) throw new NoResourceFoundException("popular routes");
         return new ApiResponse<>(popularRoutes,"popular routes fetched",200);
 
@@ -239,7 +265,13 @@ public class RouteService {
     public ApiResponse<Page<RouteDetails>> searchRoutesByKeyword(@NonNull String keyword, @NonNull Integer page, @NonNull Integer size)
     {
         Pageable pageable = PageRequest.of(page,size);
-        Page<RouteDetails> foundRoutes = routeRepo.searchByKeyword(keyword,pageable).map(routeMapper::toRouteDetails);
+        Page<RouteDetails> foundRoutes = routeRepo.searchByKeyword(keyword,pageable).map(route ->
+        {
+            List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()).stream().map(Image::getUrl).toList();
+            TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+            Point endCoords = tp2!=null ? tp2.getGeom() : null;
+            return routeMapper.toRouteDetails(route,endCoords,imageUrls);
+        });
         if(foundRoutes.isEmpty()) throw new ResourceNotFoundException("route","keyword",keyword);
         return new ApiResponse<>(foundRoutes,"searched results",200);
     }

@@ -33,6 +33,7 @@ public class DestinationMapper {
                 .name(destination.getName())
                 .district(destination.getDistrict())
                 .region(destination.getRegion())
+                .imageUrls(imageUrls)
                 .build();
     }
 }

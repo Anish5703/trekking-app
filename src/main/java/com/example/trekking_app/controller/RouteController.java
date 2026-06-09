@@ -68,7 +68,7 @@ public class RouteController {
                                                                                         @RequestParam Double radiusMeters,
                                                                                         @RequestParam Integer limit)
     {
-        NearbyRouteRequest request = NearbyRouteRequest.builder().
+        NearbyRequest request = NearbyRequest.builder().
                 longitude(longitude).latitude(latitude).radiusMeters(radiusMeters).limit(limit).
                 build();
         ApiResponse<List<NearbyRouteResponse>> response = routeService.getNearbyRoutes(request);

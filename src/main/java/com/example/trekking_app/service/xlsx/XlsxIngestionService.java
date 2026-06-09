@@ -11,6 +11,7 @@ import com.example.trekking_app.repository.RouteRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,7 +26,7 @@ public class XlsxIngestionService {
     private final RouteRepository routeRepo;
     private final ComputeService computeService;
 
-
+    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
     public ApiResponse<XlsxImportResponse> uploadXlsx(@NonNull Integer routeId, @NonNull MultipartFile file) {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
@@ -52,6 +53,7 @@ public class XlsxIngestionService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
+
         CompletableFuture<Integer> poiDeleted = computeService.deleteAllPOI(route);
         CompletableFuture<Integer> accommodationDeleted = computeService.deleteAllAccommodation(route);
         CompletableFuture<Integer> trailSegmentDeleted = computeService.deleteAllTrailSegment(route);
