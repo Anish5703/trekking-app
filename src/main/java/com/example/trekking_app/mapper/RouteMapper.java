@@ -85,16 +85,26 @@ public class RouteMapper {
 
 
     }
-    public NearbyRouteResponse toNearbyRouteResponse(@NonNull NearbyRouteProjection projections)
+    public RouteDetails toNearbyRouteResponse(@NonNull NearbyRouteProjection projections)
     {
-        return NearbyRouteResponse.builder()
-                .routeId(projections.getId())
-                .routeName(projections.getName())
-                .estimatedDays(projections.getEstimatedDays())
-                .difficultyLevel(projections.getDifficultyLevel())
-                .routeDistanceInKm(projections.getDistanceInKm())
-                .destinationName(projections.getDestinationName())
-                .distanceMetersFromCurrent(projections.getDistanceMeters()!=null || projections.getDistanceMeters()>1.0? projections.getDistanceMeters() : 0.0)
+        double endLong = 0.0;
+        double endLat = 0.0;
+        if(endCoords!=null) {
+            endLong = endCoords.getX();
+            endLat = endCoords.getY();
+        }
+
+        return RouteDetails.builder()
+                .id(route.getId())
+                .name(route.getName())
+                .destinationId(route.getDestination().getId())
+                .estimatedDays(route.getEstimatedDays())
+                .difficultyLevel(route.getDifficultyLevel())
+                .maxElevation(route.getMaxElevation())
+                .totalDistanceInKm(route.getDistanceInKm())
+                .endLongitude(endLong)
+                .endLatitude(endLat)
+                .imageUrls(imageUrls)
                 .build();
     }
 }
