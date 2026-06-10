@@ -9,4 +9,6 @@ public interface TrailSegmentRepository extends JpaRepository<TrailSegment,Integ
 
 
     List<TrailSegment> findByRoute_Id(Integer routeId);
+
+    void deleteByGpxSegment_Id(int gpxSegment_id);
 }

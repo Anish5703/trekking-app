@@ -61,4 +61,5 @@ public class GpxSegment {
     private List<TrackPoint> wayPoints = new ArrayList<>();
 
 
+
 }

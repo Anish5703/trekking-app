@@ -9,10 +9,7 @@ import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.exception.resource.*;
 import com.example.trekking_app.mapper.GpxSegmentMapper;
 import com.example.trekking_app.model.GpxSegmentStatus;
-import com.example.trekking_app.repository.GpxSegmentRepository;
-import com.example.trekking_app.repository.RouteRepository;
-import com.example.trekking_app.repository.TrackPointRepository;
-import com.example.trekking_app.repository.WayPointRepository;
+import com.example.trekking_app.repository.*;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +32,9 @@ public class GpxIngestionService {
     private final GpxParserService gpxParserService;
     private final TrackPointRepository trackPointRepo;
     private final WayPointRepository wayPointRepo;
+    private final TrailSegmentRepository trailSegmentRepo;
+    private final POIRepository poiRepo;
+    private final AccommodationRepository accommodationRepo;
     private final GpxMergeService gpxMergeService;
     private final GpxSegmentMapper gpxSegmentMapper = new GpxSegmentMapper();
 
@@ -132,7 +132,12 @@ public class GpxIngestionService {
             if(segmentStatus.equals(GpxSegmentStatus.TRACKPOINT))
                 trackPointRepo.deleteAllByGpxSegment_Id(gpxSegment.getId());
             else
+            {
+                trailSegmentRepo.deleteByGpxSegment_Id(gpxSegment.getId());
+                poiRepo.deleteAllByWayPoint_GpxSegment_Id(gpxSegment.getId());
+                accommodationRepo.deleteByWayPoint_GpxSegment_Id(gpxSegment.getId());
                 wayPointRepo.deleteAllByGpxSegment_Id(gpxSegment.getId());
+            }
             gpxSegmentRepo.deleteById(gpxSegment.getId());
             if (segmentStatus.equals(GpxSegmentStatus.TRACKPOINT))
                 gpxMergeService.mergeTrackPoints(route.getId());
