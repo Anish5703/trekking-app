@@ -92,10 +92,13 @@ public class DestinationService {
     public ApiResponse<Void> deleteDestination(int destinationId)
     {
 
-            boolean isExists = destinationRepo.existsById(destinationId);
-            if(!isExists) throw new ResourceNotFoundException("destination","id",destinationId);
+            Destination destination = destinationRepo.findById(destinationId).orElseThrow(
+                    () -> new ResourceNotFoundException("destination","id",destinationId));
             try{
-                destinationRepo.deleteById(destinationId);
+                if(!destination.getRoutes().isEmpty())
+                    throw new ResourceDeletionFailedException("failed to delete destination ! delete routes associated with destination first");
+                imageRepo.deleteByEntityTypeAndEntityId(EntityType.DESTINATION,destination.getId());
+                destinationRepo.deleteById(destination.getId());
             return new ApiResponse<>(null,"destination deleted",200);
         }
         catch (Exception e)

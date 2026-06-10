@@ -192,6 +192,8 @@ public class RouteService {
         Optional<List<GpxSegment>> gpxSegments = gpxSegmentRepo.findByRoute(route);
         if(gpxSegments.isPresent() && !gpxSegments.get().isEmpty())
             throw new ResourceDeletionFailedException("failed to delete route ! delete gpx files associated with route first");
+        if(imageRepo.existsByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()))
+            imageRepo.deleteByEntityTypeAndEntityId(EntityType.ROUTE,route.getId());
         routeRepo.delete(route);
         return new ApiResponse<>(null,"route deleted",200);
 
