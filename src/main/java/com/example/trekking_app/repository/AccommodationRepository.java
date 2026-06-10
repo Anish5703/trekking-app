@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AccommodationRepository extends JpaRepository<Accommodation,Integer> {
     boolean existsByRoute_IdAndLongitudeAndLatitude(Route route, @NonNull Double longitude, @NonNull Double latitude);
+
+    void deleteByWayPoint_GpxSegment_Id(int gpxSegmentId);
 }

@@ -33,7 +33,14 @@ public class POITypeResolver {
             if (containsAny(name, "mandir", "temple", "ashram", "stupa", "gompa")) return POIType.TEMPLE;
             if (containsAny(name, "viewpoint", "view point")) return POIType.VIEWPOINT;
             if (containsAny(name, "well", "tap", "spring", "river")) return POIType.WATER_SOURCE;
+            if (containsAny(name,"drinking water")) return POIType.DRINKING_WATER;
+            if(containsAny(name,"non-verified drinking water")) return POIType.NON_VERIFIED_DRINKING_WATER;
             if (containsAny(name, "health post", "clinic")) return POIType.HEALTH_POST;
+            if(containsAny(name,"camping spot","camping site")) return POIType.CAMP_SPOT;
+            if(containsAny(name,"information board")) return POIType.INFORMATION_BOARD;
+            if(containsAny(name,"police station")) return POIType.POLICE_STATION;
+            if(containsAny(name,"atm")) return POIType.ATM;
+            if(containsAny(name,"restroom" , "toilet","washroom")) return POIType.RESTROOM;
 
             // 4. fallback
             return POIType.OTHER;

@@ -428,9 +428,17 @@ public class XlsxParserHelper {
             case "water" -> TrailType.WATER;
             case "rocky trail" -> TrailType.ROCKY_TRAIL;
             case "stone stairs trail" -> TrailType.STONE_STAIRS;
+            case "trail with no stairs (less than 5 steps)" -> TrailType.PLAIN_TRAIL;
+            case "stairs (concrete, stone) (at least 5 or more steps)" -> TrailType.CONCRETE_STONE_STAIRS;
+            case "concrete or asphalt trail" -> TrailType.CONCRETE_OR_ASPHALT_TRAIL;
+            case "bridge" -> TrailType.BRIDGE;
             case "earthen forest trail" -> TrailType.EARTHEN_FOREST_TRAIL;
             case "concrete stairs" -> TrailType.CONCRETE_STAIRS;
             case "dhunga chapeko" -> TrailType.DHUNGA_CHAPEKO;
+            case "gravel path" -> TrailType.GRAVEL_PATH;
+            case "ice trail" -> TrailType.ICE_TRAIL;
+            case "wooden bridge" -> TrailType.WOODEN_BRIDGE;
+            case "suspension bridge" -> TrailType.SUSPENSION_BRIDGE;
             default -> TrailType.OTHER;
         };
     }
