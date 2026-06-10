@@ -51,10 +51,9 @@ public class ImageService {
                                                        @NonNull Integer entityId) {
         String folder = CloudinaryFolders.resolvePath(entityType, entityId);
         Set<String> existingNames = imageRepo.findOriginalNamesByEntityTypeAndEntityId(entityType, entityId);
-
+        boolean isFirstTimeUpload = existingNames.isEmpty();
         List<String> skipped = new CopyOnWriteArrayList<>();
         List<String> failed = new CopyOnWriteArrayList<>();
-
         List<MultipartFile> validFiles = files.stream()
                 .filter(f -> {
                     String filename = f.getOriginalFilename();
@@ -97,7 +96,7 @@ public class ImageService {
                                 .originalName(originalName)
                                 .entityType(entityType)
                                 .entityId(entityId)
-                                .isPrimary(firstImage.getAndSet(false))
+                                .isPrimary(isFirstTimeUpload ? firstImage.getAndSet(false) : false)
                                 .build();
                     }, heavyTaskExecutor).exceptionally(e -> {
                         log.error("Upload failed file={} entity={} id={}: {}", originalName, entityType, entityId, e.getMessage());
@@ -191,7 +190,6 @@ public class ImageService {
 
         return new ApiResponse<>(null, "image deleted", 200);
     }
-
 
     public ApiResponse<List<ImageResponse>> getImages(EntityType entityType, @NonNull Integer entityId) {
         List<ImageResponse> imageResponses = imageRepo.findByEntityTypeAndEntityId(entityType, entityId).stream().map(imageMapper::toImageResponse).toList();

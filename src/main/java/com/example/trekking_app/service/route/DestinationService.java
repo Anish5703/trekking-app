@@ -10,6 +10,7 @@ import com.example.trekking_app.mapper.DestinationMapper;
 import com.example.trekking_app.model.EntityType;
 import com.example.trekking_app.repository.DestinationRepository;
 import com.example.trekking_app.repository.ImageRepository;
+import com.example.trekking_app.service.image.CloudinaryService;
 import com.example.trekking_app.service.image.ImageService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class DestinationService {
     private final DestinationRepository destinationRepo;
     private final DestinationMapper destinationMapper = new DestinationMapper();
    private final ImageRepository imageRepo;
+   private final ImageService imageService;
 
 
     @Transactional(readOnly = true)
@@ -97,14 +99,26 @@ public class DestinationService {
             try{
                 if(!destination.getRoutes().isEmpty())
                     throw new ResourceDeletionFailedException("failed to delete destination ! delete routes associated with destination first");
-                imageRepo.deleteByEntityTypeAndEntityId(EntityType.DESTINATION,destination.getId());
+               //search for associated images
+                List<Image> images = imageRepo.findByEntityTypeAndEntityId(EntityType.DESTINATION,destination.getId());
                 destinationRepo.deleteById(destination.getId());
+                if(!images.isEmpty())images.forEach(this::deleteImagesForDestination);
             return new ApiResponse<>(null,"destination deleted",200);
         }
         catch (Exception e)
         {
             log.error("Failed to delete destination "+ destinationId);
             throw new ResourceDeletionFailedException("destination" ,"id" ,destinationId);
+        }
+    }
+
+    public void deleteImagesForDestination(Image image)
+    {
+        try{
+            imageService.deleteImage(image.getId());
+        }
+        catch (Exception ignored) {
+            log.error("failed to delete image id"+image.getId());
         }
     }
 
