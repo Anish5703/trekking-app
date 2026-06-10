@@ -87,6 +87,9 @@ public class Route extends BaseEntity{
     @OneToMany(mappedBy = "route" ,cascade = CascadeType.ALL , orphanRemoval = true , fetch = FetchType.LAZY)
     private List<WayPoint> waypoints = new ArrayList<>();
 
+    @OneToMany(mappedBy = "route" ,cascade = CascadeType.ALL , orphanRemoval = true , fetch = FetchType.LAZY)
+    private List<RecentlyViewed> recentlyViewed = new ArrayList<>();
+
 
     @OneToMany(mappedBy = "route" ,cascade = CascadeType.ALL , orphanRemoval = true , fetch = FetchType.LAZY)
     private List<POI> pois = new ArrayList<>();
