@@ -26,10 +26,10 @@ public class RouteMapper {
 
     public RouteResponse toRouteResponse(@NonNull Route route, Point startCoords, Point endCoords, List<String> imageUrls)
     {
-        double startLong = 0.0;
-        double startLat = 0.0;
-        double endLong = 0.0;
-        double endLat = 0.0;
+        Double startLong = 0.0;
+        Double startLat = 0.0;
+        Double endLong = 0.0;
+        Double endLat = 0.0;
         if(startCoords!=null ) {
             startLong = startCoords.getX();
             startLat = startCoords.getY();
@@ -84,17 +84,5 @@ public class RouteMapper {
                  .build();
 
 
-    }
-    public NearbyRouteResponse toNearbyRouteResponse(@NonNull NearbyRouteProjection projections)
-    {
-        return NearbyRouteResponse.builder()
-                .routeId(projections.getId())
-                .routeName(projections.getName())
-                .estimatedDays(projections.getEstimatedDays())
-                .difficultyLevel(projections.getDifficultyLevel())
-                .routeDistanceInKm(projections.getDistanceInKm())
-                .destinationName(projections.getDestinationName())
-                .distanceMetersFromCurrent(projections.getDistanceMeters()!=null || projections.getDistanceMeters()>1.0? projections.getDistanceMeters() : 0.0)
-                .build();
     }
 }

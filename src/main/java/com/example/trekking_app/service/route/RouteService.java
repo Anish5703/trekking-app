@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Slf4j
@@ -197,13 +198,22 @@ public class RouteService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<List<NearbyRouteResponse>> getNearbyRoutes(NearbyRequest routeRequest)
+    public ApiResponse<List<RouteDetails>> getNearbyRoutes(NearbyRequest routeRequest)
     {
         List<NearbyRouteProjection> nearbyRoutes = routeRepo.findNearbyRoutes(routeRequest.getLatitude(),
                 routeRequest.getLongitude(),
                 routeRequest.getRadiusMeters(),routeRequest.getLimit());
         if(nearbyRoutes.isEmpty()) throw new NoResourceFoundException("nearby routes");
-        List<NearbyRouteResponse> routeResponses = nearbyRoutes.stream().map(routeMapper::toNearbyRouteResponse).toList();
+        List<Route> routes = nearbyRoutes.stream()
+                .map(proj -> routeRepo.findById(proj.getId())
+                .orElse(null)).filter(Objects::nonNull).toList();
+        List<RouteDetails> routeResponses = routes.stream().map(route ->
+        {
+            TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+            Point endCoords = tp2!=null ? tp2.getGeom() : null;
+            List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()).stream().map(Image::getUrl).toList();
+            return routeMapper.toRouteDetails(route,endCoords,imageUrls);
+        }).toList();
         return new ApiResponse<>(routeResponses,"nearby route fetched",200);
     }
 

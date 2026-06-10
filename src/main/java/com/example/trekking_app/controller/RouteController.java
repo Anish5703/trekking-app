@@ -63,7 +63,7 @@ public class RouteController {
     }
 
     @GetMapping("/nearby")
-    public ResponseEntity<ApiResponse<List<NearbyRouteResponse>>> handleGetNearbyRoutes(@RequestParam Double longitude ,
+    public ResponseEntity<ApiResponse<List<RouteDetails>>> handleGetNearbyRoutes(@RequestParam Double longitude ,
                                                                                         @RequestParam Double latitude,
                                                                                         @RequestParam Double radiusMeters,
                                                                                         @RequestParam Integer limit)
@@ -71,7 +71,7 @@ public class RouteController {
         NearbyRequest request = NearbyRequest.builder().
                 longitude(longitude).latitude(latitude).radiusMeters(radiusMeters).limit(limit).
                 build();
-        ApiResponse<List<NearbyRouteResponse>> response = routeService.getNearbyRoutes(request);
+        ApiResponse<List<RouteDetails>> response = routeService.getNearbyRoutes(request);
         return ResponseEntity.status(200).body(response);
     }
 
