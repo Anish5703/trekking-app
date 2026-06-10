@@ -16,4 +16,8 @@ public interface ImageRepository extends JpaRepository<Image,Integer> {
     List<Image> findByEntityTypeAndEntityId(EntityType entityType, @NonNull Integer entityId);
 
     Set<String> findOriginalNamesByEntityTypeAndEntityId(@NonNull EntityType entityType, @NonNull Integer entityId);
+
+    boolean existsByEntityTypeAndEntityId(EntityType entityType, Integer id);
+
+    void deleteByEntityTypeAndEntityId(EntityType entityType, Integer entityId);
 }

@@ -3,6 +3,9 @@ package com.example.trekking_app.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Table(name ="destinations",
 uniqueConstraints = {
         @UniqueConstraint(columnNames = {"name","district","region"})
@@ -27,4 +30,7 @@ public class Destination {
 
     @Column(nullable = false , length = 100)
     private String region;
+
+    @OneToMany(mappedBy = "destination" ,cascade = CascadeType.ALL , orphanRemoval = true , fetch = FetchType.LAZY)
+    private List<Route> routes = new ArrayList<>();
 }

@@ -14,6 +14,8 @@ import com.example.trekking_app.mapper.RouteMapper;
 import com.example.trekking_app.model.EntityType;
 import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.repository.*;
+import com.example.trekking_app.service.image.CloudinaryService;
+import com.example.trekking_app.service.image.ImageService;
 import jakarta.annotation.Nonnull;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +48,7 @@ public class RouteService {
     private final RecentlyViewedRepository recentlyViewedRepo;
     private final TrackPointRepository trackPointRepo;
     private final ImageRepository imageRepo;
+    private final ImageService imageService;
 
 
 
@@ -192,9 +195,22 @@ public class RouteService {
         Optional<List<GpxSegment>> gpxSegments = gpxSegmentRepo.findByRoute(route);
         if(gpxSegments.isPresent() && !gpxSegments.get().isEmpty())
             throw new ResourceDeletionFailedException("failed to delete route ! delete gpx files associated with route first");
+        //search for associated images
+        List<Image> images = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId());
         routeRepo.delete(route);
+        //delete associated images
+        if(!images.isEmpty()) images.forEach(this::deleteImagesForRoute);
         return new ApiResponse<>(null,"route deleted",200);
 
+    }
+    public void deleteImagesForRoute(Image image)
+    {
+        try{
+            imageService.deleteImage(image.getId());
+        }
+        catch (Exception ignored) {
+            log.error("failed to delete image id"+image.getId());
+        }
     }
 
     @Transactional(readOnly = true)
