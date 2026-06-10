@@ -80,7 +80,7 @@ public class ImageService {
             return new ApiResponse<>(new ImageUploadSummary(List.of(), skipped, failed), "no new images to upload", 200);
         }
 
-        AtomicBoolean firstImage = new AtomicBoolean(true);
+        AtomicBoolean firstImage = new AtomicBoolean(isFirstTimeUpload);
 
         List<CompletableFuture<Image>> futures = validFiles.stream()
                 .map(file -> {
@@ -96,7 +96,7 @@ public class ImageService {
                                 .originalName(originalName)
                                 .entityType(entityType)
                                 .entityId(entityId)
-                                .isPrimary(isFirstTimeUpload ? firstImage.getAndSet(false) : false)
+                                .isPrimary(firstImage.getAndSet(false))
                                 .build();
                     }, heavyTaskExecutor).exceptionally(e -> {
                         log.error("Upload failed file={} entity={} id={}: {}", originalName, entityType, entityId, e.getMessage());
