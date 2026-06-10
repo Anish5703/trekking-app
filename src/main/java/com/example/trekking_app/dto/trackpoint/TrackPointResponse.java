@@ -12,13 +12,13 @@ import lombok.NoArgsConstructor;
 @Builder
 public class TrackPointResponse {
 
-    private int id;
-    private int gpxSegmentId;
-    private double latitude;
-    private double longitude;
-    private int localSequence;
-    private int globalSequence;
-    private double elevation;
-    private boolean isDeleted;
+    private Integer id;
+    private Integer gpxSegmentId;
+    private Double latitude;
+    private Double longitude;
+    private Integer localSequence;
+    private Integer globalSequence;
+    private Double elevation;
+    private Boolean isDeleted;
     private TrackPointStatus status;
 }

@@ -26,7 +26,7 @@ public class TrackPointMapper {
                   .longitude(trackPoint.getLongitude())
                   .localSequence(trackPoint.getLocalSequence())
                   .globalSequence(trackPoint.getGlobalSequence())
-                  .elevation(trackPoint.getElevation())
+                  .elevation(trackPoint.getElevation()!=null ? trackPoint.getElevation() : 0.0)
                   .isDeleted(trackPoint.getIsDeleted())
                   .status(trackPoint.getStatus())
                   .build();
@@ -36,7 +36,7 @@ public class TrackPointMapper {
     {
         trackPoint.setLongitude(trackPointRequest.getLongitude());
         trackPoint.setLatitude(trackPointRequest.getLatitude());
-        trackPoint.setElevation(trackPointRequest.getElevation());
+        trackPoint.setElevation(trackPointRequest.getElevation()!=null ? trackPoint.getElevation() : 0.0);
         trackPoint.setStatus(trackPointRequest.getStatus());
         trackPoint.setIsDeleted(trackPoint.getStatus().equals(TrackPointStatus.SOFT_DELETED));
         Point point = GF.createPoint(new Coordinate(trackPointRequest.getLongitude(), trackPointRequest.getLatitude()));
