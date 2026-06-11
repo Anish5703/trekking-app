@@ -13,7 +13,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface AccommodationRepository extends JpaRepository<Accommodation,Integer> {
-    boolean existsByRoute_IdAndLongitudeAndLatitude(Route route, @NonNull Double longitude, @NonNull Double latitude);
+    boolean existsByRoute_IdAndLongitudeAndLatitude(@NonNull Integer routeId, @NonNull Double longitude, @NonNull Double latitude);
 
     void deleteByWayPoint_GpxSegment_Id(int gpxSegmentId);
 
