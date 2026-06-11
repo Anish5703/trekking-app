@@ -5,5 +5,7 @@ public enum WaterSource {
     BOREWELL,
     RIVER,
     MUNICIPAL,
-    MIXED
+    MIXED,
+    TAP,
+    WELL
 }
