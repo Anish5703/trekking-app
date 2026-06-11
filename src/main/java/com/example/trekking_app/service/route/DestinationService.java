@@ -96,9 +96,10 @@ public class DestinationService {
 
             Destination destination = destinationRepo.findById(destinationId).orElseThrow(
                     () -> new ResourceNotFoundException("destination","id",destinationId));
-            try{
+
                 if(!destination.getRoutes().isEmpty())
                     throw new ResourceDeletionFailedException("failed to delete destination ! delete routes associated with destination first");
+              try{
                //search for associated images
                 List<Image> images = imageRepo.findByEntityTypeAndEntityId(EntityType.DESTINATION,destination.getId());
                 destinationRepo.deleteById(destination.getId());
