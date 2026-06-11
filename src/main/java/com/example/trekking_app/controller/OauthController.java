@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 /*
 @Tag(
         name = "OAuth2 Authentication",
@@ -76,9 +78,7 @@ public class OauthController {
     public ResponseEntity<ApiResponse<OauthLoginResponse>> handleOauthLogin(Authentication authentication)
     {
       ApiResponse<OauthLoginResponse> response = oauthService.getOauthLogin(authentication);
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Content-Type","application/json");
-        return ResponseEntity.status(200).headers(headers).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
 
     }
 
@@ -86,8 +86,14 @@ public class OauthController {
     public ResponseEntity<ApiResponse<OauthLoginResponse>> handleAppOauthLogin(@NonNull @RequestBody OauthLoginRequest oauthLoginRequest)
     {
       ApiResponse<OauthLoginResponse> response = oauthService.getAppOauthLogin(oauthLoginRequest);
-      return ResponseEntity.status(200).body(response);
+      return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
+    private HttpHeaders buildRequestHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Request-Id", UUID.randomUUID().toString());
+        headers.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
+        return headers;
+    }
 
 }

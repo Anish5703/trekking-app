@@ -7,6 +7,7 @@ import com.example.trekking_app.service.route.RouteService;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -31,7 +33,7 @@ public class RouteController {
     public ResponseEntity<ApiResponse<List<RouteDetails>>> handleGetAllDestinationRoutes(@NonNull @RequestParam Integer destinationId)
     {
         ApiResponse<List<RouteDetails>> response = routeService.getAllDestinationRoutes(destinationId);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @GetMapping("/{routeId}")
@@ -40,7 +42,7 @@ public class RouteController {
 
         ApiResponse<RouteResponse> response = routeService.getRoute(routeId);
         routeService.updateRecentlyViewedStatus(user.getId(),routeId);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @GetMapping("/{routeId}/geoJson")
@@ -52,14 +54,14 @@ public class RouteController {
         GeoJsonFeatureCollection response = routeService.getRouteGeoJson(routeId,tolerance);
         routeService.updateRecentlyViewedStatus(user.getId(),routeId);
         log.info("Fetched route geJson in {} ms", Duration.between(startTime,Instant.now()).toMillis());
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<Page<RouteDetails>>> handleGetAllRoutes(@NonNull Integer page ,@NonNull Integer size)
     {
         ApiResponse<Page<RouteDetails>> response = routeService.getAllRoutes(page,size);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @GetMapping("/nearby")
@@ -72,7 +74,7 @@ public class RouteController {
                 longitude(longitude).latitude(latitude).radiusMeters(radiusMeters).limit(limit).
                 build();
         ApiResponse<List<RouteDetails>> response = routeService.getNearbyRoutes(request);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @GetMapping("/recentlyViewed")
@@ -81,7 +83,7 @@ public class RouteController {
                                                                                    @RequestParam @NonNull Integer size)
     {
         ApiResponse<Page<RouteDetails>> response = routeService.getRecentlyViewedRoutes(user.getId(),page,size);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
 
     }
     @GetMapping("/popular")
@@ -89,7 +91,7 @@ public class RouteController {
                                                                                   @RequestParam @NonNull Integer size)
     {
         ApiResponse<Page<RouteDetails>> response = routeService.getPopularRoutes(page,size);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @GetMapping("/search")
@@ -98,6 +100,11 @@ public class RouteController {
                                                                                       @RequestParam @NonNull Integer size)
     {
         ApiResponse<Page<RouteDetails>> response = routeService.searchRoutesByKeyword(keyword,page,size);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
+    private HttpHeaders buildRequestHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Request-Id", UUID.randomUUID().toString());
+        return headers;
     }
 }

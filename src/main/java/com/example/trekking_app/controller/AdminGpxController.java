@@ -8,6 +8,7 @@ import com.example.trekking_app.model.GpxSegmentStatus;
 import com.example.trekking_app.service.gpx.GpxIngestionService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/route/{routeId}/gpx")
@@ -30,7 +32,7 @@ public class AdminGpxController {
                                                                                         @NonNull @RequestParam GpxSegmentStatus segmentStatus)
     {
         ApiResponse<List<GpxSegmentResponse>> response = orchestrator.getAllGpxSegment(routeId,segmentStatus);
-        return  ResponseEntity.status(200).body(response);
+        return  ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @GetMapping("/{gpxSegmentId}")
@@ -38,7 +40,7 @@ public class AdminGpxController {
                                                                                 @PathVariable Integer gpxSegmentId)
     {
         ApiResponse<GpxSegmentResponse> response = orchestrator.getGpxSegment(routeId,gpxSegmentId);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @PostMapping(value = "/upload" , consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -47,7 +49,7 @@ public class AdminGpxController {
                                                                                 @NonNull @RequestParam GpxSegmentStatus segmentStatus) throws IOException
     {
         ApiResponse<List<GpxImportResponse>> response = orchestrator.uploadGpxFiles(routeId, files, segmentStatus);
-        return ResponseEntity.status(201).body(response);
+        return ResponseEntity.status(201).headers(buildRequestHeaders()).body(response);
 
     }
 
@@ -57,7 +59,7 @@ public class AdminGpxController {
                                                                     @NonNull @RequestParam GpxSegmentStatus segmentStatus)
     {
         ApiResponse<Void> response = orchestrator.deleteGpxSegment(gpxSegmentId,routeId,segmentStatus);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @PutMapping("/reorder")
@@ -66,7 +68,7 @@ public class AdminGpxController {
                                                                      @NonNull @RequestParam GpxSegmentStatus segmentStatus)
     {
         ApiResponse<Void> response = orchestrator.reorderGpxSegment(orderRequest,routeId,segmentStatus);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @PutMapping("/remerge")
@@ -74,9 +76,13 @@ public class AdminGpxController {
                                                                      @NonNull @RequestParam GpxSegmentStatus segmentStatus)
     {
         ApiResponse<Void> response = orchestrator.remergeGpxSegment(routeId,segmentStatus);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
 
-
+    private HttpHeaders buildRequestHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Request-Id", UUID.randomUUID().toString());
+        return headers;
+    }
 }

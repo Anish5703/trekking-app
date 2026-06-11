@@ -109,9 +109,8 @@ public class AuthController {
             @Valid @RequestBody SignupRequest signupRequest,
             @RequestHeader(value = "X-Client-Type",defaultValue="DEV")ClientType clientType)
     {
-        String requestId = UUID.randomUUID().toString();
         ApiResponse<SignupResponse> response = authService.signupUser(signupRequest,clientType);
-        return ResponseEntity.status(HttpStatus.CREATED).headers(buildSecureHeaders(requestId)).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).headers(buildRequestHeaders()).body(response);
     }
 
     @Operation(
@@ -170,9 +169,8 @@ public class AuthController {
             )
             @RequestParam(name = "token") String token)
     {
-        String requestId = UUID.randomUUID().toString();
         ApiResponse<SignupResponse> response = authService.validateSignupConfirmationToken(token);
-        return ResponseEntity.status(HttpStatus.OK).headers(buildSecureHeaders(requestId)).body(response);
+        return ResponseEntity.status(HttpStatus.OK).headers(buildRequestHeaders()).body(response);
     }
 
     @Operation(
@@ -263,11 +261,8 @@ public class AuthController {
             @RequestParam(name="email") @Email @NotBlank String email,  @RequestHeader(value = "X-Client-Type",defaultValue="DEV")ClientType clientType
             )
     {
-        String requestId = UUID.randomUUID().toString();
         ApiResponse<SignupResponse> response = authService.resendSignupConfirmation(email,clientType);
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Content-Type","application/json");
-        return ResponseEntity.status(HttpStatus.OK).headers(buildSecureHeaders(requestId)).body(response);
+        return ResponseEntity.status(HttpStatus.OK).headers(buildRequestHeaders()).body(response);
     }
 
     @Operation(
@@ -353,7 +348,7 @@ public class AuthController {
         String requestId = UUID.randomUUID().toString();
         ApiResponse<LoginResponse> response = authService.loginUser(loginRequest);
 
-        return ResponseEntity.status(HttpStatus.OK).headers(buildSecureHeaders(requestId)).body(response);
+        return ResponseEntity.status(HttpStatus.OK).headers(buildRequestHeaders()).body(response);
     }
 
 
@@ -362,7 +357,7 @@ public class AuthController {
     {
         String requestId = UUID.randomUUID().toString();
         ApiResponse<AccessTokenResponse> response = tokenService.generateJwtToken(accessTokenRequest.getRefreshToken());
-        return ResponseEntity.status(HttpStatus.OK).headers(buildSecureHeaders(requestId)).body(response);
+        return ResponseEntity.status(HttpStatus.OK).headers(buildRequestHeaders()).body(response);
     }
 
 
@@ -372,54 +367,21 @@ public class AuthController {
     {
         String requestId = UUID.randomUUID().toString();
         ApiResponse<Void> response = authService.forgotPasswordReset(email,clientType);
-        return ResponseEntity.status(200).headers(buildSecureHeaders(requestId)).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @PostMapping("/forgot-password/reset/confirmation")
     public ResponseEntity<ApiResponse<ForgotPasswordResetResponse>> handleVerifyForgotPasswordReset(@Valid @RequestBody ForgotPasswordResetRequest resetRequest)
     {
-        String requestId = UUID.randomUUID().toString();
         ApiResponse<ForgotPasswordResetResponse> response = authService.VerifyForgotPasswordReset(resetRequest);
-        return ResponseEntity.status(200).headers(buildSecureHeaders(requestId)).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
 
-    /*
-     * Builds a consistent set of security-hardened HTTP response headers
-     * for all auth endpoints.
-     * Note: X-Frame-Options, HSTS, CSP etc. are ideally handled globally
-     * via Spring Security config or an OncePerRequestFilter — kept here
-     * for controllers that bypass the security filter chain.
-     */
-    private HttpHeaders buildSecureHeaders(String requestId) {
+    private HttpHeaders buildRequestHeaders() {
         HttpHeaders headers = new HttpHeaders();
-
-        // Content negotiation
-        headers.set("Content-Type", "application/json");
-
-        // Prevent caching of auth responses
+        headers.set("X-Request-Id", UUID.randomUUID().toString());
         headers.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
-        headers.set("Pragma", "no-cache");
-        headers.set("Expires", "0");
-
-        // Clickjacking protection
-        headers.set("X-Frame-Options", "DENY");
-
-        // Prevent MIME sniffing
-        headers.set("X-Content-Type-Options", "nosniff");
-
-        // XSS protection (legacy browsers)
-        headers.set("X-XSS-Protection", "1; mode=block");
-
-        // HSTS — enforce HTTPS for 1 year
-        headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
-
-        // Referrer control
-        headers.set("Referrer-Policy", "no-referrer");
-
-        // Distributed tracing / observability
-        headers.set("X-Request-Id", requestId);
-
         return headers;
     }
 }

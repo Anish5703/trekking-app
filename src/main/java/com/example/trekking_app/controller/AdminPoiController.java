@@ -7,9 +7,12 @@ import com.example.trekking_app.service.poi.PoiService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RequestMapping("/api/v1/admin/route/{routeId}/poi")
 @RestController
@@ -24,7 +27,7 @@ public class AdminPoiController {
                                                     @Valid @RequestBody PoiRequest poiRequest)
     {
         ApiResponse<PoiResponse> response = poiService.createPoi(routeId,poiRequest);
-        return ResponseEntity.status(201).body(response);
+        return ResponseEntity.status(201).headers(buildRequestHeaders()).body(response);
     }
 
     @DeleteMapping("/{poiId}")
@@ -32,7 +35,7 @@ public class AdminPoiController {
                                                              @PathVariable Integer poiId)
     {
         ApiResponse<Void> response = poiService.deletePoi(routeId,poiId);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
 
     }
     @PutMapping("/{poiId}")
@@ -41,8 +44,13 @@ public class AdminPoiController {
                                                                     @Valid @RequestBody PoiRequest poiRequest)
     {
         ApiResponse<PoiResponse> response = poiService.updatePoi(routeId,poiId,poiRequest);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
 
     }
 
+    private HttpHeaders buildRequestHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Request-Id", UUID.randomUUID().toString());
+        return headers;
+    }
 }

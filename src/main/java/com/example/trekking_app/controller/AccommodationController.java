@@ -6,10 +6,12 @@ import com.example.trekking_app.dto.route.NearbyRequest;
 import com.example.trekking_app.service.accommodation.AccommodationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/route/{routeId}/accommodation")
@@ -31,7 +33,7 @@ public class AccommodationController
                                                                                               @RequestParam Integer size)
     {
         ApiResponse<Page<AccommodationResponse>> response = accommodationService.getAllAccommodation(routeId,page,size);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
     @GetMapping("/nearby")
     public ResponseEntity<ApiResponse<List<AccommodationResponse>>> handleGetNearbyAccommodation(@RequestParam Double longitude ,
@@ -43,6 +45,12 @@ public class AccommodationController
                 longitude(longitude).latitude(latitude).radiusMeters(radiusMeters).limit(limit).
                 build();
         ApiResponse<List<AccommodationResponse>> response = accommodationService.getAccommodationNearby(request);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
+
+    private HttpHeaders buildRequestHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Request-Id", UUID.randomUUID().toString());
+        return headers;
     }
 }

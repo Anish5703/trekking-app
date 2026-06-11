@@ -7,9 +7,12 @@ import com.example.trekking_app.service.waypoint.WayPointService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/route/{routeId}/waypoint")
@@ -25,7 +28,7 @@ public class AdminWayPointController {
                                                                                           @RequestParam Integer size)
     {
         ApiResponse<Page<WayPointResponse>> response = wayPointService.getAllWayPoints(routeId,page,size);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @GetMapping("/active/list")
@@ -34,7 +37,7 @@ public class AdminWayPointController {
                                                                                             @NonNull  Integer size)
     {
         ApiResponse<Page<WayPointResponse>> response = wayPointService.getActiveWayPoints(routeId,page,size);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
     @GetMapping("/inactive/list")
     public ResponseEntity<ApiResponse<Page<WayPointResponse>>> handleGetInActiveTrackPoints(@PathVariable Integer routeId,
@@ -42,7 +45,7 @@ public class AdminWayPointController {
                                                                                               @NonNull Integer size)
     {
         ApiResponse<Page<WayPointResponse>> response = wayPointService.getInactiveWayPoints(routeId,page,size);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
     @PutMapping("/{wayPointId}")
     public ResponseEntity<ApiResponse<WayPointResponse>> handleUpdateWayPoint(@PathVariable Integer routeId,
@@ -50,7 +53,7 @@ public class AdminWayPointController {
                                                                               @NonNull @RequestBody WayPointRequest wayPointRequest)
     {
         ApiResponse<WayPointResponse> response = wayPointService.updateWayPoint(routeId,wayPointId,wayPointRequest);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @DeleteMapping
@@ -58,7 +61,12 @@ public class AdminWayPointController {
                                                                     @NonNull @RequestParam Integer trackPointId)
     {
         ApiResponse<Void> response = wayPointService.deleteWayPoint(routeId,trackPointId);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
+    private HttpHeaders buildRequestHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Request-Id", UUID.randomUUID().toString());
+        return headers;
+    }
 }
