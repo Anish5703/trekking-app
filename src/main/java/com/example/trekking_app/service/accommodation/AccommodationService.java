@@ -47,7 +47,7 @@ public class AccommodationService
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
-        boolean existsByRouteAndLatitudeAnLongitude = accommodationRepo.existsByRoute_IdAndLongitudeAndLatitude(route,req.getLongitude(),req.getLatitude());
+        boolean existsByRouteAndLatitudeAnLongitude = accommodationRepo.existsByRoute_IdAndLongitudeAndLatitude(route.getId(),req.getLongitude(),req.getLatitude());
         if(existsByRouteAndLatitudeAnLongitude) throw new DuplicateResourceFoundException("accommodation","route id , longitude and latitude",String.format("%d , %f and %f",route.getId(),req.getLongitude(),req.getLatitude()));
         Accommodation acc = accommodationMapper.toEntity(req,route);
         try
