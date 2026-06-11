@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/route/{routeId}/accommodation")
+@RequestMapping("/api/v1/admin/route/{routeId}/accommodation")
 @RequiredArgsConstructor
 public class AdminAccommodationController {
     private final AccommodationService accommodationService;
@@ -24,5 +24,24 @@ public class AdminAccommodationController {
     return ResponseEntity.status(201).body(response);
 
 }
+
+@PutMapping("/{accommodationId}")
+    public ResponseEntity<ApiResponse<AccommodationResponse>> handleUpdateAccommodation(@PathVariable Integer routeId,
+                                                                                        @PathVariable Integer accommodationId,
+                                                                                        @Valid @RequestBody AccommodationRequest accommodationRequest)
+{
+    ApiResponse<AccommodationResponse> response = accommodationService.updateAccommodation(routeId,accommodationId,accommodationRequest);
+    return ResponseEntity.status(200).body(response);
+}
+
+@DeleteMapping("/{accommodationId}")
+    public ResponseEntity<ApiResponse<Void>> handleDeleteAccommodation(@PathVariable Integer routeId,
+                                                                       @PathVariable Integer accommodationId)
+{
+    ApiResponse<Void> response = accommodationService.deleteAccommodation(routeId,accommodationId);
+    return ResponseEntity.status(200).body(response);
+}
+
+
 
 }

@@ -58,10 +58,12 @@ public class ImageService {
                 .filter(f -> {
                     String filename = f.getOriginalFilename();
                     if (!isValidImageExtension(f)) {
+                        log.error("unsupported extension {}",filename);
                         skipped.add(filename + " (unsupported extension)");
                         return false;
                     }
                     if (filename == null || filename.isBlank()) {
+                        log.error("unknown file name {}",filename);
                         skipped.add("unknown (null filename)");
                         return false;
                     }
@@ -69,6 +71,7 @@ public class ImageService {
                             ? filename.substring(0, filename.lastIndexOf('.'))
                             : filename;
                     if (existingNames.contains(originalName)) {
+                        log.error("file already exists with name {}",filename);
                         skipped.add(originalName + " (already exists)");
                         return false;
                     }
@@ -116,6 +119,14 @@ public class ImageService {
         }
 
         List<String> uploaded = imagesToSave.stream().map(Image::getOriginalName).toList();
+        StringBuilder skippedMsg=new StringBuilder();
+        StringBuilder failedMsg = new StringBuilder();
+
+        skipped.forEach(m->skippedMsg.append(" . ").append(m));
+        failed.forEach((m -> failedMsg.append(" , ").append(m)));
+        String errorMsg = String.format("failed to upload images , skipped : %d , %s and failed %d , %s ",skipped.size(),skippedMsg ,failed.size(),failedMsg);
+
+        if(uploaded.isEmpty()) throw new FileParsingFailedException(errorMsg);
         return new ApiResponse<>(new ImageUploadSummary(uploaded, skipped, failed), "upload complete", 201);
     }
 

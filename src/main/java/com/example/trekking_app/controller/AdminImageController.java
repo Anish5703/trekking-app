@@ -21,7 +21,7 @@ public class AdminImageController
     private final ImageService imageService;
 
     @PostMapping(value = "/upload" ,consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<ImageUploadSummary>> handleUploadImageForPoi(@RequestParam EntityType entityType,
+    public ResponseEntity<ApiResponse<ImageUploadSummary>> handleUploadImage(@RequestParam EntityType entityType,
                                                                                    @RequestParam Integer entityId,
                                                @RequestPart("images") List<MultipartFile> images)
     {
@@ -29,7 +29,7 @@ public class AdminImageController
        return ResponseEntity.status(201).body(response);
     }
     @GetMapping()
-    public ResponseEntity<ApiResponse<List<ImageResponse>>> handleGetUploadedImageForPoi(@RequestParam EntityType entityType,
+    public ResponseEntity<ApiResponse<List<ImageResponse>>> handleGetUploadedImage(@RequestParam EntityType entityType,
                                                                                           @RequestParam Integer entityId)
     {
         ApiResponse<List<ImageResponse>> response = imageService.getImages(entityType,entityId);

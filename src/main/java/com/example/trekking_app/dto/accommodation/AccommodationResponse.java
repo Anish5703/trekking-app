@@ -13,6 +13,7 @@ import java.util.List;
 @Builder
 public class AccommodationResponse
 {
+    private Integer id;
     private Integer routeId;
     private String name;
     private Double latitude;
