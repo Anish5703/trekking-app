@@ -4,16 +4,12 @@ import com.example.trekking_app.model.POIType;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Entity
 @Table(name="pois" , indexes = {
         @Index( name = "idx_poi_route" , columnList = "route_id"),
         @Index(name = "idx_poi_type" , columnList = "route_id , type" ),
         @Index(name = "idx_poi_lat_lon" , columnList = "latitude , longitude")
 })
-@Inheritance(strategy = InheritanceType.JOINED)
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
