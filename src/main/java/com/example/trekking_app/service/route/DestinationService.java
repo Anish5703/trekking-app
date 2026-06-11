@@ -112,6 +112,7 @@ public class DestinationService {
         }
     }
 
+    // helper method for image deleting
     public void deleteImagesForDestination(Image image)
     {
         try{

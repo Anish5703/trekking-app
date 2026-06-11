@@ -12,6 +12,9 @@ import com.example.trekking_app.model.ErrorType;
 import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.tool.schema.spi.CommandAcceptanceException;
+import org.springframework.core.convert.ConversionException;
+import org.springframework.core.convert.ConversionFailedException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailSendException;
@@ -286,7 +289,28 @@ public class GlobalExceptionHandler {
     {
         log.error(ex.getMessage());
         ErrorResponse data = new ErrorResponse(ErrorType.DUPLICATE_RESOURCE_FOUND, ex.getLocalizedMessage());
-        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,"DATABASE ERROR",500);
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,"Database error",500);
         return ResponseEntity.status(500).body(response);
     }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleDataAccessException(DataAccessException ex)
+    {
+        log.error(ex.getMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.DATABASE_FAILURE, ex.getLocalizedMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,"Database error",500);
+        return ResponseEntity.status(500).body(response);
+    }
+
+    @ExceptionHandler({ConversionFailedException.class, ConversionException.class})
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleDataConversionException(Exception ex)
+    {
+        log.error(ex.getMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.INTERNAL_SERVER_ERROR, ex.getLocalizedMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,"internal server error",500);
+        return ResponseEntity.status(500).body(response);
+    }
+
+
+
 }

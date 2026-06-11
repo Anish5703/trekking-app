@@ -36,6 +36,7 @@ public class AccommodationMapper {
 
     public AccommodationResponse toAccommodationResponse(Accommodation acc, List<String> imageUrls) {
         return AccommodationResponse.builder()
+                .id(acc.getId())
                 .routeId(acc.getRoute() != null ? acc.getRoute().getId() : null)
                 .name(acc.getName())
                 .latitude(acc.getLatitude())
@@ -54,4 +55,5 @@ public class AccommodationMapper {
                 .hasFirstAid(acc.getHasFirstAid())
                 .build();
     }
+
 }

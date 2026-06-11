@@ -1,7 +1,6 @@
 package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.global.ApiResponse;
-import com.example.trekking_app.dto.poi.NearbyPoiResponse;
 import com.example.trekking_app.dto.poi.PoiResponse;
 import com.example.trekking_app.dto.route.NearbyRequest;
 import com.example.trekking_app.service.poi.PoiService;
@@ -35,7 +34,7 @@ public class PoiController {
         return ResponseEntity.status(200).body(response);
     }
     @GetMapping("/nearby")
-    public ResponseEntity<ApiResponse<List<NearbyPoiResponse>>> handleGetNearbyPoi(@RequestParam Double longitude ,
+    public ResponseEntity<ApiResponse<List<PoiResponse>>> handleGetNearbyPoi(@RequestParam Double longitude ,
                                                                                    @RequestParam Double latitude,
                                                                                    @RequestParam Double radiusMeters,
                                                                                    @RequestParam Integer limit)
@@ -43,7 +42,7 @@ public class PoiController {
         NearbyRequest request = NearbyRequest.builder().
                 longitude(longitude).latitude(latitude).radiusMeters(radiusMeters).limit(limit).
                 build();
-        ApiResponse<List<NearbyPoiResponse>> response = poiService.getPoiNearby(request);
+        ApiResponse<List<PoiResponse>> response = poiService.getPoiNearby(request);
         return ResponseEntity.status(200).body(response);
     }
 
