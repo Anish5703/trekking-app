@@ -35,4 +35,5 @@ public class DestinationController {
         ApiResponse<DestinationResponse> response = destinationService.getDestination(destinationId);
         return ResponseEntity.status(200).body(response);
     }
+
 }

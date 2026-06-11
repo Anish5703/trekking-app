@@ -6,11 +6,14 @@ import com.example.trekking_app.service.xlsx.XlsxIngestionService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/route/{routeId}/xlsx")
@@ -26,7 +29,7 @@ public class AdminXlsxController {
                                                            @NonNull MultipartFile file)
     {
         ApiResponse<XlsxImportResponse> response = xlsxIngestionService.uploadXlsx(routeId,file);
-        return ResponseEntity.status(201).body(response);
+        return ResponseEntity.status(201).headers(buildRequestHeaders()).body(response);
     }
 
     @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
@@ -34,7 +37,12 @@ public class AdminXlsxController {
     public ResponseEntity<ApiResponse<Void>> handleDeleteXlsxImports(@PathVariable Integer routeId)
     {
         ApiResponse<Void> response = xlsxIngestionService.deleteXlsxImports(routeId);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
+    private HttpHeaders buildRequestHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Request-Id", UUID.randomUUID().toString());
+        return headers;
+    }
 }

@@ -6,10 +6,12 @@ import com.example.trekking_app.dto.route.NearbyRequest;
 import com.example.trekking_app.service.poi.PoiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/route/{routeId}/poi")
@@ -23,7 +25,7 @@ public class PoiController {
                                                                           @RequestParam Integer size)
     {
         ApiResponse<Page<PoiResponse>> response = poiService.getAllPoi(routeId,page,size);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @GetMapping("/{poiId}")
@@ -31,7 +33,7 @@ public class PoiController {
                                                                  @PathVariable Integer poiId)
     {
         ApiResponse<PoiResponse> response = poiService.getPoi(routeId, poiId);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
     @GetMapping("/nearby")
     public ResponseEntity<ApiResponse<List<PoiResponse>>> handleGetNearbyPoi(@RequestParam Double longitude ,
@@ -43,7 +45,12 @@ public class PoiController {
                 longitude(longitude).latitude(latitude).radiusMeters(radiusMeters).limit(limit).
                 build();
         ApiResponse<List<PoiResponse>> response = poiService.getPoiNearby(request);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
+    private HttpHeaders buildRequestHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Request-Id", UUID.randomUUID().toString());
+        return headers;
+    }
 }

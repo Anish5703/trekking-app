@@ -2,6 +2,7 @@ package com.example.trekking_app.service.auth;
 
 import com.example.trekking_app.dto.auth.*;
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.user.UserDetails;
 import com.example.trekking_app.entity.OauthUser;
 import com.example.trekking_app.entity.Token;
 import com.example.trekking_app.entity.User;
@@ -17,8 +18,6 @@ import com.example.trekking_app.repository.TokenRepository;
 import com.example.trekking_app.repository.UserRepository;
 import com.example.trekking_app.service.user.MailService;
 import com.example.trekking_app.service.user.TokenService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.Email;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +28,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -268,6 +268,16 @@ public class AuthService {
 
       ForgotPasswordResetResponse resetResponse = ForgotPasswordResetResponse.builder().email(user.getEmail()).build();
       return new ApiResponse<>(resetResponse,"password reset successfully",200);
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<UserDetails> getUserInfo(@NonNull Integer userId)
+    {
+        User user = userRepo.findById(userId).orElseThrow(
+                () -> new UserNotFoundException("user not found with id "+userId)
+        );
+        UserDetails userDetails = userMapper.toUserDetails(user);
+        return new ApiResponse<>(userDetails,"user info fetched",200);
     }
 
 }

@@ -10,11 +10,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/destination")
@@ -43,7 +46,7 @@ public class AdminDestinationController {
     public ResponseEntity<ApiResponse<DestinationResponse>> handleCreateDestination( @RequestBody DestinationRequest destinationRequest)
     {
         ApiResponse<DestinationResponse> response = destinationService.createDestination(destinationRequest);
-        return ResponseEntity.status(201).body(response);
+        return ResponseEntity.status(201).headers(buildRequestHeaders()).body(response);
     }
     @Operation(
             summary = "Update existing destination",
@@ -60,7 +63,7 @@ public class AdminDestinationController {
                                                                                         @Valid @RequestBody DestinationRequest destinationRequest)
     {
         ApiResponse<DestinationResponse> response = destinationService.updateDestination(destinationRequest,destinationId);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @Operation(
@@ -77,6 +80,11 @@ public class AdminDestinationController {
     public ResponseEntity<ApiResponse<Void>> handleDeleteDestination(@RequestParam int destinationId)
     {
         ApiResponse<Void> response = destinationService.deleteDestination(destinationId);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
+    private HttpHeaders buildRequestHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Request-Id", UUID.randomUUID().toString());
+        return headers;
     }
 }

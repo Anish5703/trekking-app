@@ -8,9 +8,12 @@ import jakarta.validation.Valid;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/route/{routeId}/trackpoint")
@@ -52,20 +55,26 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
                                                               @Valid @RequestBody TrackPointRequest trackPointRequest)
     {
         ApiResponse<TrackPointResponse> response = trackPointService.updateTrackPoint(routeId,trackPointId,trackPointRequest);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
     @DeleteMapping("/{trackPointId}")
     public ResponseEntity<ApiResponse<Void>> handleDeleteTrackPoint(@PathVariable Integer routeId ,
                                                                    @PathVariable Integer trackPointId)
     {
         ApiResponse<Void> response = trackPointService.deleteTrackPoint(routeId,trackPointId);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
     @PutMapping("/{trackPointId}/recover")
     public ResponseEntity<ApiResponse<Void>> handleUndoDeleteTrackPoint(@PathVariable Integer routeId,
                                                                         @PathVariable Integer trackPointId)
     {
         ApiResponse<Void> response = trackPointService.recoverTrackPoint(routeId,trackPointId);
-        return ResponseEntity.status(200).body(response);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
+
+    private HttpHeaders buildRequestHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Request-Id", UUID.randomUUID().toString());
+        return headers;
     }
 }
