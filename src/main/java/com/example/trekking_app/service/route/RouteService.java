@@ -301,5 +301,20 @@ public class RouteService {
         if(foundRoutes.isEmpty()) throw new ResourceNotFoundException("route","keyword",keyword);
         return new ApiResponse<>(foundRoutes,"searched results",200);
     }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<Page<RouteDetails>> getRecentlyAddedRoutes(@NonNull Integer page, @NonNull Integer size)
+    {
+        Pageable pageable = PageRequest.of(page,size);
+        Page<RouteDetails> foundRoutes = routeRepo.findAllByOrderByTimeStampDesc(pageable).map(route ->
+        {
+            List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()).stream().map(Image::getUrl).toList();
+            TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+            Point endCoords = tp2!=null ? tp2.getGeom() : null;
+            return routeMapper.toRouteDetails(route,endCoords,imageUrls);
+        });
+        if(foundRoutes.isEmpty()) throw new NoResourceFoundException("recently added");
+        return new ApiResponse<>(foundRoutes,"recently added",200);
+    }
 }
 

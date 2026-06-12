@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mail.MailSendException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -311,6 +312,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(500).body(response);
     }
 
-
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleMissingParameter(MissingServletRequestParameterException ex)
+    {
+        log.error(ex.getMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.ILLEGAL_ARGUMENTS, ex.getLocalizedMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,"Missing parameter ! check data.details for error description",400);
+        return ResponseEntity.status(500).body(response);
+    }
 
 }
