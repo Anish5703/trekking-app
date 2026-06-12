@@ -94,6 +94,14 @@ public class RouteController {
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
+    @GetMapping("/recentlyAdded")
+    public ResponseEntity<ApiResponse<Page<RouteDetails>>> handleGetRecentlyAddedRoutes(@RequestParam @NonNull Integer page,
+                                                                                        @RequestParam @NonNull Integer size)
+    {
+        ApiResponse<Page<RouteDetails>> response = routeService.getRecentlyAddedRoutes(page,size);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
+
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<Page<RouteDetails>>> handleSearchRoutesByKeyword(@RequestParam @NonNull String keyword,
                                                                                       @RequestParam @NonNull Integer page,

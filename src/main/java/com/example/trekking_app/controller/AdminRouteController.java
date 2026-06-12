@@ -54,12 +54,15 @@ public class AdminRouteController {
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
+
     @DeleteMapping("/{routeId}")
     public ResponseEntity<ApiResponse<Void>> handleDeleteRoute(@NonNull @PathVariable Integer routeId)
     {
         ApiResponse<Void> response = routeService.deleteRoute(routeId);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
+
+
 
     private HttpHeaders buildRequestHeaders() {
         HttpHeaders headers = new HttpHeaders();
