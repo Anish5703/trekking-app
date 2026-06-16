@@ -44,7 +44,9 @@ public class GpxIngestionService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
-        int nextOrder =  gpxSegmentRepo.findByRoute_IdAndSegmentStatusOrderByOrderIndexAsc(routeId,segmentStatus).stream().mapToInt(GpxSegment::getOrderIndex).max().orElse(0)+1;
+        int nextOrder =  gpxSegmentRepo.findTopByRoute_IdAndSegmentStatusOrderByOrderIndexDesc(routeId, segmentStatus)
+                .map(GpxSegment::getOrderIndex)
+                .orElse(0) + 1;
 
         List<GpxImportResponse> gpxImportResponses = new ArrayList<>();
         GpxImportResponse gpxImportResponse = new GpxImportResponse();
