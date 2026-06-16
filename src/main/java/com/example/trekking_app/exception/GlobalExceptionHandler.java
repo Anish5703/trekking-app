@@ -288,7 +288,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IncorrectResultSizeDataAccessException.class)
     public ResponseEntity<ApiResponse<ErrorResponse>> handleIncorrectResultSizeDataAccessException(IncorrectResultSizeDataAccessException ex)
     {
-        log.error(ex.getMessage());
+        log.error(ex.getMessage() , ex.getMessage() , ex.getStackTrace());
         ErrorResponse data = new ErrorResponse(ErrorType.DUPLICATE_RESOURCE_FOUND, ex.getLocalizedMessage());
         ApiResponse<ErrorResponse> response = new ApiResponse<>(data,"Database error",500);
         return ResponseEntity.status(500).body(response);
@@ -297,7 +297,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ApiResponse<ErrorResponse>> handleDataAccessException(DataAccessException ex)
     {
-        log.error(ex.getMessage());
+        log.error(ex.getMessage() , ex.getMessage() , ex.getStackTrace());
         ErrorResponse data = new ErrorResponse(ErrorType.DATABASE_FAILURE, ex.getLocalizedMessage());
         ApiResponse<ErrorResponse> response = new ApiResponse<>(data,"Database error",500);
         return ResponseEntity.status(500).body(response);
