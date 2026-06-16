@@ -192,12 +192,18 @@ public class RouteService {
             if (route.getRouteStatus().equals(RouteStatus.MERGING))
                 throw new ResourceDeletionFailedException("failed to delete route since it is merging currently");
         }
+        /*
         Optional<List<GpxSegment>> gpxSegments = gpxSegmentRepo.findByRoute(route);
+
         if(gpxSegments.isPresent() && !gpxSegments.get().isEmpty())
             throw new ResourceDeletionFailedException("failed to delete route ! delete gpx files associated with route first");
+
+         */
         //search for associated images
         List<Image> images = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId());
         routeRepo.delete(route);
+        Optional<List<GpxSegment>> gpxSegments = gpxSegmentRepo.findByRoute(route);
+
         //delete associated images
         if(!images.isEmpty()) images.forEach(this::deleteImagesForRoute);
         return new ApiResponse<>(null,"route deleted",200);
