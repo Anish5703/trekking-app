@@ -24,5 +24,6 @@ public class RouteDetails {
     private Double endLatitude;
     private Double totalDistanceInKm;
     private List<String> imageUrls;
+    private Boolean isPublished;
 
 }

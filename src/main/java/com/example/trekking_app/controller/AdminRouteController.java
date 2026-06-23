@@ -39,9 +39,10 @@ public class AdminRouteController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<RouteResponse>> handleGetRoute(@NonNull @RequestParam  Integer routeId)
+    public ResponseEntity<ApiResponse<RouteResponse>> handleGetRoute(@NonNull @RequestParam  Integer routeId,
+                                                                     @AuthenticationPrincipal UserPrincipal user)
     {
-        ApiResponse<RouteResponse> response = routeService.getRoute(routeId);
+        ApiResponse<RouteResponse> response = routeService.getRoute(routeId, user.getId());
         return  ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
@@ -62,7 +63,12 @@ public class AdminRouteController {
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
-
+    @PutMapping("/{routeId}/publish")
+    public ResponseEntity<ApiResponse<Void>> handleUpdateRoutePublishStatus(@PathVariable Integer routeId,@RequestParam(defaultValue = "true") Boolean publish)
+    {
+        ApiResponse<Void>  response = routeService.updateRoutePublishStatus(routeId,publish);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
 
     private HttpHeaders buildRequestHeaders() {
         HttpHeaders headers = new HttpHeaders();

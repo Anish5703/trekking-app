@@ -86,7 +86,7 @@ public class TrackPointService {
         return new ApiResponse<>(inactiveTrackPoints,message,200);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ApiResponse<TrackPointResponse> updateTrackPoint(@NonNull Integer routeId , @NonNull Integer trackPointId , @NonNull TrackPointRequest trackPointRequest)
     {
         Route route = routeRepo.findById(routeId).orElseThrow(
