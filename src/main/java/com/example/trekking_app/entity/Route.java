@@ -106,7 +106,7 @@ public class Route extends BaseEntity{
 
 public Boolean getIsPublished()
 {
-    return isPublished==null || isPublished==false ? false : true;
+    return isPublished==null || isPublished==true ? true : false;
 }
 
 }
