@@ -37,10 +37,11 @@ public class RouteController {
     }
 
     @GetMapping("/{routeId}")
-    public ResponseEntity<ApiResponse<RouteResponse>> handleGetRoute(@NonNull @PathVariable Integer routeId,@AuthenticationPrincipal UserPrincipal user)
+    public ResponseEntity<ApiResponse<RouteResponse>> handleGetRoute(@NonNull @PathVariable Integer routeId
+            ,@AuthenticationPrincipal UserPrincipal user)
     {
 
-        ApiResponse<RouteResponse> response = routeService.getRoute(routeId);
+        ApiResponse<RouteResponse> response = routeService.getRoute(routeId,user.getId());
         routeService.updateRecentlyViewedStatus(user.getId(),routeId);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
@@ -51,7 +52,7 @@ public class RouteController {
                                                                           @AuthenticationPrincipal UserPrincipal user)
     {
         Instant startTime = Instant.now();
-        GeoJsonFeatureCollection response = routeService.getRouteGeoJson(routeId,tolerance);
+        GeoJsonFeatureCollection response = routeService.getRouteGeoJson(routeId,tolerance, user.getId());
         routeService.updateRecentlyViewedStatus(user.getId(),routeId);
         log.info("Fetched route geJson in {} ms", Duration.between(startTime,Instant.now()).toMillis());
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);

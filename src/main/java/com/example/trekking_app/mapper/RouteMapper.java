@@ -57,6 +57,7 @@ public class RouteMapper {
                  .totalDistanceInKm(route.getDistanceInKm())
                  .imageUrls(imageUrls)
                  .timeStamp(route.getTimeStamp())
+                 .isPublished(route.getIsPublished())
                  .build();
 
     }
@@ -81,6 +82,7 @@ public class RouteMapper {
                  .endLongitude(endLong)
                  .endLatitude(endLat)
                  .imageUrls(imageUrls)
+                .isPublished(route.getIsPublished())
                  .build();
 
 

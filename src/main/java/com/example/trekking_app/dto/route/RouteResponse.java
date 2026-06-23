@@ -33,5 +33,6 @@ public class RouteResponse {
     private Double endLongitude;
     private Double endLatitude;
     private List<String> imageUrls;
+    private Boolean isPublished;
 
 }

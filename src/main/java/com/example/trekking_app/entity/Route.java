@@ -57,6 +57,9 @@ public class Route extends BaseEntity{
     @Column(name="estimated_days")
     private Integer estimatedDays;
 
+    @Column(name="is_published")
+    private Boolean isPublished;
+
     @Column
     @Builder.Default
     private Double distanceInKm=0.0;
@@ -101,7 +104,9 @@ public class Route extends BaseEntity{
    private List<OfflineRegion> offlineRegions = new ArrayList<>();
 
 
-
-
+public Boolean getIsPublished()
+{
+    return isPublished==null || isPublished==false ? false : true;
+}
 
 }

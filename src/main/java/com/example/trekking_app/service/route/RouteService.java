@@ -1,5 +1,6 @@
 package com.example.trekking_app.service.route;
 
+import ch.qos.logback.core.joran.conditional.IfAction;
 import com.example.trekking_app.dto.geoJson.GeoJsonFeatureCollection;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.*;
@@ -12,6 +13,7 @@ import com.example.trekking_app.exception.route.CreateRouteFailedException;
 import com.example.trekking_app.mapper.GeoJsonMapper;
 import com.example.trekking_app.mapper.RouteMapper;
 import com.example.trekking_app.model.EntityType;
+import com.example.trekking_app.model.Role;
 import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.repository.*;
 import com.example.trekking_app.service.image.CloudinaryService;
@@ -53,13 +55,19 @@ public class RouteService {
 
 
     @Transactional(readOnly = true)
-    public ApiResponse<RouteResponse> getRoute(Integer routeId) {
+    public ApiResponse<RouteResponse> getRoute(Integer routeId,Integer userId) {
         if (routeId < 1) throw new IllegalArgumentException("invalid route id ");
 
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
 
         );
+        //additional layer to prevent unpublished route from exposing
+        User user = userRepo.findById(userId).orElseThrow(() -> new UserNotFoundException("user not found with id "+userId));
+        if(!route.getIsPublished())
+            if(user.getRole().equals(Role.CUSTOMER)) throw new NoResourceFoundException("route is not published yet");
+
+
         TrackPoint tp1 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceAsc(route.getId()).orElse(null);
         TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
         Point startCoords = tp1!=null ? tp1.getGeom() : null;
@@ -129,10 +137,14 @@ public class RouteService {
 
     @Cacheable(value="route-geoJson",key ="#routeId + ':' + #tolerance" )
     @Transactional(readOnly = true)
-    public GeoJsonFeatureCollection getRouteGeoJson(@NonNull Integer routeId,@Nonnull Double tolerance) {
+    public GeoJsonFeatureCollection getRouteGeoJson(@NonNull Integer routeId,@Nonnull Double tolerance,@NonNull Integer userId) {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
+        //additional layer to prevent unpublished route from exposing
+        User user = userRepo.findById(userId).orElseThrow(() -> new UserNotFoundException("user not found with id "+userId));
+        if(!route.getIsPublished())
+            if(user.getRole().equals(Role.CUSTOMER)) throw new NoResourceFoundException("route is not published yet");
         log.info("fetching geoJson for route {}",routeId);
         if(route.getPath()==null) throw new CreateRouteFailedException("no path created for this route");
         switch (route.getRouteStatus()) {
@@ -321,6 +333,21 @@ public class RouteService {
         });
         if(foundRoutes.isEmpty()) throw new NoResourceFoundException("recently added");
         return new ApiResponse<>(foundRoutes,"recently added",200);
+    }
+
+    public ApiResponse<Void> updateRoutePublishStatus(@NonNull Integer routeId,@NonNull Boolean publish)
+    {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route","id",routeId)
+        );
+        route.setIsPublished(publish);
+        try{
+           routeRepo.save(route);
+           String message = publish ? "route published " : "route unpublished";
+           return new ApiResponse<>(null,message,200);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }
 
