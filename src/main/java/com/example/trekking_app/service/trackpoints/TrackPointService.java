@@ -112,7 +112,7 @@ public class TrackPointService {
 
     }
 
-
+   @Transactional
     public ApiResponse<Void> deleteTrackPoint(Integer routeId, Integer trackPointId) {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
