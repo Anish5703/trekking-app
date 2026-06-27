@@ -58,7 +58,7 @@ public class GpxSegment {
     @OneToMany(mappedBy = "gpxSegment",cascade = CascadeType.ALL,orphanRemoval = true,fetch = FetchType.LAZY)
     @OrderBy("local_sequence ASC")
     @Builder.Default
-    private List<TrackPoint> wayPoints = new ArrayList<>();
+    private List<WayPoint> wayPoints = new ArrayList<>();
 
 
 
