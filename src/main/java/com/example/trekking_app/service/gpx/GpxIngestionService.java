@@ -52,10 +52,25 @@ public class GpxIngestionService {
         GpxImportResponse gpxImportResponse = new GpxImportResponse();
         for(MultipartFile file : files)
         {
+            String filename = file.getOriginalFilename() != null
+                    ? file.getOriginalFilename().toLowerCase() : "";
+
             if(segmentStatus.equals(GpxSegmentStatus.TRACKPOINT))
-            gpxImportResponse =  gpxParserService.parseTrackPoints(file,route,nextOrder);
-            else if (segmentStatus.equals(GpxSegmentStatus.WAYPOINT))
-                gpxImportResponse = gpxParserService.parseWayPoints(file,route,nextOrder);
+            {
+                gpxImportResponse = filename.endsWith(".xlsx")
+                        ? gpxParserService.parseTrackPointsFromExcel(file, route, nextOrder)
+                        : gpxParserService.parseTrackPoints(file, route, nextOrder);
+            }
+            else if (segmentStatus.equals(GpxSegmentStatus.WAYPOINT)) {
+                gpxImportResponse = filename.endsWith(".xlsx")
+                        ? gpxParserService.parseWayPointsFromExcel(file, route, nextOrder)
+                        : gpxParserService.parseWayPoints(file, route, nextOrder);
+            }
+            else {
+                throw new RuntimeException("Unsupported segment status: " + segmentStatus);
+            }
+
+
             nextOrder++;
            gpxImportResponses.add(gpxImportResponse);
         }

@@ -4,12 +4,15 @@ import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.trailSegment.TrailSegmentResponse;
 import com.example.trekking_app.dto.trailSegment.TrailSegmentUpdateRequest;
 import com.example.trekking_app.entity.Route;
+import com.example.trekking_app.entity.TrackPoint;
 import com.example.trekking_app.entity.TrailSegment;
+import com.example.trekking_app.entity.WayPoint;
 import com.example.trekking_app.exception.resource.NoResourceFoundException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.mapper.TrailSegmentMapper;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrailSegmentRepository;
+import com.example.trekking_app.repository.WayPointRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +29,7 @@ public class TrailSegmentService {
     private final TrailSegmentRepository trailSegmentRepo;
     private final RouteRepository routeRepo;
     private final TrailSegmentMapper trailSegmentMapper =new TrailSegmentMapper();
+    private final WayPointRepository wayPointRepo;
 
     @Transactional(readOnly = true)
     public ApiResponse<Page<TrailSegmentResponse>> getAllTrailSegments(@NonNull Integer routeId,Integer page,
@@ -70,4 +74,5 @@ public class TrailSegmentService {
         TrailSegmentResponse trailResponse = trailSegmentMapper.toTrailSegmentResponse(updatedTrail);
         return new ApiResponse<>(trailResponse,"trail segment updated",200);
     }
+
 }

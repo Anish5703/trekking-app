@@ -14,6 +14,8 @@ import com.example.trekking_app.repository.TrackPointRepository;
 import com.example.trekking_app.repository.WayPointRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Slf4j
@@ -254,6 +257,7 @@ public class GpxParserService {
         }
     }
 
+
     /** Helper methods */
 
     private static String textOf(Element parent, String tag) {
@@ -308,6 +312,278 @@ public class GpxParserService {
                     trackPoints.get(i).getLatitude() , trackPoints.get(i).getLongitude());
         }
         return totalDist;
+    }
+
+
+
+    @Transactional
+    public GpxImportResponse parseTrackPointsFromExcel(MultipartFile file, Route route, Integer nextOrder) {
+
+        String filename = file.getOriginalFilename();
+        if (filename == null || !filename.toLowerCase().endsWith(".xlsx"))
+            throw new RuntimeException("Invalid file! Only .xlsx files allowed");
+
+        try {
+            byte[] fileBytes = file.getBytes();
+            String sha256 = sha256(fileBytes);
+
+            GpxSegment gpxSegment = GpxSegment.builder()
+                    .sourceFileName(filename)
+                    .sourceFileHash(sha256)
+                    .user(route.getUser())
+                    .orderIndex(nextOrder)
+                    .route(route)
+                    .segmentStatus(GpxSegmentStatus.TRACKPOINT)
+                    .build();
+
+            GpxSegment savedGpxSegment = gpxSegmentRepo.save(gpxSegment);
+
+            Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(fileBytes));
+            Sheet sheet = workbook.getSheetAt(0);
+
+            // --- Resolve column indices from header row ---
+            Row headerRow = sheet.getRow(0);
+            if (headerRow == null) throw new FileParsingFailedException("Excel file has no header row");
+
+            Map<String, Integer> colIndex = new HashMap<>();
+            for (Cell cell : headerRow) {
+                colIndex.put(cell.getStringCellValue().trim().toUpperCase(), cell.getColumnIndex());
+            }
+
+            Integer latCol  = colIndex.get("LATITUDE");
+            Integer lonCol  = colIndex.get("LONGITUDE");
+            Integer eleCol  = colIndex.get("ELEVATION");
+            Integer timeCol = colIndex.get("DATETIME");
+            Integer seqCol  = colIndex.get("OBJECTID");
+
+            if (latCol == null || lonCol == null)
+                throw new FileParsingFailedException("Missing required columns: LATITUDE / LONGITUDE");
+
+            // --- Parse data rows ---
+            List<TrackPoint> trackPoints = new ArrayList<>();
+            DataFormatter formatter = new DataFormatter();
+
+            int totalRows = sheet.getLastRowNum(); // 0-indexed, row 0 = header
+            if (totalRows < 1) throw new FileParsingFailedException("No trackpoints to collect");
+
+            for (int i = 1; i <= totalRows; i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                double latitude  = getNumericCell(row, latCol);
+                double longitude = getNumericCell(row, lonCol);
+                double elevation = eleCol != null ? getNumericCell(row, eleCol) : 0.0;
+
+                LocalDateTime timestamp = null;
+                if (timeCol != null) {
+                    Cell timeCell = row.getCell(timeCol);
+                    if (timeCell != null && DateUtil.isCellDateFormatted(timeCell)) {
+                        timestamp = timeCell.getLocalDateTimeCellValue();
+                    } else if (timeCell != null) {
+                        // fallback: parse string
+                        String raw = formatter.formatCellValue(timeCell).trim();
+                        if (!raw.isEmpty()) {
+                            timestamp = LocalDateTime.parse(raw,
+                                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                        }
+                    }
+                }
+
+                int localSequence = i; // default: row number
+                if (seqCol != null) {
+                    Cell seqCell = row.getCell(seqCol);
+                    if (seqCell != null && seqCell.getCellType() == CellType.NUMERIC) {
+                        localSequence = (int) seqCell.getNumericCellValue();
+                    }
+                }
+
+                Point point = GF.createPoint(new Coordinate(longitude, latitude));
+
+                TrackPoint trackPoint = TrackPoint.builder()
+                        .route(route)
+                        .gpxSegment(savedGpxSegment)
+                        .latitude(latitude)
+                        .longitude(longitude)
+                        .elevation(elevation)
+                        .localSequence(localSequence)
+                        .geom(point)
+                        .recordedAt(timestamp)
+                        .build();
+
+                trackPoints.add(trackPoint);
+            }
+
+            workbook.close();
+
+            if (trackPoints.isEmpty()) throw new FileParsingFailedException("No trackpoints to collect");
+
+            savedGpxSegment.setRecordedAt(trackPoints.getFirst().getRecordedAt());
+            savedGpxSegment.setRecordedUntil(trackPoints.getLast().getRecordedAt());
+            gpxSegmentRepo.save(savedGpxSegment);
+
+            trackPointRepo.saveAll(trackPoints);
+
+            double totalDist = calculateTotalDistance(trackPoints);
+
+            return GpxImportResponse.builder()
+                    .routeId(route.getId())
+                    .segmentId(savedGpxSegment.getId())
+                    .segmentName(savedGpxSegment.getSourceFileName())
+                    .totalTrackPoints(trackPoints.size())
+                    .totalWayPoints(0)
+                    .totalDistanceInKm(totalDist)
+                    .build();
+
+        } catch (FileParsingFailedException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Excel file parsing failed for: {}, error: {}", file.getOriginalFilename(), e.getLocalizedMessage());
+            throw new FileParsingFailedException("Invalid Excel file for extraction of trackpoints: " + filename);
+        }
+    }
+
+    // Helper — avoids NPE on missing optional cells
+    private double getNumericCell(Row row, int colIdx) {
+        Cell cell = row.getCell(colIdx);
+        if (cell == null) return 0.0;
+        return switch (cell.getCellType()) {
+            case NUMERIC -> cell.getNumericCellValue();
+            case STRING  -> Double.parseDouble(cell.getStringCellValue().trim());
+            default      -> 0.0;
+        };
+    }
+
+    @Transactional
+    public GpxImportResponse parseWayPointsFromExcel(MultipartFile file, Route route, Integer nextOrder) {
+
+        String filename = file.getOriginalFilename();
+        if (filename == null || !filename.toLowerCase().endsWith(".xlsx"))
+            throw new RuntimeException("Invalid file! Only .xlsx files allowed");
+
+        try {
+            byte[] fileBytes = file.getBytes();
+            String sha256 = sha256(fileBytes);
+
+            GpxSegment gpxSegment = GpxSegment.builder()
+                    .sourceFileName(filename)
+                    .sourceFileHash(sha256)
+                    .user(route.getUser())
+                    .orderIndex(nextOrder)
+                    .route(route)
+                    .segmentStatus(GpxSegmentStatus.WAYPOINT)
+                    .build();
+
+            GpxSegment savedGpxSegment = gpxSegmentRepo.save(gpxSegment);
+
+            Workbook workbook = new XSSFWorkbook(new ByteArrayInputStream(fileBytes));
+            Sheet sheet = workbook.getSheetAt(0);
+
+            Row headerRow = sheet.getRow(0);
+            if (headerRow == null) throw new FileParsingFailedException("Excel file has no header row");
+
+            Map<String, Integer> colIndex = new HashMap<>();
+            for (Cell cell : headerRow) {
+                colIndex.put(cell.getStringCellValue().trim().toUpperCase(), cell.getColumnIndex());
+            }
+
+            Integer latCol  = colIndex.get("LATITUDE");
+            Integer lonCol  = colIndex.get("LONGITUDE");
+            Integer eleCol  = colIndex.get("ELEVATION");
+            Integer timeCol = colIndex.get("DATETIME");
+            Integer seqCol  = colIndex.get("OBJECTID");
+            Integer nameCol = colIndex.get("NAME"); // optional — WayPoint has a name field
+
+            if (latCol == null || lonCol == null)
+                throw new FileParsingFailedException("Missing required columns: LATITUDE / LONGITUDE");
+
+            List<WayPoint> wayPoints = new ArrayList<>();
+            DataFormatter formatter = new DataFormatter();
+
+            int totalRows = sheet.getLastRowNum();
+            if (totalRows < 1) throw new FileParsingFailedException("No waypoints to collect");
+
+            for (int i = 1; i <= totalRows; i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                double latitude  = getNumericCell(row, latCol);
+                double longitude = getNumericCell(row, lonCol);
+                double elevation = eleCol != null ? getNumericCell(row, eleCol) : 0.0;
+
+                LocalDateTime timestamp = null;
+                if (timeCol != null) {
+                    Cell timeCell = row.getCell(timeCol);
+                    if (timeCell != null && DateUtil.isCellDateFormatted(timeCell)) {
+                        timestamp = timeCell.getLocalDateTimeCellValue();
+                    } else if (timeCell != null) {
+                        String raw = formatter.formatCellValue(timeCell).trim();
+                        if (!raw.isEmpty()) {
+                            timestamp = LocalDateTime.parse(raw,
+                                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                        }
+                    }
+                }
+
+                int localSequence = i;
+                if (seqCol != null) {
+                    Cell seqCell = row.getCell(seqCol);
+                    if (seqCell != null && seqCell.getCellType() == CellType.NUMERIC) {
+                        localSequence = (int) seqCell.getNumericCellValue();
+                    }
+                }
+
+                // name: prefer dedicated NAME column, fallback to localSequence (mirrors GPX behavior)
+                String name = String.valueOf(localSequence);
+                if (nameCol != null) {
+                    Cell nameCell = row.getCell(nameCol);
+                    if (nameCell != null) {
+                        String raw = formatter.formatCellValue(nameCell).trim();
+                        if (!raw.isEmpty()) name = raw;
+                    }
+                }
+
+                Point point = GF.createPoint(new Coordinate(longitude, latitude));
+
+                WayPoint wayPoint = WayPoint.builder()
+                        .route(route)
+                        .gpxSegment(savedGpxSegment)
+                        .name(name)
+                        .latitude(latitude)
+                        .longitude(longitude)
+                        .elevation(elevation)
+                        .localSequence(localSequence)
+                        .geom(point)
+                        .recordedAt(timestamp)
+                        .build();
+
+                wayPoints.add(wayPoint);
+            }
+
+            workbook.close();
+
+            if (wayPoints.isEmpty()) throw new FileParsingFailedException("No waypoints to collect");
+
+            savedGpxSegment.setRecordedAt(wayPoints.getFirst().getRecordedAt());
+            savedGpxSegment.setRecordedUntil(wayPoints.getLast().getRecordedAt());
+            gpxSegmentRepo.save(savedGpxSegment);
+
+            wayPointRepo.saveAll(wayPoints);
+
+            return GpxImportResponse.builder()
+                    .routeId(route.getId())
+                    .segmentId(savedGpxSegment.getId())
+                    .segmentName(savedGpxSegment.getSourceFileName())
+                    .totalWayPoints(wayPoints.size())
+                    .totalTrackPoints(0)
+                    .totalDistanceInKm(0.0)
+                    .build();
+
+        } catch (FileParsingFailedException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Excel file parsing failed for extracting waypoints: {}, error: {}", file.getOriginalFilename(), e.getLocalizedMessage());
+            throw new FileParsingFailedException("Invalid Excel file for extraction of waypoints: " + filename);
+        }
     }
 
 
