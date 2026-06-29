@@ -6,25 +6,35 @@ import com.example.trekking_app.dto.trackpoint.TrackPointResponse;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrackPoint;
 import com.example.trekking_app.entity.TrailSegment;
+import com.example.trekking_app.entity.WayPoint;
 import com.example.trekking_app.exception.resource.ResourceDeletionFailedException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
 import com.example.trekking_app.mapper.TrackPointMapper;
 import com.example.trekking_app.model.RouteStatus;
+import com.example.trekking_app.model.SegmentRefreshContext;
 import com.example.trekking_app.model.TrackPointStatus;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
+import com.example.trekking_app.repository.TrailSegmentRepository;
+import com.example.trekking_app.repository.WayPointRepository;
 import com.example.trekking_app.service.gpx.GpxMergeService;
+import com.example.trekking_app.service.trailSegment.TrailSegmentService;
+import com.example.trekking_app.service.xlsx.XlsxParserHelper;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +43,9 @@ public class TrackPointService {
 
     private final TrackPointRepository trackPointRepo;
     private final RouteRepository routeRepo;
+    private final TrailSegmentService trailSegmentService;
+    private final XlsxParserHelper trailSegmentHelper;
+    private final TrailSegmentRepository trailSegmentRepo;
     private final TrackPointMapper trackPointMapper = new TrackPointMapper();
     private final GpxMergeService gpxMergeService;
     private final GeometryFactory GF = new GeometryFactory(new PrecisionModel(),4326);
@@ -87,8 +100,8 @@ public class TrackPointService {
         return new ApiResponse<>(inactiveTrackPoints,message,200);
     }
 
-    @Transactional
-    public ApiResponse<TrackPointResponse> updateTrackPoint(@NonNull Integer routeId , @NonNull Integer trackPointId , @NonNull TrackPointRequest trackPointRequest)
+    @Deprecated(since = "version 2.0")
+    public ApiResponse<TrackPointResponse> updateTrackPoint_V1(@NonNull Integer routeId , @NonNull Integer trackPointId , @NonNull TrackPointRequest trackPointRequest)
     {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
@@ -110,6 +123,53 @@ public class TrackPointService {
             throw new ResourceUpdateFailedException("trackpoint","id",trackPointId);
         }
 
+    }
+
+    @Transactional
+    public ApiResponse<TrackPointResponse> updateTrackPoint(@NonNull Integer routeId,
+                                                            @NonNull Integer trackPointId,
+                                                            @NonNull TrackPointRequest trackPointRequest) {
+        Route route = routeRepo.findById(routeId)
+                .orElseThrow(() -> new ResourceNotFoundException("route", "id", routeId));
+        TrackPoint trackPoint = trackPointRepo.findByIdAndRoute_Id(trackPointId, routeId)
+                .orElseThrow(() -> new ResourceNotFoundException("trackpoint", "id", trackPointId));
+
+        if (route.getRouteStatus().equals(RouteStatus.MERGING))
+            throw new ResourceUpdateFailedException(
+                    "failed to update trackpoint since the associated route's trackpoints are merging");
+
+        try {
+            // Step 1 — resolve affected segments BEFORE coords/sequence change
+            List<SegmentRefreshContext> contexts = trailSegmentService.resolveAffectedSegments(routeId, trackPoint);
+
+            // Step 2 — update trackpoint and reassign global sequences
+            trackPoint = trackPointMapper.toUpdateTrackPoint(trackPoint, trackPointRequest);
+            trackPointRepo.save(trackPoint);
+            TrackPointResponse tpResponse = trackPointMapper.toTrackPointResponse(trackPoint);
+            gpxMergeService.mergeTrackPoints(routeId);
+
+            // Step 3 — refresh affected segments using pre-resolved trackpoint IDs
+            if (!contexts.isEmpty()) {
+                List<TrailSegment> toSave = new ArrayList<>();
+                for (SegmentRefreshContext ctx : contexts) {
+                    // re-fetch by ID to get updated globalSequence post-merge
+                    TrackPoint startTp = trackPointRepo.findById(ctx.startTp().getId()).orElse(ctx.startTp());
+                    TrackPoint endTp = trackPointRepo.findById(ctx.endTp().getId()).orElse(ctx.endTp());
+
+                    LineString newPath = trailSegmentHelper.generateTrailSegmentPath(startTp, endTp, route);
+                    ctx.segment().setPath(newPath);
+                    toSave.add(ctx.segment());
+                }
+                trailSegmentRepo.saveAll(toSave);
+                log.info("Refreshed {} trail segments after trackpoint {} update", toSave.size(), trackPointId);
+            }
+
+            return new ApiResponse<>(tpResponse, "trackpoint updated", 200);
+
+        } catch (Exception e) {
+            log.error("Trackpoint update failed : {}", e.getLocalizedMessage());
+            throw new ResourceUpdateFailedException("trackpoint", "id", trackPointId);
+        }
 
     }
 

@@ -95,6 +95,7 @@ public class WayPointService {
         }
     }
 
+    @Transactional
     public ApiResponse<WayPointResponse> updateWayPoint(@NonNull Integer routeId,@NonNull Integer wayPointId,@NonNull WayPointRequest wayPointRequest)
     {
         Route route = routeRepo.findById(routeId).orElseThrow(
@@ -109,4 +110,6 @@ public class WayPointService {
         return new ApiResponse<>(wayPointResponse,"waypoint updated",200);
 
     }
+
+
 }

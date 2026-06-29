@@ -228,7 +228,7 @@ public class XlsxParserHelper {
 
     }
     @Transactional
-    private LineString generateTrailSegmentPath(@NonNull TrackPoint startTp, @NonNull TrackPoint endTp,@NonNull Route route)
+    public LineString generateTrailSegmentPath(@NonNull TrackPoint startTp, @NonNull TrackPoint endTp,@NonNull Route route)
     {
         Integer startSeq = startTp.getGlobalSequence();
         Integer endSeq = endTp.getGlobalSequence();
@@ -238,7 +238,7 @@ public class XlsxParserHelper {
                     startTp.getId(), endTp.getId());
             return straightLine(startTp,endTp);
         }
-       if(startSeq>endSeq) {Integer temp = startSeq;startSeq = endSeq; endSeq = startSeq;}
+       if(startSeq>endSeq) {Integer temp = startSeq;startSeq = endSeq; endSeq = temp;}
         List<TrackPoint> points = trackPointRepo.findBetweenGlobalSequences(route.getId(), startSeq, endSeq);
         if (points.size() < 2)
         {
@@ -251,43 +251,6 @@ public class XlsxParserHelper {
                 .toArray(Coordinate[]::new);
         return GF.createLineString(coords);
 
-    }
-
-
- @Deprecated(since = "version 2.0")
-    public LineString generateTrailSegmentPath(WayPoint start, WayPoint end, Route route) {
-
-        TrackPoint startTp = resolveOrInsertTrackPoint(start, route);
-        TrackPoint endTp   = resolveOrInsertTrackPoint(end, route);
-
-        if (startTp == null || endTp == null) {
-            log.warn("Could not resolve trackpoints for start/end waypoints on route {}, falling back to straight line", route.getId());
-            return straightLine(start, end);
-        }
-        //update global sequence
-        gpxMergeHelper.assignTrackPointGlobalSequences(route.getId());
-
-        Integer startSeq = trackPointRepo.findById(startTp.getId()).map(TrackPoint::getGlobalSequence).orElseThrow(
-                () -> new FileParsingFailedException("failed to create trail segment between wp :"+start+"and"+end)
-        );
-
-        Integer endSeq   = trackPointRepo.findById(endTp.getId()).map(TrackPoint::getGlobalSequence).orElseThrow(
-                () -> new FileParsingFailedException("failed to create trail segment between wp :"+start+"and"+end)
-        );
-
-        if (startSeq > endSeq) { Integer tmp = startSeq; startSeq = endSeq; endSeq = tmp; }
-
-        List<TrackPoint> points = trackPointRepo.findBetweenGlobalSequences(route.getId(), startSeq, endSeq);
-        if (points.size() < 2) {
-            log.warn("Not enough trackpoints ({}) between globalSeq {} and {} for route {}",
-                    points.size(), startSeq, endSeq, route.getId());
-            return straightLine(start, end);
-        }
-
-        Coordinate[] coords = points.stream()
-                .map(tp -> new Coordinate(tp.getLongitude(), tp.getLatitude()))
-                .toArray(Coordinate[]::new);
-        return GF.createLineString(coords);
     }
 
     /**

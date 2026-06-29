@@ -148,4 +148,7 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
 
     Optional<TrackPoint> findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceAsc(Integer routeId);
     Optional<TrackPoint> findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(Integer routeId);
+
+    Optional<TrackPoint> findByRoute_IdAndLatitudeAndLongitude(Integer routeId, Double latitude, Double longitude);
 }
+
