@@ -3,6 +3,7 @@ package com.example.trekking_app.controller;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.trackpoint.TrackPointRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointResponse;
+import com.example.trekking_app.model.TrackPointDeleteRequest;
 import com.example.trekking_app.service.trackpoints.TrackPointService;
 import jakarta.validation.Valid;
 import lombok.NonNull;
@@ -64,6 +65,14 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
         ApiResponse<Void> response = trackPointService.deleteTrackPoint(routeId,trackPointId);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
+
+    @DeleteMapping("/list")
+    public ResponseEntity<ApiResponse<Void>> handleDeleteListOfTrackPoint(@PathVariable Integer routeId,
+                                                                          @RequestBody TrackPointDeleteRequest req)
+    {
+      ApiResponse<Void> response = trackPointService.deleteListOfTrackPoint(routeId,req);
+      return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
     @PutMapping("/{trackPointId}/recover")
     public ResponseEntity<ApiResponse<Void>> handleUndoDeleteTrackPoint(@PathVariable Integer routeId,
                                                                         @PathVariable Integer trackPointId)
@@ -71,6 +80,7 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
         ApiResponse<Void> response = trackPointService.recoverTrackPoint(routeId,trackPointId);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
+
 
     private HttpHeaders buildRequestHeaders() {
         HttpHeaders headers = new HttpHeaders();

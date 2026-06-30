@@ -13,6 +13,7 @@ import com.example.trekking_app.exception.resource.ResourceUpdateFailedException
 import com.example.trekking_app.mapper.TrackPointMapper;
 import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.model.SegmentRefreshContext;
+import com.example.trekking_app.model.TrackPointDeleteRequest;
 import com.example.trekking_app.model.TrackPointStatus;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
@@ -174,24 +175,7 @@ public class TrackPointService {
     }
 
 
-   @Transactional
-    public ApiResponse<Void> deleteTrackPoint(Integer routeId, Integer trackPointId) {
-        Route route = routeRepo.findById(routeId).orElseThrow(
-                () -> new ResourceNotFoundException("route", "id", routeId)
-        );
-            TrackPoint trackPoint = trackPointRepo.findById(trackPointId).orElseThrow(
-                    () -> new ResourceNotFoundException("trackpoint","id",trackPointId)
-            );
-            try{
-            trackPoint.setIsDeleted(true);
-            trackPoint.setStatus(TrackPointStatus.SOFT_DELETED);
-            trackPointRepo.save(trackPoint);
-            gpxMergeService.mergeTrackPoints(route.getId());
-            return new ApiResponse<>(null, "trackpoint deleted", 200);
-        } catch (Exception e) {
-            throw new ResourceDeletionFailedException("trackpoint", "id", trackPointId);
-        }
-    }
+
 
     @Transactional
     public ApiResponse<Void> recoverTrackPoint(@NonNull Integer routeId, @NonNull Integer trackPointId)
@@ -206,6 +190,53 @@ public class TrackPointService {
         trackPointRepo.save(tp);
         return new ApiResponse<>(null,"trackpoint recovered",200);
 
+
+    }
+    @Transactional
+    public ApiResponse<Void> deleteTrackPoint(Integer routeId, Integer trackPointId) {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route", "id", routeId)
+        );
+        TrackPoint trackPoint = trackPointRepo.findById(trackPointId).orElseThrow(
+                () -> new ResourceNotFoundException("trackpoint","id",trackPointId)
+        );
+        try{
+            trackPoint.setIsDeleted(true);
+            trackPoint.setStatus(TrackPointStatus.SOFT_DELETED);
+            trackPointRepo.save(trackPoint);
+            gpxMergeService.mergeTrackPoints(route.getId());
+            return new ApiResponse<>(null, "trackpoint deleted", 200);
+        } catch (Exception e) {
+            throw new ResourceDeletionFailedException("trackpoint", "id", trackPointId);
+        }
+    }
+
+    @Transactional
+    public ApiResponse<Void> deleteListOfTrackPoint(@NonNull Integer routeId, @NonNull TrackPointDeleteRequest req)
+    {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route", "id", routeId)
+        );
+        if(req.getTrackPointIds().isEmpty()) throw new ResourceDeletionFailedException("no trackpoints selected for deletion");
+        List<TrackPoint> tps = new ArrayList<>();
+        for (Integer trackPointId : req.getTrackPointIds())
+        {
+            TrackPoint trackPoint = trackPointRepo.findById(trackPointId).orElseThrow(
+                    () -> new ResourceNotFoundException("trackpoint","id",trackPointId)
+            );
+            trackPoint.setIsDeleted(true);
+            trackPoint.setStatus(TrackPointStatus.SOFT_DELETED);
+            tps.add(trackPoint);
+        }
+        try
+        {
+            trackPointRepo.saveAll(tps);
+            gpxMergeService.mergeTrackPoints(route.getId());
+            return new ApiResponse<>(null, req.getTrackPointIds().size()+" trackpoints deleted", 200);
+        }
+        catch (Exception e) {
+            throw new ResourceDeletionFailedException("failed to delete trackpoints");
+        }
 
     }
 }
