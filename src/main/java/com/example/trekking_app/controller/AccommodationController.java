@@ -35,6 +35,13 @@ public class AccommodationController
         ApiResponse<Page<AccommodationResponse>> response = accommodationService.getAllAccommodation(routeId,page,size);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
+
+    @GetMapping("/list")
+    public ResponseEntity<ApiResponse<List<AccommodationResponse>>> handleGetListOfAccommodation(@PathVariable Integer routeId)
+    {
+        ApiResponse<List<AccommodationResponse>> response = accommodationService.getListOfAccommodation(routeId);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
     @GetMapping("/nearby")
     public ResponseEntity<ApiResponse<List<AccommodationResponse>>> handleGetNearbyAccommodation(@RequestParam Double longitude ,
                                                                                                        @RequestParam Double latitude,

@@ -165,4 +165,20 @@ public class AccommodationService
         ).filter(Objects::nonNull).toList();
         return new ApiResponse<>(accommodationResponses,"nearby accommodation fetched",200);
     }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<List<AccommodationResponse>> getListOfAccommodation(@NonNull Integer routeId)
+    {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route","id",routeId)
+        );
+        List<Accommodation> accommodations = accommodationRepo.findAllByRoute_Id(route.getId());
+        if(accommodations.isEmpty()) throw new NoResourceFoundException("no accommodation found for route "+route.getName());
+        List<AccommodationResponse> accommodationResponses = accommodations.stream().map(acc ->
+        {
+            List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ACCOMMODATION,acc.getId()).stream().map(Image::getUrl).toList();
+            return accommodationMapper.toAccommodationResponse(acc,imageUrls);
+        } ).toList();
+        return new ApiResponse<>(accommodationResponses,"accommodations fetched",200);
+    }
 }

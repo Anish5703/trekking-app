@@ -1,5 +1,6 @@
 package com.example.trekking_app.repository;
 
+import com.example.trekking_app.dto.accommodation.AccommodationResponse;
 import com.example.trekking_app.dto.accommodation.NearbyAccommodationProjection;
 import com.example.trekking_app.entity.Accommodation;
 import com.example.trekking_app.entity.Route;
@@ -50,4 +51,6 @@ public interface AccommodationRepository extends JpaRepository<Accommodation,Int
             @Param("radiusMeters") double radiusMeters,
             @Param("limit") int limit
     );
+
+    List<Accommodation> findAllByRoute_Id(@NonNull Integer id);
 }
