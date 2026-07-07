@@ -53,7 +53,7 @@ public class AccommodationService
         try
         {
             Accommodation newAcc = accommodationRepo.save(acc);
-            AccommodationResponse accResponse = accommodationMapper.toAccommodationResponse(acc,null);
+            AccommodationResponse accResponse = accommodationMapper.toAccommodationResponse(newAcc,null);
             return new ApiResponse<>(accResponse,"accommodation created",201);
         }
         catch (DataAccessException e)
@@ -154,7 +154,7 @@ public class AccommodationService
     public ApiResponse<List<AccommodationResponse>> getAccommodationNearby(@NonNull @Valid NearbyRequest request)
     {
         List<NearbyAccommodationProjection> nearbyAccommodations = accommodationRepo.findNearbyAccommodation(request.getLongitude(), request.getLatitude(),request.getRadiusMeters(),request.getLimit());
-        if(nearbyAccommodations.isEmpty()) throw new NoResourceFoundException("no accommodation found nearby");
+        if(nearbyAccommodations.isEmpty()) throw new NoResourceFoundException("accommodation");
         List<AccommodationResponse> accommodationResponses = nearbyAccommodations.stream().map( nearby ->
                 {
                     Accommodation acc = accommodationRepo.findById(nearby.getId()).orElse(null);
@@ -173,7 +173,7 @@ public class AccommodationService
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
         List<Accommodation> accommodations = accommodationRepo.findAllByRoute_Id(route.getId());
-        if(accommodations.isEmpty()) throw new NoResourceFoundException("no accommodation found for route "+route.getName());
+        if(accommodations.isEmpty()) throw new NoResourceFoundException("accommodation");
         List<AccommodationResponse> accommodationResponses = accommodations.stream().map(acc ->
         {
             List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ACCOMMODATION,acc.getId()).stream().map(Image::getUrl).toList();

@@ -10,6 +10,7 @@ import com.example.trekking_app.exception.route.RouteNotFoundException;
 import com.example.trekking_app.exception.user.DeleteUserFailedException;
 import com.example.trekking_app.model.ErrorType;
 import io.jsonwebtoken.*;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.tool.schema.spi.CommandAcceptanceException;
 import org.springframework.core.convert.ConversionException;
@@ -319,6 +320,22 @@ public class GlobalExceptionHandler {
         ErrorResponse data = new ErrorResponse(ErrorType.ILLEGAL_ARGUMENTS, ex.getLocalizedMessage());
         ApiResponse<ErrorResponse> response = new ApiResponse<>(data,"Missing parameter ! check data.details for error description",400);
         return ResponseEntity.status(500).body(response);
+    }
+
+    @ExceptionHandler(RateLimitException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleRateLimit(
+            RateLimitException ex, HttpServletResponse res) {
+        res.setHeader("Retry-After", String.valueOf(ex.getRetryAfter()));
+        ErrorResponse data = new ErrorResponse(ErrorType.RATE_LIMIT_EXCEEDED, ex.getMessage());
+        return ResponseEntity.status(429).body(new ApiResponse<>(data, ex.getMessage(), 429));
+    }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleAccountLocked(
+            AccountLockedException ex, HttpServletResponse res) {
+        res.setHeader("Retry-After", String.valueOf(ex.getRetryAfter()));
+        ErrorResponse data = new ErrorResponse(ErrorType.ACCOUNT_LOCKED, ex.getMessage());
+        return ResponseEntity.status(429).body(new ApiResponse<>(data, ex.getMessage(), 429));
     }
 
 }

@@ -1,5 +1,6 @@
 package com.example.trekking_app.service.auth;
 
+import com.example.trekking_app.config.IpExtractor;
 import com.example.trekking_app.dto.auth.*;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.user.UserDetails;
@@ -16,8 +17,10 @@ import com.example.trekking_app.model.Role;
 import com.example.trekking_app.repository.OauthUserRepository;
 import com.example.trekking_app.repository.TokenRepository;
 import com.example.trekking_app.repository.UserRepository;
+import com.example.trekking_app.service.security.BruteForceProtectionService;
 import com.example.trekking_app.service.user.MailService;
 import com.example.trekking_app.service.user.TokenService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.constraints.Email;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,8 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -47,6 +52,9 @@ public class AuthService {
     private final TokenService tokenService;
     private final UserMapper userMapper = new UserMapper();
     private final TokenMapper tokenMapper = new TokenMapper();
+
+    private final BruteForceProtectionService bruteForce;
+    private final IpExtractor ipExtractor;
 
     /*
     * Signup User flow
@@ -177,8 +185,15 @@ public class AuthService {
     @Transactional
     public ApiResponse<LoginResponse> loginUser(LoginRequest request)
     {
+        String ip    = extractCurrentIp();
+        String email = request.getEmail();
+        log.info("loginUser called — ip={} isBlocked={}", ip, bruteForce.isBlocked(ip));
+        // brute force check — before any DB call
+        if (bruteForce.isBlocked(ip))
+            throw new AccountLockedException(bruteForce.getLockoutRemaining(ip));
 
-            User user = userRepo.findByEmail(request.getEmail())
+
+        User user = userRepo.findByEmail(request.getEmail())
                     .orElseThrow(
                             () -> new UserNotFoundException("Email not found")
                     );
@@ -193,6 +208,10 @@ public class AuthService {
             }
             try {
                 Authentication auth = authManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+
+                // success — clear any recorded attempts
+                bruteForce.resetAttempts(ip);
+
                 String jwtToken = jwtService.generateAccessToken(request.getEmail());
                 String refreshToken = tokenService.generateRefreshToken(user);
 
@@ -205,9 +224,16 @@ public class AuthService {
             }
             catch (AuthenticationException e)
             {
+                bruteForce.recordFailedAttempt(ip);
                 throw new LoginFailedException("invalid credentials ! incorrect password");
             }
 
+    }
+
+    private String extractCurrentIp() {
+        HttpServletRequest req = ((ServletRequestAttributes)
+                RequestContextHolder.currentRequestAttributes()).getRequest();
+        return ipExtractor.extract(req);
     }
 
 

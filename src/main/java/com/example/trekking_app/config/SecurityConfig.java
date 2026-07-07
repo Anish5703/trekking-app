@@ -36,17 +36,18 @@ public class SecurityConfig {
     private final CustomOauth2SuccessHandler oauth2SuccessHandler;
     private final CustomOauth2FailureHandler oauth2FailureHandler;
 
-
+    private final RateLimitFilter rateLimitFilter;
     private final Logger log;
 
     public SecurityConfig(MyUserDetailsService userDetailsService,JwtFilter jwtFilter,
-                          CustomOauth2SuccessHandler oauth2SuccessHandler,CustomOauth2FailureHandler oauth2FailureHandler )
+                          CustomOauth2SuccessHandler oauth2SuccessHandler,CustomOauth2FailureHandler oauth2FailureHandler,RateLimitFilter rateLimitFilter )
     {
         this.userDetailsService = userDetailsService;
         this.jwtFilter = jwtFilter;
         this.oauth2SuccessHandler = oauth2SuccessHandler;
         this.oauth2FailureHandler = oauth2FailureHandler;
         log = LoggerFactory.getLogger(SecurityConfig.class);
+        this.rateLimitFilter = rateLimitFilter;
 
     }
 
@@ -70,7 +71,8 @@ public class SecurityConfig {
                         .authenticationEntryPoint(unauthorizedEntryPoint()) )
                 .sessionManagement(session->session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS) )
-                .addFilterBefore(jwtFilter,UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter,UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(rateLimitFilter, JwtFilter.class);
 
                 return http.build();
     }
@@ -146,6 +148,20 @@ public class SecurityConfig {
         FilterRegistrationBean<SecurityHeadersFilter> registration = new FilterRegistrationBean<>(filter);
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
         registration.addUrlPatterns("/*");
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<RateLimitFilter> rateLimitFilterRegistration(RateLimitFilter filter) {
+        FilterRegistrationBean<RateLimitFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    @Bean
+    public FilterRegistrationBean<JwtFilter> jwtFilterRegistration(JwtFilter filter) {
+        FilterRegistrationBean<JwtFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
         return registration;
     }
 
