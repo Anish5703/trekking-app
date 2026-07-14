@@ -103,7 +103,7 @@ public class XlsxParserHelper {
             }
             String stopKey = importantStops != null ? importantStops.trim().toLowerCase() : null;
 
-            if (ACCOMMODATION_STOPS.contains(stopKey)) {
+            if (stopKey != null && ACCOMMODATION_STOPS.contains(stopKey)) {
                 String poiName = resolvePoiName(row, indexMap, importantStops, other);
                 Accommodation acc = buildAccommodation(row, indexMap, poiName, stopKey, wayPoint, route);
                 return XlsxParserResult.ofAccommodation(wayPoint, acc, gpxOrderIndex);
