@@ -19,5 +19,6 @@ public class GeoJsonFeatureCollection
     private String type = "FeatureCollection";
     @JsonProperty("features")
     private List<GeoJsonFeature> features;
-
+    @JsonProperty("gaps")
+    private List<GeoJsonGap> gaps;
 }
