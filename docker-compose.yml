@@ -57,6 +57,8 @@ services:
       start_period: 5s
 
   app:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     build: .
     container_name: trekking-app
     depends_on:

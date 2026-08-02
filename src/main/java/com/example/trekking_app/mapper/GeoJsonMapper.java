@@ -8,33 +8,49 @@ import com.example.trekking_app.entity.Accommodation;
 import com.example.trekking_app.entity.POI;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrailSegment;
-import jakarta.annotation.Nonnull;
+import com.example.trekking_app.service.graphHopper.TrailGapRoutingService;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.simplify.TopologyPreservingSimplifier;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 
-public class GeoJsonMapper {
 
+@Service
+@RequiredArgsConstructor
+public class GeoJsonMapper {
     private final String ROUTE_ID_PREFIX = "route:";
     private final String POI_ID_PREFIX = "poi:";
     private final String TRAIL_SEGMENT_ID_PREFIX = "trail_segment:";
     private final String ACCOMMODATION_ID_PREFIX = "accommodation:";
+    private final TrailGapRoutingService trailGapRoutingService;
 
     private static final double GAP_THRESHOLD_METERS = 200.0;
     private static final double EARTH_RADIUS_METERS = 6371000.0;
 
     private record Segment(Coordinate[] coords, Double gapBeforeMeters) {}
 
-    public GeoJsonFeatureCollection toGeoJson(@NonNull Route route, @Nonnull Double tolerance) {
+    public GeoJsonFeatureCollection toGeoJson(@NonNull Route route, @NonNull Double tolerance) {
         List<GeoJsonFeature> features = new ArrayList<>();
         List<GeoJsonGap> gaps = new ArrayList<>();
 
         features.addAll(buildRouteFeatures(route, tolerance, gaps));
-
+        List<GeoJsonFeature> bridges = new ArrayList<>();
+        for (int i = 0; i < gaps.size(); i++) {
+            GeoJsonGap gap = gaps.get(i);
+            GeoJsonFeature bridge = trailGapRoutingService.findBridgePath(
+                    gap.getFrom(), gap.getTo(), "bridge:" + i
+            );
+            if (bridge != null) {
+                bridges.add(bridge);
+            }
+        }
+        features.addAll(bridges);
         if (route.getTrailSegments() != null) {
             route.getTrailSegments().forEach(segment -> {
                 List<GeoJsonFeature> segFeatures = buildTrailSegmentFeatures(segment, tolerance, gaps);
@@ -112,10 +128,13 @@ public class GeoJsonMapper {
                 geometry = new GeoJsonGeometry("LineString", coordList);
             }
 
+            Map<String,Object> featureProps = new LinkedHashMap<>(properties);
+            Double gapBefore = segments.get(i).gapBeforeMeters;
+            if(gapBefore!=null) featureProps.put("gapBeforeMeters",gapBefore);
             features.add(GeoJsonFeature.builder()
                     .id(id)
                     .geometry(geometry)
-                    .properties(properties)
+                    .properties(featureProps)
                     .build());
         }
         return features;

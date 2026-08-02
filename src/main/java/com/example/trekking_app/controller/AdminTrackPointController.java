@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -32,6 +33,15 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
     {
        ApiResponse<Page<TrackPointResponse>> response = trackPointService.getAllTrackPoints(routeId,page,size);
        return ResponseEntity.status(200).body(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<TrackPointResponse>>> handleGetTrackPointByLatAndLon(@PathVariable Integer routeId,
+                                                                                                @NonNull Double latitude,
+                                                                                                @NonNull Double longitude)
+    {
+        ApiResponse<List<TrackPointResponse>> response = trackPointService.getTrackPointByLatAndLong(routeId,latitude,longitude);
+        return ResponseEntity.status(200).body(response);
     }
     @GetMapping("/active/list")
     public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetActiveTrackPoints(@PathVariable Integer routeId,
