@@ -12,7 +12,7 @@ import com.example.trekking_app.exception.resource.ResourceUpdateFailedException
 import com.example.trekking_app.mapper.TrackPointMapper;
 import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.model.SegmentRefreshContext;
-import com.example.trekking_app.model.TrackPointDeleteRequest;
+import com.example.trekking_app.dto.trackpoint.TrackPointBatchRequest;
 import com.example.trekking_app.model.TrackPointStatus;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
@@ -200,8 +200,35 @@ public class TrackPointService {
         trackPointRepo.save(tp);
         return new ApiResponse<>(null,"trackpoint recovered",200);
 
-
     }
+    @Transactional
+    public ApiResponse<Void> recoverTrackPoints(
+            @NonNull Integer routeId,
+            @NonNull TrackPointBatchRequest tpIds) {
+
+        List<TrackPoint> trackPoints =
+                trackPointRepo.findAllByIdInAndRoute_IdAndIsDeletedTrueAndStatus(
+                        tpIds.getTrackPointIds(),
+                        routeId,
+                        TrackPointStatus.SOFT_DELETED
+                );
+
+        if (trackPoints.size() != tpIds.getTrackPointIds().size()) {
+            throw new ResourceUpdateFailedException(
+                    "One or more track points were not found, do not belong to the specified route, or are not soft deleted."
+            );
+        }
+
+        trackPoints.forEach(tp -> {
+            tp.setIsDeleted(false);
+            tp.setStatus(TrackPointStatus.RECOVERED);
+        });
+
+        trackPointRepo.saveAll(trackPoints);
+
+        return new ApiResponse<>(null, "Track points recovered successfully.", 200);
+    }
+
     @Transactional
     public ApiResponse<Void> deleteTrackPoint(Integer routeId, Integer trackPointId) {
         Route route = routeRepo.findById(routeId).orElseThrow(
@@ -222,7 +249,7 @@ public class TrackPointService {
     }
 
     @Transactional
-    public ApiResponse<Void> deleteListOfTrackPoint(@NonNull Integer routeId, @NonNull TrackPointDeleteRequest req)
+    public ApiResponse<Void> deleteListOfTrackPoint(@NonNull Integer routeId, @NonNull TrackPointBatchRequest req)
     {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)

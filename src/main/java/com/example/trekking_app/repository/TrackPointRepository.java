@@ -2,6 +2,7 @@ package com.example.trekking_app.repository;
 
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrackPoint;
+import com.example.trekking_app.model.TrackPointStatus;
 import lombok.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -151,5 +152,11 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
 
     Optional<TrackPoint> findFirstByRoute_IdAndLatitudeAndLongitude(Integer routeId, Double latitude, Double longitude);
     Optional<List<TrackPoint>> findByRoute_IdAndLatitudeAndLongitude(Integer routeId, Double latitude, Double longitude);
+
+    List<TrackPoint> findAllByIdInAndRoute_IdAndIsDeletedTrueAndStatus(
+            List<Integer> ids,
+            Integer routeId,
+            TrackPointStatus status
+    );
 }
 
