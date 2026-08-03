@@ -6,7 +6,6 @@ import com.example.trekking_app.dto.trackpoint.TrackPointResponse;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrackPoint;
 import com.example.trekking_app.entity.TrailSegment;
-import com.example.trekking_app.entity.WayPoint;
 import com.example.trekking_app.exception.resource.ResourceDeletionFailedException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
@@ -18,7 +17,6 @@ import com.example.trekking_app.model.TrackPointStatus;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
 import com.example.trekking_app.repository.TrailSegmentRepository;
-import com.example.trekking_app.repository.WayPointRepository;
 import com.example.trekking_app.service.gpx.GpxMergeService;
 import com.example.trekking_app.service.trailSegment.TrailSegmentService;
 import com.example.trekking_app.service.xlsx.XlsxParserHelper;
@@ -68,6 +66,18 @@ public class TrackPointService {
 
         return new ApiResponse<>(trackPointResponses, message, 200);
     }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<List<TrackPointResponse>> getTrackPointByLatAndLong(@NonNull Integer routeId , @NonNull Double lat, @NonNull Double lon)
+    {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route", "id", routeId)
+        );
+        List<TrackPointResponse> tps = trackPointRepo.findByRoute_IdAndLatitudeAndLongitude(route.getId(),lat,lon).get().stream().map(trackPointMapper::toTrackPointResponse).toList();
+        if(tps.isEmpty()) throw new ResourceNotFoundException(String.format("trackpoint not found with lat %f and lon %f",lat,lon));
+        return new ApiResponse<>(tps,"trackpoint fetched",200);
+    }
+
 
     @Transactional(readOnly = true)
     public ApiResponse<Page<TrackPointResponse>> getActiveTrackPoints(@NonNull Integer routeId,

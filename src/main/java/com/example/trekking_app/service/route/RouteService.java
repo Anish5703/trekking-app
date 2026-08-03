@@ -45,7 +45,7 @@ public class RouteService {
     private final DestinationRepository destinationRepo;
     private final UserRepository userRepo;
     private final RouteMapper routeMapper = new RouteMapper();
-    private final GeoJsonMapper geoJsonMapper = new GeoJsonMapper();
+    private final GeoJsonMapper geoJsonMapper;
     private final GpxSegmentRepository gpxSegmentRepo;
     private final RecentlyViewedRepository recentlyViewedRepo;
     private final TrackPointRepository trackPointRepo;

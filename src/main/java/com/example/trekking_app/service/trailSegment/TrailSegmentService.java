@@ -14,7 +14,6 @@ import com.example.trekking_app.model.SegmentRefreshContext;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
 import com.example.trekking_app.repository.TrailSegmentRepository;
-import com.example.trekking_app.repository.WayPointRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -101,9 +100,9 @@ public class TrailSegmentService {
             WayPoint ew = seg.getEndWaypoint();
 
             Optional<TrackPoint> startTpOpt = trackPointRepo
-                    .findByRoute_IdAndLatitudeAndLongitude(routeId, sw.getLatitude(), sw.getLongitude());
+                    .findFirstByRoute_IdAndLatitudeAndLongitude(routeId, sw.getLatitude(), sw.getLongitude());
             Optional<TrackPoint> endTpOpt = trackPointRepo
-                    .findByRoute_IdAndLatitudeAndLongitude(routeId, ew.getLatitude(), ew.getLongitude());
+                    .findFirstByRoute_IdAndLatitudeAndLongitude(routeId, ew.getLatitude(), ew.getLongitude());
 
             if (startTpOpt.isEmpty() || endTpOpt.isEmpty()) {
                 log.warn("Could not resolve boundary trackpoints for segment {}, skipping", seg.getId());
