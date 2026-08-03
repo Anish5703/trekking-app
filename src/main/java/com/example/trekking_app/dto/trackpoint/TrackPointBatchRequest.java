@@ -1,4 +1,4 @@
-package com.example.trekking_app.model;
+package com.example.trekking_app.dto.trackpoint;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @Data
 @Builder
-public class TrackPointDeleteRequest
+public class TrackPointBatchRequest
 {
     private List<Integer> trackPointIds;
 

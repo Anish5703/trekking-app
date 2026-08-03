@@ -3,11 +3,12 @@ package com.example.trekking_app.controller;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.trackpoint.TrackPointRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointResponse;
-import com.example.trekking_app.model.TrackPointDeleteRequest;
+import com.example.trekking_app.dto.trackpoint.TrackPointBatchRequest;
 import com.example.trekking_app.service.trackpoints.TrackPointService;
 import jakarta.validation.Valid;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -60,6 +61,7 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
         return ResponseEntity.status(200).body(response);
     }
 
+    @CacheEvict(value = "route-geoJson",key = "#routeId")
     @PutMapping("/{trackPointId}")
     public ResponseEntity<ApiResponse<TrackPointResponse>> updateTrackPoint(@PathVariable Integer routeId,
                                                                             @PathVariable Integer trackPointId,
@@ -68,6 +70,8 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
         ApiResponse<TrackPointResponse> response = trackPointService.updateTrackPoint(routeId,trackPointId,trackPointRequest);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
+
+    @CacheEvict(value = "route-geoJson",key = "#routeId")
     @DeleteMapping("/{trackPointId}")
     public ResponseEntity<ApiResponse<Void>> handleDeleteTrackPoint(@PathVariable Integer routeId ,
                                                                    @PathVariable Integer trackPointId)
@@ -76,13 +80,16 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
+    @CacheEvict(value = "route-geoJson",key = "#routeId")
     @DeleteMapping("/list")
     public ResponseEntity<ApiResponse<Void>> handleDeleteListOfTrackPoint(@PathVariable Integer routeId,
-                                                                          @RequestBody TrackPointDeleteRequest req)
+                                                                          @RequestBody TrackPointBatchRequest req)
     {
       ApiResponse<Void> response = trackPointService.deleteListOfTrackPoint(routeId,req);
       return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
+
+    @CacheEvict(value = "route-geoJson",key = "#routeId")
     @PutMapping("/{trackPointId}/recover")
     public ResponseEntity<ApiResponse<Void>> handleUndoDeleteTrackPoint(@PathVariable Integer routeId,
                                                                         @PathVariable Integer trackPointId)
@@ -91,6 +98,14 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
+    @CacheEvict(value = "route-geoJson",key = "#routeId")
+    @PutMapping("/list/recover")
+    public ResponseEntity<ApiResponse<Void>> handleUndoDeleteListOfTrackPoint(@PathVariable Integer routeId,
+                                                                              @RequestBody TrackPointBatchRequest req)
+    {
+        ApiResponse<Void> response = trackPointService.recoverTrackPoints(routeId,req);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
 
     private HttpHeaders buildRequestHeaders() {
         HttpHeaders headers = new HttpHeaders();
