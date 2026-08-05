@@ -4,23 +4,26 @@ import com.example.trekking_app.dto.geoJson.GeoJsonFeature;
 import com.example.trekking_app.dto.geoJson.GeoJsonFeatureCollection;
 import com.example.trekking_app.dto.geoJson.GeoJsonGap;
 import com.example.trekking_app.dto.geoJson.GeoJsonGeometry;
+import com.example.trekking_app.dto.poi.ExternalPoiDto;
 import com.example.trekking_app.entity.Accommodation;
 import com.example.trekking_app.entity.POI;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrailSegment;
+import com.example.trekking_app.model.POIType;
 import com.example.trekking_app.service.graphHopper.TrailGapRoutingService;
+import com.example.trekking_app.service.overpass.ExternalPoiService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.LineString;
 import org.locationtech.jts.simplify.TopologyPreservingSimplifier;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GeoJsonMapper {
@@ -34,6 +37,9 @@ public class GeoJsonMapper {
     private static final double EARTH_RADIUS_METERS = 6371000.0;
 
     private record Segment(Coordinate[] coords, Double gapBeforeMeters) {}
+
+    private final String EXTERNAL_POI_ID_PREFIX = "external_poi:";
+    private final ExternalPoiService externalPoiService;
 
     public GeoJsonFeatureCollection toGeoJson(@NonNull Route route, @NonNull Double tolerance) {
         List<GeoJsonFeature> features = new ArrayList<>();
@@ -66,6 +72,11 @@ public class GeoJsonMapper {
             route.getAccommodations().stream().map(this::buildAccommodationFeature).forEach(features::add);
         }
 
+        List<double[]> routePoints = extractRoutePoints(route.getPath());
+        log.info("GeoJsonMapper: extracted {} route points for external POI lookup", routePoints.size());
+        List<ExternalPoiDto> externalPois = externalPoiService.getForRoute(routePoints);
+        log.info("GeoJsonMapper: received {} external POIs to add as features", externalPois.size());
+        externalPois.forEach(poi -> features.add(buildExternalPoiFeature(poi)));
         return GeoJsonFeatureCollection.builder()
                 .type("FeatureCollection")
                 .features(features)
@@ -210,5 +221,28 @@ public class GeoJsonMapper {
         props.put("roomPriceForForeigner", accommodation.getPriceForeigner());
         return GeoJsonFeature.builder().id(ACCOMMODATION_ID_PREFIX + accommodation.getId())
                 .geometry(geometry).properties(props).build();
+    }
+
+    private List<double[]> extractRoutePoints(LineString path) {
+        if (path == null) return List.of();
+        return Arrays.stream(path.getCoordinates())
+                .map(c -> new double[]{c.y, c.x}) // y=lat, x=lon
+                .toList();
+    }
+
+    private GeoJsonFeature buildExternalPoiFeature(ExternalPoiDto poi) {
+        List<Double> coords = List.of(poi.lon(), poi.lat());
+        GeoJsonGeometry geometry = new GeoJsonGeometry("Point", coords);
+
+        Map<String, Object> props = new LinkedHashMap<>();
+        props.put("type", "external_poi");
+        props.put("name", poi.name());
+        props.put("poiType", poi.type());
+
+        return GeoJsonFeature.builder()
+                .id(EXTERNAL_POI_ID_PREFIX + poi.name().hashCode())
+                .geometry(geometry)
+                .properties(props)
+                .build();
     }
 }
