@@ -26,5 +26,8 @@ public enum POIType {
     ATM,
     NETWORK_COVERAGE,
     OTHER,
-    ACCOMMODATION
+    ACCOMMODATION,
+    SCHOOL,
+    WORKSHOP,
+    PEAK
 }
