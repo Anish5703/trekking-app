@@ -44,10 +44,10 @@ public class OverpassClient {
             return mapper.readTree(response.getBody());
 
         } catch (RestClientException e) {
-            log.error("Overpass query failed - RestClientException: {}", e.getMessage(), e);
+            log.error("Overpass query failed - RestClientException: {}", e.getMessage());
             return null;
         } catch (Exception e) {
-            log.error("Overpass query failed - unexpected error: {}", e.getMessage(), e);
+            log.error("Overpass query failed - unexpected error: {}", e.getMessage());
             return null;
         }
     }
