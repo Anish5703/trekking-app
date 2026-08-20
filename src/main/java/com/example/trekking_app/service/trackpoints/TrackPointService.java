@@ -1,19 +1,25 @@
 package com.example.trekking_app.service.trackpoints;
 
+import com.example.trekking_app.dto.geoJson.GeoJsonFeature;
+import com.example.trekking_app.dto.geoJson.GeoJsonGeometry;
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.gpx.GapPreviewDto;
+import com.example.trekking_app.dto.route.FillGapsRequest;
+import com.example.trekking_app.dto.trackpoint.TrackPointCreateRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointResponse;
+import com.example.trekking_app.entity.GpxSegment;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrackPoint;
 import com.example.trekking_app.entity.TrailSegment;
 import com.example.trekking_app.exception.resource.ResourceDeletionFailedException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
+import com.example.trekking_app.mapper.GeoJsonMapper;
 import com.example.trekking_app.mapper.TrackPointMapper;
-import com.example.trekking_app.model.RouteStatus;
-import com.example.trekking_app.model.SegmentRefreshContext;
+import com.example.trekking_app.model.*;
 import com.example.trekking_app.dto.trackpoint.TrackPointBatchRequest;
-import com.example.trekking_app.model.TrackPointStatus;
+import com.example.trekking_app.repository.GpxSegmentRepository;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
 import com.example.trekking_app.repository.TrailSegmentRepository;
@@ -23,17 +29,16 @@ import com.example.trekking_app.service.xlsx.XlsxParserHelper;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.PrecisionModel;
+import org.locationtech.jts.geom.*;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -45,8 +50,10 @@ public class TrackPointService {
     private final TrailSegmentService trailSegmentService;
     private final XlsxParserHelper trailSegmentHelper;
     private final TrailSegmentRepository trailSegmentRepo;
+    private final GpxSegmentRepository gpxSegmentRepo;
     private final TrackPointMapper trackPointMapper = new TrackPointMapper();
     private final GpxMergeService gpxMergeService;
+    private final GeoJsonMapper geoJsonMapper;
     private final GeometryFactory GF = new GeometryFactory(new PrecisionModel(),4326);
 
 
@@ -136,6 +143,7 @@ public class TrackPointService {
 
     }
 
+    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
     @Transactional
     public ApiResponse<TrackPointResponse> updateTrackPoint(@NonNull Integer routeId,
                                                             @NonNull Integer trackPointId,
@@ -187,6 +195,7 @@ public class TrackPointService {
 
 
 
+    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
     @Transactional
     public ApiResponse<Void> recoverTrackPoint(@NonNull Integer routeId, @NonNull Integer trackPointId)
     {
@@ -201,6 +210,7 @@ public class TrackPointService {
         return new ApiResponse<>(null,"trackpoint recovered",200);
 
     }
+    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
     @Transactional
     public ApiResponse<Void> recoverTrackPoints(
             @NonNull Integer routeId,
@@ -229,6 +239,7 @@ public class TrackPointService {
         return new ApiResponse<>(null, "Track points recovered successfully.", 200);
     }
 
+    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
     @Transactional
     public ApiResponse<Void> deleteTrackPoint(Integer routeId, Integer trackPointId) {
         Route route = routeRepo.findById(routeId).orElseThrow(
@@ -248,6 +259,7 @@ public class TrackPointService {
         }
     }
 
+    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
     @Transactional
     public ApiResponse<Void> deleteListOfTrackPoint(@NonNull Integer routeId, @NonNull TrackPointBatchRequest req)
     {
@@ -275,5 +287,182 @@ public class TrackPointService {
             throw new ResourceDeletionFailedException("failed to delete trackpoints");
         }
 
+    }
+
+    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
+    @Transactional
+    public ApiResponse<Void> createTrackpoint(@NonNull Integer routeId, @NonNull TrackPointCreateRequest tpCreateReq) {
+
+        if (routeId < 1 || tpCreateReq.getLatitude() < 1.0 || tpCreateReq.getLongitude() < 1.0)
+            throw new IllegalArgumentException("values cannot be less than 1");
+
+        Route route = routeRepo.findById(routeId)
+                .orElseThrow(() -> new ResourceNotFoundException("route", "id", routeId));
+
+        GpxSegment gpxSegment;
+        int newLocalSequence;
+
+        if (tpCreateReq.getPrecedingTpId() != null) {
+            TrackPoint precedingTp = trackPointRepo.findById(tpCreateReq.getPrecedingTpId())
+                    .orElseThrow(() -> new ResourceNotFoundException("trackpoint", "id", tpCreateReq.getPrecedingTpId()));
+
+            if (!precedingTp.getRoute().getId().equals(route.getId()))
+                throw new IllegalArgumentException("preceding trackpoint does not belong to route " + routeId);
+
+            gpxSegment = precedingTp.getGpxSegment();
+
+            trackPointRepo.shiftLocalSequencesAfter(gpxSegment.getId(), precedingTp.getLocalSequence());
+
+            newLocalSequence = precedingTp.getLocalSequence() + 1;
+        } else {
+            int nextOrderIndex = gpxSegmentRepo
+                    .findTopByRoute_IdAndSegmentStatusOrderByOrderIndexDesc(routeId, GpxSegmentStatus.TRACKPOINT)
+                    .map(g -> g.getOrderIndex() + 1)
+                    .orElse(0);
+
+            gpxSegment = gpxSegmentRepo.save(
+                    GpxSegment.builder()
+                            .route(route)
+                            .sourceFileName("Auto Created GPX " + UUID.randomUUID())
+                            .sourceFileHash("MANUAL-" + UUID.randomUUID())
+                            .orderIndex(nextOrderIndex)
+                            .segmentStatus(GpxSegmentStatus.TRACKPOINT)
+                            .user(route.getUser())
+                            .build()
+            );
+            newLocalSequence = 0;
+        }
+
+        Point geom = GF.createPoint(
+                new Coordinate(tpCreateReq.getLongitude(), tpCreateReq.getLatitude())
+        );
+
+        TrackPoint newTp = TrackPoint.builder()
+                .route(route)
+                .gpxSegment(gpxSegment)
+                .latitude(tpCreateReq.getLatitude())
+                .longitude(tpCreateReq.getLongitude())
+                .localSequence(newLocalSequence)
+                .geom(geom)
+                .status(TrackPointStatus.ACTIVE)
+                .recordedAt(LocalDateTime.now())
+                .build();
+
+        trackPointRepo.save(newTp);
+
+        // re-derive globalSequence across the route since a mid-route insert shifts downstream points
+        trackPointRepo.updateGlobalSequences(routeId);
+
+        return new ApiResponse<>(null,"new trackpoint created successfully",201);
+    }
+
+
+    public List<GapPreviewDto> detectGaps(@NonNull Integer routeId, double thresholdMeters) {
+        Route route = routeRepo.findById(routeId)
+                .orElseThrow(() -> new ResourceNotFoundException("route", "id", routeId));
+
+        List<TrackPoint> tps = trackPointRepo.findByRouteAndIsDeletedFalseOrderByGlobalSequenceAsc(route)
+                .orElse(List.of())
+                .stream()
+                .filter(tp -> tp.getGpxSegment().getSegmentStatus() == GpxSegmentStatus.TRACKPOINT)
+                .toList();
+
+        List<GapPreviewDto> gaps = new ArrayList<>();
+        for (int i = 1; i < tps.size(); i++) {
+            TrackPoint prev = tps.get(i - 1);
+            TrackPoint curr = tps.get(i);
+            double dist = GeoUtils.haversineMeters(prev.getLongitude(), prev.getLatitude(),
+                    curr.getLongitude(), curr.getLatitude());
+            if (dist > thresholdMeters) {
+                gaps.add(GapPreviewDto.builder()
+                        .precedingTpId(prev.getId())
+                        .followingTpId(curr.getId())
+                        .from(List.of(prev.getLongitude(), prev.getLatitude()))
+                        .to(List.of(curr.getLongitude(), curr.getLatitude()))
+                        .distanceMeters(Math.round(dist * 100) / 100.0)
+                        .build());
+            }
+        }
+        return gaps;
+    }
+
+    @Transactional
+    public ApiResponse<Void> fillGaps(@NonNull Integer routeId, @NonNull FillGapsRequest request) {
+        Route route = routeRepo.findById(routeId)
+                .orElseThrow(() -> new ResourceNotFoundException("route", "id", routeId));
+
+        double threshold = request.getThresholdMeters() != null ? request.getThresholdMeters() : 200.0;
+        List<GapPreviewDto> gaps = detectGaps(routeId, threshold);
+
+        if (request.getPrecedingTpIds() != null && !request.getPrecedingTpIds().isEmpty()) {
+            Set<Integer> selected = new HashSet<>(request.getPrecedingTpIds());
+            gaps = gaps.stream().filter(g -> selected.contains(g.getPrecedingTpId())).toList();
+        }
+        if (gaps.isEmpty())
+            throw new IllegalArgumentException("no matching gaps found to fill");
+
+        int filledCount = 0;
+        for (GapPreviewDto gap : gaps) { // already ascending sequence order
+            filledCount += fillSingleGap(route, gap);
+        }
+
+        trackPointRepo.updateGlobalSequences(routeId);
+        String message = ("Filled " + gaps.size() + " gap(s) with " + filledCount + " trackpoints");
+        return new ApiResponse<>(null,message,201);
+
+    }
+
+    private int fillSingleGap(Route route, GapPreviewDto gap) {
+        TrackPoint precedingTp = trackPointRepo.findById(gap.getPrecedingTpId())
+                .orElseThrow(() -> new ResourceNotFoundException("trackpoint", "id", gap.getPrecedingTpId()));
+
+        GeoJsonFeature bridge = geoJsonMapper.trailGapRoutingService.findBridgePath(gap.getFrom(), gap.getTo(),
+                "gap-" + gap.getPrecedingTpId());
+        if (bridge == null) {
+            log.warn("no bridge path found for gap after tp {}", gap.getPrecedingTpId());
+            return 0;
+        }
+
+        List<List<Double>> coords = extractLineCoords(bridge.getGeometry());
+        if (coords.isEmpty()) return 0;
+
+        int insertAtOrderIndex = precedingTp.getGpxSegment().getOrderIndex() + 1;
+        gpxSegmentRepo.shiftOrderIndexAfter(route.getId(), precedingTp.getGpxSegment().getOrderIndex());
+
+        GpxSegment gpxSegment = gpxSegmentRepo.save(
+                GpxSegment.builder()
+                        .route(route)
+                        .sourceFileName("GraphHopper Gap Fill " + UUID.randomUUID())
+                        .sourceFileHash("GH-GAP-" + UUID.randomUUID())
+                        .orderIndex(insertAtOrderIndex)
+                        .segmentStatus(GpxSegmentStatus.TRACKPOINT)
+                        .user(route.getUser())
+                        .build()
+        );
+
+        List<TrackPoint> trackPoints = new ArrayList<>(coords.size());
+        int seq = 0;
+        for (List<Double> c : coords) {
+            double lon = c.get(0), lat = c.get(1);
+            trackPoints.add(TrackPoint.builder()
+                    .route(route)
+                    .gpxSegment(gpxSegment)
+                    .latitude(lat)
+                    .longitude(lon)
+                    .localSequence(seq++)
+                    .geom(GF.createPoint(new Coordinate(lon, lat)))
+                    .status(TrackPointStatus.ACTIVE)
+                    .recordedAt(LocalDateTime.now())
+                    .build());
+        }
+        trackPointRepo.saveAll(trackPoints);
+        return trackPoints.size();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<List<Double>> extractLineCoords(GeoJsonGeometry geometry) {
+        Object raw = geometry.getCoordinates();
+        if ("Point".equals(geometry.getType())) return List.of((List<Double>) raw);
+        return (List<List<Double>>) raw;
     }
 }
