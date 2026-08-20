@@ -31,7 +31,7 @@ public class GeoJsonMapper {
     private final String POI_ID_PREFIX = "poi:";
     private final String TRAIL_SEGMENT_ID_PREFIX = "trail_segment:";
     private final String ACCOMMODATION_ID_PREFIX = "accommodation:";
-    private final TrailGapRoutingService trailGapRoutingService;
+    public final TrailGapRoutingService trailGapRoutingService;
 
     private static final double GAP_THRESHOLD_METERS = 200.0;
     private static final double EARTH_RADIUS_METERS = 6371000.0;
