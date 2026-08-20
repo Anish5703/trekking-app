@@ -1,6 +1,7 @@
 package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.trackpoint.TrackPointCreateRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointResponse;
 import com.example.trekking_app.dto.trackpoint.TrackPointBatchRequest;
@@ -59,6 +60,14 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
     {
         ApiResponse<Page<TrackPointResponse>> response = trackPointService.getInactiveTrackPoints(routeId,page,size);
         return ResponseEntity.status(200).body(response);
+    }
+
+    @PostMapping()
+    public ResponseEntity<ApiResponse<Void>> handleCreateTrackPoint(@PathVariable Integer routeId ,
+                                                                    @RequestBody TrackPointCreateRequest tpCreateReq)
+    {
+        ApiResponse<Void> response = trackPointService.createTrackpoint(routeId,tpCreateReq);
+        return ResponseEntity.status(201).body(response);
     }
 
     @CacheEvict(value = "route-geoJson",key = "#routeId")

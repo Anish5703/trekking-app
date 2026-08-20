@@ -18,6 +18,7 @@ public class CorsConfig {
         config.setAllowedOrigins(List.of(
                 "http://localhost:8080",
                 "http://localhost:3000",
+                "http://103.235.196.105:8081",
                 "https://trekking-app-production.up.railway.app",
                 "https://trekking-application.vercel.app"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
