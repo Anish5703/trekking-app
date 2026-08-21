@@ -2,65 +2,65 @@ services:
   db:
     image: postgis/postgis:15-3.4
     container_name: postgresql-trekking-app
-    restart: no
+    restart: unless-stopped
     stop_grace_period: 30s
     stop_signal: SIGINT
-    environment:
-      POSTGRES_DB: trekking-app-db
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-    ports:
-      - "5432:5432"
     env_file:
       - .env
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./init-postgis.sql:/docker-entrypoint-initdb.d/init-postgis.sql
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U myuser -d trekking-app-db" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
       start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   pgAdmin:
     image: dpage/pgadmin4
     container_name: trekking-app-pgadmin
+    restart: unless-stopped
     logging:
       driver: "none"
+    env_file:
+      - .env
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@pgadmin4.com
-      PGADMIN_DEFAULT_PASSWORD: admin
       PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: 50
       GUNICORN_ACCESS_LOGFILE: /dev/null
     ports:
-      - "8082:80"
-      # pgAdmin accessible on localhost:8082
-          #username = myuser  , password = mypassword
+      - "127.0.0.1:8082:80"   # only reachable via SSH tunnel — not public
     depends_on:
       - db
 
   redis:
     image: redis:7-alpine
     container_name: trekking-app-redis
-    restart: no
-    ports:
-      - "6379:6379"
-    command: redis-server --requirepass redispassword --appendonly yes
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
     volumes:
       - redisdata:/data
     healthcheck:
-      test: ["CMD", "redis-cli","-a","redispassword","ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
       start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
   app:
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     build: .
     container_name: trekking-app
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
@@ -71,16 +71,21 @@ services:
     env_file:
       - .env
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATA_REDIS_SSL=false
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
-      - SPRING_DATA_REDIS_PASSWORD=redispassword
-
+      - SPRING_DATA_REDIS_PASSWORD=${REDIS_PASSWORD}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - ./logs:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 768M
 
 volumes:
   pgdata:
   redisdata:
-

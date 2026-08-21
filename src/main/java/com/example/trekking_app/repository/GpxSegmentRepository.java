@@ -5,6 +5,9 @@ import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.model.GpxSegmentStatus;
 import lombok.NonNull;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -21,7 +24,10 @@ public interface GpxSegmentRepository extends JpaRepository<GpxSegment,Integer> 
 
     Optional<List<GpxSegment>> findByRouteAndSegmentStatus(Route route, GpxSegmentStatus segmentStatus);
 
-
-
     Optional<GpxSegment> findByRoute_IdAndSegmentStatusAndOrderIndex(Integer id, GpxSegmentStatus gpxSegmentStatus, Integer gpxOrderIndex);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("UPDATE GpxSegment g SET g.orderIndex = g.orderIndex + 1 " +
+            "WHERE g.route.id = :routeId AND g.orderIndex > :afterOrderIndex")
+    void shiftOrderIndexAfter(@Param("routeId") Integer routeId, @Param("afterOrderIndex") int afterOrderIndex);
 }
