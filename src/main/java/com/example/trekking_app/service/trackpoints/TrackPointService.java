@@ -386,6 +386,7 @@ public class TrackPointService {
         return gaps;
     }
 
+    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
     @Transactional
     public ApiResponse<Void> fillGaps(@NonNull Integer routeId, @NonNull FillGapsRequest request) {
         Route route = routeRepo.findById(routeId)
@@ -412,6 +413,7 @@ public class TrackPointService {
 
     }
 
+    @Transactional
     private int fillSingleGap(Route route, GapPreviewDto gap) {
         TrackPoint precedingTp = trackPointRepo.findById(gap.getPrecedingTpId())
                 .orElseThrow(() -> new ResourceNotFoundException("trackpoint", "id", gap.getPrecedingTpId()));

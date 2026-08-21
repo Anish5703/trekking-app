@@ -5,9 +5,11 @@ import com.example.trekking_app.dto.gpx.GpxImportResponse;
 import com.example.trekking_app.dto.gpx.GpxSegmentOrderRequest;
 import com.example.trekking_app.dto.gpx.GpxSegmentResponse;
 import com.example.trekking_app.model.GpxSegmentStatus;
+import com.example.trekking_app.service.gpx.GpxExportService;
 import com.example.trekking_app.service.gpx.GpxIngestionService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +28,7 @@ import java.util.UUID;
 public class AdminGpxController {
 
     private final GpxIngestionService orchestrator;
+    private final GpxExportService gpxExportService;
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<GpxSegmentResponse>>> handleGetAllGpxSegments(@PathVariable Integer routeId,
@@ -79,6 +82,39 @@ public class AdminGpxController {
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
+
+    @GetMapping("/download")
+    public ResponseEntity<byte[]> handleDownloadGpx(@PathVariable Integer routeId) {
+        byte[] gpxBytes = gpxExportService.exportRouteAsGpx(routeId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_XML);
+        headers.setContentDisposition(
+                ContentDisposition.attachment()
+                        .filename("route-" + routeId + ".gpx")
+                        .build()
+        );
+
+        return ResponseEntity.status(200).headers(headers).body(gpxBytes);
+    }
+    @GetMapping("/{gpxSegmentId}/download")
+    public ResponseEntity<byte[]> handleDownloadGpxSegment(
+            @PathVariable Integer routeId,
+            @PathVariable Integer segmentId) {
+
+        byte[] gpxBytes = gpxExportService.exportSegmentAsGpx(routeId, segmentId);
+        String filename = gpxExportService.getSegmentOriginalFilename(routeId, segmentId);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_XML);
+        headers.setContentDisposition(
+                ContentDisposition.attachment()
+                        .filename(filename)
+                        .build()
+        );
+
+        return ResponseEntity.status(200).headers(headers).body(gpxBytes);
+    }
 
     private HttpHeaders buildRequestHeaders() {
         HttpHeaders headers = new HttpHeaders();
