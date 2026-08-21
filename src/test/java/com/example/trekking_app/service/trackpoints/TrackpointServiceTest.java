@@ -1,7 +1,12 @@
 package com.example.trekking_app.service.trackpoints;
 
+import com.example.trekking_app.dto.geoJson.GeoJsonFeature;
+import com.example.trekking_app.dto.geoJson.GeoJsonGeometry;
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.gpx.GapPreviewDto;
+import com.example.trekking_app.dto.route.FillGapsRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointBatchRequest;
+import com.example.trekking_app.dto.trackpoint.TrackPointCreateRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointResponse;
 import com.example.trekking_app.entity.GpxSegment;
@@ -10,11 +15,15 @@ import com.example.trekking_app.entity.TrackPoint;
 import com.example.trekking_app.exception.resource.ResourceDeletionFailedException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
+import com.example.trekking_app.mapper.GeoJsonMapper;
+import com.example.trekking_app.model.GpxSegmentStatus;
 import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.model.TrackPointStatus;
+import com.example.trekking_app.repository.GpxSegmentRepository;
 import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TrackPointRepository;
 import com.example.trekking_app.service.gpx.GpxMergeService;
+import com.example.trekking_app.service.graphHopper.TrailGapRoutingService;
 import com.example.trekking_app.service.trailSegment.TrailSegmentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +38,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -36,8 +46,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class TrackpointServiceTest {
@@ -50,6 +59,12 @@ public class TrackpointServiceTest {
     private GpxMergeService gpxMergeService;
     @Mock
     private TrailSegmentService trailSegmentService;
+    @Mock
+    private GpxSegmentRepository gpxSegmentRepo;
+    @Mock
+    private GeoJsonMapper geoJsonMapper;
+    @Mock
+    private TrailGapRoutingService trailGapRoutingService;
 
     @InjectMocks
     private TrackPointService trackPointService;
@@ -58,6 +73,7 @@ public class TrackpointServiceTest {
     private TrackPoint trackPoint ;
     private GpxSegment gpxSegment;
     private TrackPointRequest trackPointRequest;
+    private TrackPointCreateRequest tpCreateReq;
 
     @BeforeEach
     void setUp() {
@@ -90,6 +106,12 @@ public class TrackpointServiceTest {
                 .latitude(24.4)
                 .elevation(1200.0)
                 .status(TrackPointStatus.ACTIVE)
+                .build();
+
+        tpCreateReq = TrackPointCreateRequest.builder()
+                .latitude(23.3)
+                .longitude(83.3)
+                .precedingTpId(trackPoint.getId())
                 .build();
 
     }
@@ -443,4 +465,214 @@ public class TrackpointServiceTest {
 
         assertThrows(ResourceDeletionFailedException.class,()->trackPointService.deleteListOfTrackPoint(route.getId(),req));
     }
+
+    @Test
+    void createTrackpoint_WithPrecedingTrackpoint_Success() {
+
+        when(routeRepo.findById(route.getId())).thenReturn(Optional.of(route));
+        when(trackPointRepo.findById(tpCreateReq.getPrecedingTpId())).thenReturn(Optional.of(trackPoint));
+
+        ApiResponse<Void> response = trackPointService.createTrackpoint(route.getId(),tpCreateReq);
+
+        assertNotNull(response);
+        assertEquals(201,response.getStatus());
+        verify(trackPointRepo).shiftLocalSequencesAfter(gpxSegment.getId(), trackPoint.getLocalSequence());
+
+    }
+
+    @Test
+    void testCreateTrackpoint_WithoutPrecedingTrackPoint_CreatesNewGpxSegment() {
+        TrackPointCreateRequest req = TrackPointCreateRequest.builder().latitude(27.71).longitude(86.52).build();
+
+        when(routeRepo.findById(route.getId())).thenReturn(Optional.of(route));
+        when(gpxSegmentRepo.findTopByRoute_IdAndSegmentStatusOrderByOrderIndexDesc(route.getId(), GpxSegmentStatus.TRACKPOINT))
+                .thenReturn(Optional.empty());
+        when(gpxSegmentRepo.save(any(GpxSegment.class))).thenAnswer(i -> i.getArgument(0));
+
+        ApiResponse<Void> response = trackPointService.createTrackpoint(route.getId(), req);
+
+        assertEquals(201, response.getStatus());
+
+    }
+
+    @Test
+    void createTrackpoint_RouteNotFound() {
+
+        when(routeRepo.findById(route.getId())).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class,()->trackPointService.createTrackpoint(route.getId(),tpCreateReq));
+    }
+
+    @Test
+    void createTrackpoint_TrackpointNotFound() {
+
+        when(routeRepo.findById(route.getId())).thenReturn(Optional.of(route));
+        when(trackPointRepo.findById(tpCreateReq.getPrecedingTpId())).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class,()->trackPointService.createTrackpoint(route.getId(),tpCreateReq));
+    }
+
+    @Test
+    void testCreateTrackpoint_PrecedingTrackPointBelongsToDifferentRoute() {
+        Route otherRoute = new Route();
+        otherRoute.setId(999);
+        TrackPoint foreignTp = TrackPoint.builder().id(500).route(otherRoute).localSequence(2).gpxSegment(gpxSegment).build();
+
+        TrackPointCreateRequest req = TrackPointCreateRequest.builder().latitude(27.71).longitude(86.52).precedingTpId(foreignTp.getId()).build();
+
+        when(routeRepo.findById(route.getId())).thenReturn(Optional.of(route));
+        when(trackPointRepo.findById(foreignTp.getId())).thenReturn(Optional.of(foreignTp));
+
+        assertThrows(IllegalArgumentException.class, () -> trackPointService.createTrackpoint(route.getId(), req));
+    }
+
+    @Test
+    void testDetectGaps_Success() {
+        TrackPoint tp2 = TrackPoint.builder()
+                .id(102)
+                .route(route)
+                .gpxSegment(gpxSegment)
+                .latitude(23.4)
+                .longitude(81.3)
+                .build();
+        gpxSegment.setSegmentStatus(GpxSegmentStatus.TRACKPOINT);
+
+        when(routeRepo.findById(route.getId())).thenReturn(Optional.of(route));
+        when(trackPointRepo.findByRouteAndIsDeletedFalseOrderByGlobalSequenceAsc(route))
+                .thenReturn(Optional.of(List.of(trackPoint, tp2)));
+
+        List<GapPreviewDto> gaps = trackPointService.detectGaps(route.getId(), 200.0);
+
+        assertNotNull(gaps);
+        assertEquals(1, gaps.size());
+        assertEquals(101, gaps.get(0).getPrecedingTpId());
+        assertEquals(102, gaps.get(0).getFollowingTpId());
+    }
+
+    @Test
+    void testDetectGaps_RouteNotFound() {
+        when(routeRepo.findById(route.getId())).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> trackPointService.detectGaps(route.getId(), 200.0));
+    }
+
+    @Test
+    void testDetectGaps_NoGapsFound() {
+        TrackPoint tp2 = TrackPoint.builder()
+                .id(102)
+                .route(route)
+                .gpxSegment(gpxSegment)
+                .latitude(23.30001)
+                .longitude(81.20001)
+                .build();
+        gpxSegment.setSegmentStatus(GpxSegmentStatus.TRACKPOINT);
+
+        when(routeRepo.findById(route.getId())).thenReturn(Optional.of(route));
+        when(trackPointRepo.findByRouteAndIsDeletedFalseOrderByGlobalSequenceAsc(route))
+                .thenReturn(Optional.of(List.of(trackPoint, tp2)));
+
+        List<GapPreviewDto> gaps = trackPointService.detectGaps(route.getId(), 1000.0);
+
+        assertTrue(gaps.isEmpty());
+    }
+
+    @Test
+    void testFillGaps_Success() {
+        TrackPoint tp2 = TrackPoint.builder()
+                .id(102)
+                .route(route)
+                .gpxSegment(gpxSegment)
+                .latitude(23.4)
+                .longitude(81.3)
+                .build();
+        gpxSegment.setSegmentStatus(GpxSegmentStatus.TRACKPOINT);
+        gpxSegment.setOrderIndex(1);
+
+        when(routeRepo.findById(route.getId())).thenReturn(Optional.of(route));
+        when(trackPointRepo.findByRouteAndIsDeletedFalseOrderByGlobalSequenceAsc(route))
+                .thenReturn(Optional.of(List.of(trackPoint, tp2)));
+
+        FillGapsRequest request = new FillGapsRequest();
+        request.setThresholdMeters(200.0);
+        request.setPrecedingTpIds(List.of(101));
+
+        when(trackPointRepo.findById(101)).thenReturn(Optional.of(trackPoint));
+
+        GeoJsonGeometry geom = new GeoJsonGeometry();
+        geom.setType("LineString");
+        geom.setCoordinates(List.of(List.of(81.25, 23.35)));
+
+        GeoJsonFeature feature = new GeoJsonFeature();
+        feature.setGeometry(geom);
+
+        ReflectionTestUtils.setField(geoJsonMapper,"trailGapRoutingService",trailGapRoutingService);
+
+        when(trailGapRoutingService.findBridgePath(anyList(), anyList(), anyString()))
+                .thenReturn(feature);
+        when(gpxSegmentRepo.save(any(GpxSegment.class))).thenAnswer(i -> i.getArgument(0));
+
+        ApiResponse<Void> response = trackPointService.fillGaps(route.getId(), request);
+
+        assertEquals(201, response.getStatus());
+        verify(trackPointRepo).saveAll(anyList());
+        verify(trackPointRepo).updateGlobalSequences(route.getId());
+    }
+
+    @Test
+    void testFillGaps_RouteNotFound() {
+        FillGapsRequest request = new FillGapsRequest();
+
+        when(routeRepo.findById(route.getId())).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> trackPointService.fillGaps(route.getId(), request));
+    }
+
+    @Test
+    void testFillGaps_NoMatchingGaps() {
+        TrackPoint tp2 = TrackPoint.builder()
+                .id(102)
+                .route(route)
+                .gpxSegment(gpxSegment)
+                .latitude(23.30001)
+                .longitude(81.20001)
+                .build();
+        gpxSegment.setSegmentStatus(GpxSegmentStatus.TRACKPOINT);
+
+        when(routeRepo.findById(route.getId())).thenReturn(Optional.of(route));
+        when(trackPointRepo.findByRouteAndIsDeletedFalseOrderByGlobalSequenceAsc(route))
+                .thenReturn(Optional.of(List.of(trackPoint, tp2)));
+
+        FillGapsRequest request = new FillGapsRequest();
+        request.setThresholdMeters(1000.0);
+
+        assertThrows(IllegalArgumentException.class, () -> trackPointService.fillGaps(route.getId(), request));
+    }
+
+    @Test
+    void testFillGaps_BridgePathNull() {
+        TrackPoint tp2 = TrackPoint.builder()
+                .id(102)
+                .route(route)
+                .gpxSegment(gpxSegment)
+                .latitude(23.4)
+                .longitude(81.3)
+                .build();
+        gpxSegment.setSegmentStatus(GpxSegmentStatus.TRACKPOINT);
+
+        when(routeRepo.findById(route.getId())).thenReturn(Optional.of(route));
+        when(trackPointRepo.findByRouteAndIsDeletedFalseOrderByGlobalSequenceAsc(route))
+                .thenReturn(Optional.of(List.of(trackPoint, tp2)));
+
+        FillGapsRequest request = new FillGapsRequest();
+        request.setThresholdMeters(200.0);
+
+        when(trackPointRepo.findById(101)).thenReturn(Optional.of(trackPoint));
+
+        ReflectionTestUtils.setField(geoJsonMapper,"trailGapRoutingService",trailGapRoutingService);
+        when(trailGapRoutingService.findBridgePath(anyList(), anyList(), anyString())).thenReturn(null);
+
+        ApiResponse<Void> response = trackPointService.fillGaps(route.getId(), request);
+
+        assertEquals(201, response.getStatus());
+        verify(trackPointRepo, never()).saveAll(anyList());
+    }
 }
+
