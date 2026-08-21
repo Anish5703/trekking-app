@@ -100,10 +100,10 @@ public class AdminGpxController {
     @GetMapping("/{gpxSegmentId}/download")
     public ResponseEntity<byte[]> handleDownloadGpxSegment(
             @PathVariable Integer routeId,
-            @PathVariable Integer segmentId) {
+            @PathVariable Integer gpxSegmentId) {
 
-        byte[] gpxBytes = gpxExportService.exportSegmentAsGpx(routeId, segmentId);
-        String filename = gpxExportService.getSegmentOriginalFilename(routeId, segmentId);
+        byte[] gpxBytes = gpxExportService.exportSegmentAsGpx(routeId, gpxSegmentId);
+        String filename = gpxExportService.getSegmentOriginalFilename(routeId, gpxSegmentId);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_XML);
