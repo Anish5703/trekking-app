@@ -40,6 +40,14 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
        return ResponseEntity.status(200).body(response);
     }
 
+    @GetMapping("/{trackpointId}")
+    public ResponseEntity<ApiResponse<TrackPointResponse>> handleGetTrackPoint(@PathVariable Integer routeId,
+                                                                               @PathVariable Integer trackpointId)
+    {
+        ApiResponse<TrackPointResponse> response = trackPointService.getTrackpoint(routeId,trackpointId);
+        return ResponseEntity.status(200).body(response);
+    }
+
     @GetMapping
     public ResponseEntity<ApiResponse<List<TrackPointResponse>>> handleGetTrackPointByLatAndLon(@PathVariable Integer routeId,
                                                                                                 @NonNull Double latitude,

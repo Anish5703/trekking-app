@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -23,31 +24,30 @@ import java.util.Map;
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private final SlidingWindowRateLimiter rateLimiter;
-    private final IpExtractor              ipExtractor;
+    private final IpExtractor ipExtractor;
 
     private static final Map<String, int[]> PATH_LIMITS = Map.of(
-            "/api/v1/auth",      new int[]{10,  900},   // 10 / 15min
-            "/api/v1/admin/gpx", new int[]{10,  60},  // 10 / 1min
-            "/api/v1/admin",     new int[]{500, 60},    // 500 / 1min
-            "/api/v1/",          new int[]{200, 60}     // 200 / 1min default
+            "/api/v1/auth",      new int[]{10, 900},
+            "/api/v1/admin/gpx", new int[]{10, 60},
+            "/api/v1/admin",     new int[]{10, 60},
+            "/api/v1/",          new int[]{10, 60}
     );
 
     @Override
-    protected void doFilterInternal(HttpServletRequest req,
-                                    HttpServletResponse res,
-                                    FilterChain chain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+            throws ServletException, IOException {
 
-        String ip   = ipExtractor.extract(req);
+        String ip = ipExtractor.extract(req);
         String path = req.getRequestURI();
-        log.info("RateLimitFilter executing — path={} ip={}", path, ip);
-        int[]  conf = resolveLimit(path);
+        int[] conf = resolveLimit(path);
+        String identifier = "filter:%s:%s".formatted(resolveIdentifier(ip), segmentOf(path));
 
-        RateLimitResult result = rateLimiter.isAllowed(
-                "filter:%s:%s".formatted(resolveIdentifier(ip), segmentOf(path)),
-                conf[0], conf[1]
-        );
+        RateLimitResult result = rateLimiter.isAllowed(identifier, conf[0], conf[1]);
 
-        res.setHeader("X-RateLimit-Limit",     String.valueOf(conf[0]));
+        log.debug("RateLimit check — id={} allowed={} remaining={} path={}",
+                identifier, result.isAllowed(), result.getRemaining(), path);
+
+        res.setHeader("X-RateLimit-Limit", String.valueOf(conf[0]));
         res.setHeader("X-RateLimit-Remaining", String.valueOf(result.getRemaining()));
 
         if (!result.isAllowed()) {

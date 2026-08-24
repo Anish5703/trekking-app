@@ -210,7 +210,7 @@ public class TrackPointService {
         return new ApiResponse<>(null,"trackpoint recovered",200);
 
     }
-    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
+    @CacheEvict(value = "route-geoJson" ,key="#routeId")
     @Transactional
     public ApiResponse<Void> recoverTrackPoints(
             @NonNull Integer routeId,
@@ -432,8 +432,8 @@ public class TrackPointService {
         TrackPoint precedingTp = trackPointRepo.findById(gap.getPrecedingTpId())
                 .orElseThrow(() -> new ResourceNotFoundException("trackpoint", "id", gap.getPrecedingTpId()));
 
-        GeoJsonFeature bridge = geoJsonMapper.trailGapRoutingService.findBridgePath(gap.getFrom(), gap.getTo(),
-                "gap-" + gap.getPrecedingTpId());
+        GeoJsonFeature bridge = geoJsonMapper.trailGapRoutingService.findBridgePath(
+                gap.getFrom(), gap.getTo(), "gap-" + gap.getPrecedingTpId());
         if (bridge == null) {
             log.warn("no bridge path found for gap after tp {}", gap.getPrecedingTpId());
             return 0;
@@ -442,27 +442,36 @@ public class TrackPointService {
         List<List<Double>> coords = extractLineCoords(bridge.getGeometry());
         if (coords.isEmpty()) return 0;
 
-        int insertAtOrderIndex = precedingTp.getGpxSegment().getOrderIndex() + 1;
-        gpxSegmentRepo.shiftOrderIndexAfter(route.getId(), precedingTp.getGpxSegment().getOrderIndex());
+        GpxSegment originalSegment = precedingTp.getGpxSegment();
+        int originalOrderIndex = originalSegment.getOrderIndex();
 
-        GpxSegment gpxSegment = gpxSegmentRepo.save(
+        // points AFTER precedingTp within the same segment — must be pushed past the bridge
+        List<TrackPoint> tailPoints = trackPointRepo
+                .findByGpxSegmentIdAndLocalSequenceGreaterThanOrderByLocalSequenceAsc(
+                        originalSegment.getId(), precedingTp.getLocalSequence());
+
+        boolean needsSplit = !tailPoints.isEmpty();
+        int shiftAmount = needsSplit ? 2 : 1;
+        gpxSegmentRepo.shiftOrderIndexAfter(route.getId(), originalOrderIndex, shiftAmount);
+
+        GpxSegment bridgeSegment = gpxSegmentRepo.save(
                 GpxSegment.builder()
                         .route(route)
                         .sourceFileName("GraphHopper Gap Fill " + UUID.randomUUID())
                         .sourceFileHash("GH-GAP-" + UUID.randomUUID())
-                        .orderIndex(insertAtOrderIndex)
+                        .orderIndex(originalOrderIndex + 1)
                         .segmentStatus(GpxSegmentStatus.TRACKPOINT)
                         .user(route.getUser())
                         .build()
         );
 
-        List<TrackPoint> trackPoints = new ArrayList<>(coords.size());
-        int seq = 0;
+        List<TrackPoint> bridgeTps = new ArrayList<>(coords.size());
+        int seq = 1;
         for (List<Double> c : coords) {
             double lon = c.get(0), lat = c.get(1);
-            trackPoints.add(TrackPoint.builder()
+            bridgeTps.add(TrackPoint.builder()
                     .route(route)
-                    .gpxSegment(gpxSegment)
+                    .gpxSegment(bridgeSegment)
                     .latitude(lat)
                     .longitude(lon)
                     .localSequence(seq++)
@@ -471,8 +480,28 @@ public class TrackPointService {
                     .recordedAt(LocalDateTime.now())
                     .build());
         }
-        trackPointRepo.saveAll(trackPoints);
-        return trackPoints.size();
+        trackPointRepo.saveAll(bridgeTps);
+
+        if (needsSplit) {
+            GpxSegment tailSegment = gpxSegmentRepo.save(
+                    GpxSegment.builder()
+                            .route(route)
+                            .sourceFileName(originalSegment.getSourceFileName())
+                            .sourceFileHash(originalSegment.getSourceFileHash() + "-split")
+                            .orderIndex(originalOrderIndex + 2)
+                            .segmentStatus(originalSegment.getSegmentStatus())
+                            .user(route.getUser())
+                            .build()
+            );
+            int tailSeq = 1;
+            for (TrackPoint tp : tailPoints) {
+                tp.setGpxSegment(tailSegment);
+                tp.setLocalSequence(tailSeq++);
+            }
+            trackPointRepo.saveAll(tailPoints);
+        }
+
+        return bridgeTps.size();
     }
 
     @SuppressWarnings("unchecked")
@@ -480,5 +509,15 @@ public class TrackPointService {
         Object raw = geometry.getCoordinates();
         if ("Point".equals(geometry.getType())) return List.of((List<Double>) raw);
         return (List<List<Double>>) raw;
+    }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<TrackPointResponse> getTrackpoint(@NonNull Integer routeId,@NonNull Integer trackpointId)
+    {
+        Route route = routeRepo.findById(routeId)
+                .orElseThrow(() -> new ResourceNotFoundException("route", "id", routeId));
+        TrackPointResponse tp = trackPointRepo.findByRoute_IdAndId(route.getId(),trackpointId).map(trackPointMapper::toTrackPointResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("trackpoint","id",trackpointId));
+        return new ApiResponse<>(tp,"trackpoint fetched",200);
     }
 }

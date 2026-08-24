@@ -26,8 +26,11 @@ public interface GpxSegmentRepository extends JpaRepository<GpxSegment,Integer> 
 
     Optional<GpxSegment> findByRoute_IdAndSegmentStatusAndOrderIndex(Integer id, GpxSegmentStatus gpxSegmentStatus, Integer gpxOrderIndex);
 
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("UPDATE GpxSegment g SET g.orderIndex = g.orderIndex + 1 " +
-            "WHERE g.route.id = :routeId AND g.orderIndex > :afterOrderIndex")
-    void shiftOrderIndexAfter(@Param("routeId") Integer routeId, @Param("afterOrderIndex") int afterOrderIndex);
+    // GpxSegmentRepository
+    @Modifying
+    @Query("update GpxSegment s set s.orderIndex = s.orderIndex + :amount " +
+            "where s.route.id = :routeId and s.orderIndex > :afterIndex")
+    void shiftOrderIndexAfter(@Param("routeId") Integer routeId,
+                              @Param("afterIndex") int afterIndex,
+                              @Param("amount") int amount);
 }
