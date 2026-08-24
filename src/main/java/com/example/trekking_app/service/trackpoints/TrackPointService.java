@@ -302,7 +302,7 @@ public class TrackPointService {
         GpxSegment gpxSegment;
         int newLocalSequence;
 
-        if (tpCreateReq.getPrecedingTpId() != null) {
+        if (tpCreateReq.getPrecedingTpId() != null && tpCreateReq.getPrecedingTpId()!=0) {
             TrackPoint precedingTp = trackPointRepo.findById(tpCreateReq.getPrecedingTpId())
                     .orElseThrow(() -> new ResourceNotFoundException("trackpoint", "id", tpCreateReq.getPrecedingTpId()));
 
@@ -330,7 +330,7 @@ public class TrackPointService {
                             .user(route.getUser())
                             .build()
             );
-            newLocalSequence = 0;
+            newLocalSequence = 1;
         }
 
         Point geom = GF.createPoint(
@@ -352,6 +352,20 @@ public class TrackPointService {
 
         // re-derive globalSequence across the route since a mid-route insert shifts downstream points
         trackPointRepo.updateGlobalSequences(routeId);
+
+        // rebuild route path from updated trackpoint order
+        List<TrackPoint> orderedTps = trackPointRepo
+                .findByRouteAndIsDeletedFalseOrderByGlobalSequenceAsc(route)
+                .orElse(List.of());
+
+        if (orderedTps.size() >= 2) {
+            Coordinate[] coords = orderedTps.stream()
+                    .map(tp -> new Coordinate(tp.getLongitude(), tp.getLatitude()))
+                    .toArray(Coordinate[]::new);
+            route.setPath(GF.createLineString(coords));
+            route.setRouteStatus(RouteStatus.MERGED);
+            routeRepo.save(route);
+        }
 
         return new ApiResponse<>(null,"new trackpoint created successfully",201);
     }

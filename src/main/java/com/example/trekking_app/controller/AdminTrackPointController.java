@@ -73,7 +73,6 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
         return ResponseEntity.status(201).body(response);
     }
 
-    @CacheEvict(value = "route-geoJson",key = "#routeId")
     @PutMapping("/{trackPointId}")
     public ResponseEntity<ApiResponse<TrackPointResponse>> updateTrackPoint(@PathVariable Integer routeId,
                                                                             @PathVariable Integer trackPointId,
@@ -83,7 +82,6 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
-    @CacheEvict(value = "route-geoJson",key = "#routeId")
     @DeleteMapping("/{trackPointId}")
     public ResponseEntity<ApiResponse<Void>> handleDeleteTrackPoint(@PathVariable Integer routeId ,
                                                                    @PathVariable Integer trackPointId)
@@ -92,7 +90,6 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
-    @CacheEvict(value = "route-geoJson",key = "#routeId")
     @DeleteMapping("/list")
     public ResponseEntity<ApiResponse<Void>> handleDeleteListOfTrackPoint(@PathVariable Integer routeId,
                                                                           @RequestBody TrackPointBatchRequest req)
@@ -101,7 +98,6 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
       return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
-    @CacheEvict(value = "route-geoJson",key = "#routeId")
     @PutMapping("/{trackPointId}/recover")
     public ResponseEntity<ApiResponse<Void>> handleUndoDeleteTrackPoint(@PathVariable Integer routeId,
                                                                         @PathVariable Integer trackPointId)
@@ -110,7 +106,6 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
-    @CacheEvict(value = "route-geoJson",key = "#routeId")
     @PutMapping("/list/recover")
     public ResponseEntity<ApiResponse<Void>> handleUndoDeleteListOfTrackPoint(@PathVariable Integer routeId,
                                                                               @RequestBody TrackPointBatchRequest req)
@@ -125,7 +120,6 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
         return headers;
     }
 
-    @CacheEvict(value = "route-geoJson",key = "#routeId")
     @GetMapping("/gaps")
     public ResponseEntity<ApiResponse<List<GapPreviewDto>>> handlePreviewGaps(
             @PathVariable Integer routeId,
@@ -134,7 +128,6 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
         return ResponseEntity.status(200).body(new ApiResponse<>(response,"previewing gaps",200));
     }
 
-    @CacheEvict(value = "route-geoJson", key = "#routeId")
     @PostMapping("/gaps/fill")
     public ResponseEntity<ApiResponse<Void>> handleFillGaps(
             @PathVariable Integer routeId,
