@@ -422,6 +422,7 @@ public class TrackPointService {
         }
 
         trackPointRepo.updateGlobalSequences(routeId);
+        gpxMergeService.mergeTrackPoints(route.getId());
         String message = ("Filled " + gaps.size() + " gap(s) with " + filledCount + " trackpoints");
         return new ApiResponse<>(null,message,201);
 
