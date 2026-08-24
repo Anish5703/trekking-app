@@ -8,7 +8,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.RedisScript;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,14 +32,14 @@ class SlidingWindowRateLimiterTest {
         int limit = 100;
         long windowSeconds = 60;
 
-        when(stringRedisTemplate.executePipelined(any(RedisCallback.class))).thenReturn(List.of("5", "0"));
+        when(stringRedisTemplate.execute(any(RedisScript.class),anyList(),eq(String.valueOf(limit)),eq(String.valueOf(windowSeconds)),anyString())).thenReturn(List.of(1L,95L,0L));
 
         RateLimitResult result = slidingWindowRateLimiter.isAllowed(identifier, limit, windowSeconds);
 
         assertTrue(result.isAllowed());
         assertEquals(95, result.getRemaining());
 
-        verify(stringRedisTemplate, times(2)).executePipelined(any(RedisCallback.class));
+        verify(stringRedisTemplate, times(1)).execute(any(RedisScript.class), anyList(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -46,15 +48,14 @@ class SlidingWindowRateLimiterTest {
         int limit = 10;
         long windowSeconds = 60;
 
-        when(stringRedisTemplate.executePipelined(any(RedisCallback.class))).thenReturn(List.of("10", "5"));
+        when(stringRedisTemplate.execute(any(RedisScript.class),anyList(),eq(String.valueOf(limit)),eq(String.valueOf(windowSeconds)),anyString())).thenReturn(List.of(0L,0L,45L));
 
         RateLimitResult result = slidingWindowRateLimiter.isAllowed(identifier, limit, windowSeconds);
 
         assertFalse(result.isAllowed());
         assertEquals(0, result.getRemaining());
-        assertTrue(result.getRetryAfter() > 0);
+        assertEquals(45,result.getRetryAfter());
 
-        verify(stringRedisTemplate, times(1)).executePipelined(any(RedisCallback.class));
     }
 
     @Test
@@ -63,8 +64,8 @@ class SlidingWindowRateLimiterTest {
         int limit = 10;
         long windowSeconds = 60;
 
-        when(stringRedisTemplate.executePipelined(any(RedisCallback.class))).thenReturn(List.of());
+        when(stringRedisTemplate.execute(any(RedisScript.class),anyList(),anyString(),anyString(),anyString())).thenReturn(Collections.emptyList());
 
-        assertThrows(IndexOutOfBoundsException.class, () -> slidingWindowRateLimiter.isAllowed(identifier, limit, windowSeconds));
+        assertThrows(IllegalStateException.class, () -> slidingWindowRateLimiter.isAllowed(identifier, limit, windowSeconds));
     }
 }
