@@ -29,8 +29,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static final Map<String, int[]> PATH_LIMITS = Map.of(
             "/api/v1/auth",      new int[]{10, 900},
             "/api/v1/admin/gpx", new int[]{10, 60},
-            "/api/v1/admin",     new int[]{10, 60},
-            "/api/v1/",          new int[]{10, 60}
+            "/api/v1/admin",     new int[]{20, 60},
+            "/api/v1/",          new int[]{20, 60}
     );
 
     @Override

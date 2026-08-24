@@ -33,7 +33,7 @@ public class GeoJsonMapper {
     private final String ACCOMMODATION_ID_PREFIX = "accommodation:";
     public final TrailGapRoutingService trailGapRoutingService;
 
-    private static final double GAP_THRESHOLD_METERS = 500.0;
+    private static final double GAP_THRESHOLD_METERS = 200.0;
     private static final double EARTH_RADIUS_METERS = 6371000.0;
 
     private record Segment(Coordinate[] coords, Double gapBeforeMeters) {}
