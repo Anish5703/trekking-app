@@ -467,6 +467,23 @@ public class TrackpointServiceTest {
     }
 
     @Test
+    void testCreateTrackpoint_RouteLessThanOne() {
+        route.setId(0);
+        assertThrows(IllegalArgumentException.class,()->trackPointService.createTrackpoint(route.getId(),tpCreateReq));
+    }
+
+    @Test
+    void testCreateTrackpoint_LatitudeLessThanOne() {
+        tpCreateReq.setLatitude(0.0);
+        assertThrows(IllegalArgumentException.class,()->trackPointService.createTrackpoint(route.getId(),tpCreateReq));
+    }
+
+    @Test
+    void testCreateTrackpoint_LongitudeLessThanOne() {
+        tpCreateReq.setLongitude(0.0);
+        assertThrows(IllegalArgumentException.class,()->trackPointService.createTrackpoint(route.getId(),tpCreateReq));
+    }
+    @Test
     void createTrackpoint_WithPrecedingTrackpoint_Success() {
 
         when(routeRepo.findById(route.getId())).thenReturn(Optional.of(route));
