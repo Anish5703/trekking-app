@@ -130,7 +130,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /path/to/trekking-app        # <-- update to actual path on VPS
+            cd /opt/trekking-app/backend/trekking-app        # <-- update to actual path on VPS
             PREV_TAG=$(cat .last_good_tag 2>/dev/null || echo "latest")
             export IMAGE_TAG=$PREV_TAG
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d app
