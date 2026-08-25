@@ -80,7 +80,7 @@ public class GeoJsonMapper {
         return GeoJsonFeatureCollection.builder()
                 .type("FeatureCollection")
                 .features(features)
-                .gaps(gaps.isEmpty() ? null : gaps)
+                .gaps(gaps.isEmpty() ? null : gaps)      //hardcoded null
                 .build();
     }
 
