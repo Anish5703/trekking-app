@@ -16,6 +16,7 @@ import java.util.List;
 public class RouteDetails {
     private Integer id;
     private String name;
+    private String createdBy;
     private int destinationId;
     private DifficultyLevel difficultyLevel;
     private Integer estimatedDays;

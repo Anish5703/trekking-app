@@ -20,6 +20,7 @@ public class RouteResponse {
 
     private Integer id;
     private String name;
+    private String createdBy;
     private int destinationId;
     private String description;
     private DifficultyLevel difficultyLevel;

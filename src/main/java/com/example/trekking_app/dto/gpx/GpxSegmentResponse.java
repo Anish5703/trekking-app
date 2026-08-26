@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public class GpxSegmentResponse {
     private Integer id;
     private Integer routeId;
+    private String uploadedBy;
     private Integer orderIndex;
     private String  sourceFilename;
     private GpxSegmentStatus status;

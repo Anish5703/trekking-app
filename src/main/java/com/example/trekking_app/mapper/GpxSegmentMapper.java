@@ -10,6 +10,7 @@ public class GpxSegmentMapper {
         return GpxSegmentResponse.builder()
                 .id(gpxSegment.getId())
                 .routeId(gpxSegment.getRoute().getId())
+                .uploadedBy(gpxSegment.getUser().getEmail())
                 .sourceFilename(gpxSegment.getSourceFileName())
                 .orderIndex(gpxSegment.getOrderIndex())
                 .trackPointCount(gpxSegment.getTrackPoints().size())
