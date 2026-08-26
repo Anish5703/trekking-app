@@ -1,0 +1,7 @@
+services:
+  app:
+    build: !reset null
+    image: ghcr.io/anish5703/trekking-app:${IMAGE_TAG:-latest}
+    pull_policy: always
+    labels:
+      - "org.opencontainers.image.revision=${IMAGE_TAG:-latest}"
