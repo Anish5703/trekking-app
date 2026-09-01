@@ -3,6 +3,8 @@ package com.example.trekking_app.entity;
 import com.example.trekking_app.model.DifficultyLevel;
 import com.example.trekking_app.model.RouteStatus;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.locationtech.jts.geom.LineString;
 import java.util.ArrayList;
@@ -29,7 +31,8 @@ public class Route extends BaseEntity{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false,length = 100)
+    @NotBlank(message = "Route name is required")
+    @Size(max = 500, message = "Route name must not exceed 500 characters")
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -40,7 +43,7 @@ public class Route extends BaseEntity{
     @JoinColumn(name = "destination_id" , nullable = false)
     private Destination destination;
 
-    @Column(columnDefinition = "TEXT")
+    @Size(max = 5000, message = "Description must not exceed 5000 characters")
     private String description;
 
     @Column(name = "path",columnDefinition = "geometry(LineString, 4326)")

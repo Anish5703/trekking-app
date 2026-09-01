@@ -1,6 +1,7 @@
 package com.example.trekking_app.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.util.ArrayList;
@@ -22,7 +23,8 @@ public class Destination {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(nullable = false  , length = 100)
+    @Column(nullable = false)
+    @Size(max = 500, message = "Destination name must not exceed 500 characters")
     private String name ;
 
     @Column(nullable = false , length = 100)

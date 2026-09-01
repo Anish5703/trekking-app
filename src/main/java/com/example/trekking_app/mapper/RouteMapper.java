@@ -24,6 +24,17 @@ public class RouteMapper {
 
     }
 
+    public Route updateEntityFromRequest(RouteRequest routeRequest , Route route ,User user , Destination destination)
+    {
+        route.setName(routeRequest.getName());
+        route.setDestination(destination);
+        route.setDescription(routeRequest.getDescription());
+        route.setDifficultyLevel(routeRequest.getDifficultyLevel());
+        route.setUser(user);
+        route.setEstimatedDays(routeRequest.getEstimatedDays());
+        return route;
+    }
+
     public RouteResponse toRouteResponse(@NonNull Route route, Point startCoords, Point endCoords, List<String> imageUrls)
     {
         Double startLong = 0.0;

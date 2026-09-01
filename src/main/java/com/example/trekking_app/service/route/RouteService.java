@@ -178,12 +178,8 @@ public class RouteService {
         User user = userRepo.findById(userId).orElseThrow(
                 () -> new ResourceNotFoundException("user","id",userId)
         );
-        Route newRoute = routeMapper.toEntity(routeRequest,user,destination);
-        newRoute.setMinElevation(route.getMinElevation());
-        newRoute.setMaxElevation(route.getMaxElevation());
-        newRoute.setDistanceInKm(route.getDistanceInKm());
-        newRoute.setId(route.getId());
-        Route updatedRoute = routeRepo.save(newRoute);
+        Route modifiedRoute = routeMapper.updateEntityFromRequest(routeRequest,route,user,destination);
+        Route updatedRoute = routeRepo.save(modifiedRoute);
         TrackPoint tp1 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceAsc(route.getId()).orElse(null);
         TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
         Point startCoords = tp1!=null ? tp1.getGeom() : null;
