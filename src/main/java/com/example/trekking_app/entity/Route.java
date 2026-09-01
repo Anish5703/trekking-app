@@ -43,7 +43,7 @@ public class Route extends BaseEntity{
     @JoinColumn(name = "destination_id" , nullable = false)
     private Destination destination;
 
-    @Size(max = 5000, message = "Description must not exceed 5000 characters")
+    @Size(max = 20000, message = "Description must not exceed 20000 characters")
     private String description;
 
     @Column(name = "path",columnDefinition = "geometry(LineString, 4326)")
