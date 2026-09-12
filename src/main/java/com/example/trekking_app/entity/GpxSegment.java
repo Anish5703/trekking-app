@@ -29,7 +29,7 @@ public class GpxSegment {
     @Column(nullable = false , name ="source_file_name" ,columnDefinition = "TEXT")
     private String sourceFileName;
 
-    @Column(nullable = false , name="source_file_hash")
+    @Column(nullable = false , name="source_file_hash" ,columnDefinition = "TEXT")
     private String sourceFileHash;
 
     @Column(nullable = false,name = "order_index")

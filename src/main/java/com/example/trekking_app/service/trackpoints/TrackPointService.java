@@ -29,6 +29,7 @@ import com.example.trekking_app.service.xlsx.XlsxParserHelper;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.locationtech.jts.geom.*;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
@@ -488,7 +489,7 @@ public class TrackPointService {
                     GpxSegment.builder()
                             .route(route)
                             .sourceFileName(originalSegment.getSourceFileName())
-                            .sourceFileHash(originalSegment.getSourceFileHash() + "-split")
+                            .sourceFileHash(deriveSplitHash(originalSegment.getSourceFileHash(),originalOrderIndex+2))
                             .orderIndex(originalOrderIndex + 2)
                             .segmentStatus(originalSegment.getSegmentStatus())
                             .user(route.getUser())
@@ -520,5 +521,10 @@ public class TrackPointService {
         TrackPointResponse tp = trackPointRepo.findByRoute_IdAndId(route.getId(),trackpointId).map(trackPointMapper::toTrackPointResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("trackpoint","id",trackpointId));
         return new ApiResponse<>(tp,"trackpoint fetched",200);
+    }
+
+    private String deriveSplitHash(String originalHash, long orderIndex) {
+        return originalHash == null ? null
+                : DigestUtils.sha256Hex(originalHash + ":" + orderIndex).substring(0, 40);
     }
 }
