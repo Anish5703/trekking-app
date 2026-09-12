@@ -26,7 +26,7 @@ public class GpxSegment {
     @JoinColumn(name = "route_id")
     private Route route;
 
-    @Column(nullable = false , name ="source_file_name")
+    @Column(nullable = false , name ="source_file_name" ,columnDefinition = "TEXT")
     private String sourceFileName;
 
     @Column(nullable = false , name="source_file_hash")
