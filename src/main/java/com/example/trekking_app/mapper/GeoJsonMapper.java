@@ -15,9 +15,7 @@ import com.example.trekking_app.service.overpass.ExternalPoiService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.LineString;
+import org.locationtech.jts.geom.*;
 import org.locationtech.jts.simplify.TopologyPreservingSimplifier;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +38,8 @@ public class GeoJsonMapper {
 
     private final String EXTERNAL_POI_ID_PREFIX = "external_poi:";
     private final ExternalPoiService externalPoiService;
+    private final GeometryFactory GF = new GeometryFactory(new PrecisionModel(),4326);
+
 
     public GeoJsonFeatureCollection toGeoJson(@NonNull Route route, @NonNull Double tolerance) {
         List<GeoJsonFeature> features = new ArrayList<>();
@@ -89,8 +89,15 @@ public class GeoJsonMapper {
         LineString geom = route.getPath();
         if (geom == null) return List.of();
 
+        /* older logic
         Geometry simplifiedGeom = TopologyPreservingSimplifier.simplify(geom, tolerance);
         List<Segment> segments = splitByGap(simplifiedGeom.getCoordinates(), GAP_THRESHOLD_METERS, gapsOut);
+         */
+
+        // 1. Split on RAW coordinates first — gap detection must never see simplified data
+        List<Segment> rawSegments = splitByGap(geom.getCoordinates(), GAP_THRESHOLD_METERS, gapsOut);
+        // 2. Simplify each segment independently, preserving its endpoints
+        List<Segment> segments = simplifySegments(rawSegments, tolerance);
 
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put("type", "route");
@@ -106,8 +113,16 @@ public class GeoJsonMapper {
         LineString geom = segment.getPath();
         if (geom == null) return List.of();
 
+
+        /* older logic
         Geometry simplifiedGeom = TopologyPreservingSimplifier.simplify(geom, tolerance);
         List<Segment> segments = splitByGap(simplifiedGeom.getCoordinates(), GAP_THRESHOLD_METERS, gapsOut);
+         */
+
+        // 1. Split on RAW coordinates first — gap detection must never see simplified data
+        List<Segment> rawSegments = splitByGap(geom.getCoordinates(), GAP_THRESHOLD_METERS, gapsOut);
+        // 2. Simplify each segment independently, preserving its endpoints
+        List<Segment> segments = simplifySegments(rawSegments, tolerance);
 
         Map<String, Object> props = new LinkedHashMap<>();
         props.put("type", "trail_segment");
@@ -162,7 +177,6 @@ public class GeoJsonMapper {
         List<Coordinate> current = new ArrayList<>();
         current.add(coords[0]);
         Double gapBeforeCurrent = null;
-
         for (int i = 1; i < coords.length; i++) {
             double dist = haversineMeters(coords[i - 1], coords[i]);
             if (dist > thresholdMeters) {
@@ -244,5 +258,25 @@ public class GeoJsonMapper {
                 .geometry(geometry)
                 .properties(props)
                 .build();
+    }
+
+
+    /**
+     * Simplifies each already gap-split segment independently so a segment's
+     * boundary points (which define gap distances) can never be dropped.
+     */
+    private List<Segment> simplifySegments(List<Segment> rawSegments, double tolerance) {
+        List<Segment> result = new ArrayList<>(rawSegments.size());
+        for (Segment seg : rawSegments) {
+            Coordinate[] coords = seg.coords();
+            if (coords.length < 2) {
+                result.add(seg); // single point — nothing to simplify
+                continue;
+            }
+            LineString ls = GF.createLineString(coords);
+            Geometry simplified = TopologyPreservingSimplifier.simplify(ls, tolerance);
+            result.add(new Segment(simplified.getCoordinates(), seg.gapBeforeMeters()));
+        }
+        return result;
     }
 }
