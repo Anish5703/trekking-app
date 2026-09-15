@@ -2,11 +2,15 @@ package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.admin.AccountStatusResetRequest;
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.route.RouteDetails;
+import com.example.trekking_app.dto.route.RouteResponse;
 import com.example.trekking_app.dto.user.UserDetails;
 import com.example.trekking_app.model.Role;
+import com.example.trekking_app.service.route.RouteService;
 import com.example.trekking_app.service.user.AdminService;
 import jakarta.validation.Valid;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -19,13 +23,11 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/user")
 @PreAuthorize("hasRole('ADMIN')")
+@RequiredArgsConstructor
 public class AdminUserController {
 
     private final AdminService adminService;
 
-    public AdminUserController(AdminService adminService) {
-        this.adminService = adminService;
-    }
 
     @GetMapping("/list")
     public ResponseEntity<ApiResponse<Page<UserDetails>>> handleGetUserList(@RequestParam @NonNull Role role,
@@ -59,6 +61,8 @@ public class AdminUserController {
         ApiResponse<Page<UserDetails>> response = adminService.getActiveUsers(role,page,size);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
+
+
     private HttpHeaders buildRequestHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-Request-Id", UUID.randomUUID().toString());

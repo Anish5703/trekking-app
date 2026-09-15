@@ -1,12 +1,14 @@
 package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.route.RouteDetails;
 import com.example.trekking_app.dto.route.RouteRequest;
 import com.example.trekking_app.dto.route.RouteResponse;
 import com.example.trekking_app.model.UserPrincipal;
 import com.example.trekking_app.service.route.RouteService;
 import jakarta.validation.Valid;
 import lombok.NonNull;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -67,6 +69,15 @@ public class AdminRouteController {
     public ResponseEntity<ApiResponse<Void>> handleUpdateRoutePublishStatus(@PathVariable Integer routeId,@RequestParam(defaultValue = "true") Boolean publish)
     {
         ApiResponse<Void>  response = routeService.updateRoutePublishStatus(routeId,publish);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<Page<RouteDetails>>> handleGetAdminCreatedRoutes(@PathVariable @NonNull Integer userId ,
+                                                                                       @RequestParam @NonNull Integer page ,
+                                                                                       @RequestParam @NonNull Integer size)
+    {
+        ApiResponse<Page<RouteDetails>> response = routeService.getAdminCreatedRoutes(userId,page,size);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 

@@ -61,4 +61,9 @@ long count();
     Page<Route> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
 
-    Page<Route> findAllByOrderByTimeStampDesc(Pageable pageable);}
+    Page<Route> findAllByOrderByTimeStampDesc(Pageable pageable);
+
+    Page<Route> findAllByUserId(Integer userId , Pageable pageable);
+
+}
+

@@ -2,25 +2,34 @@ package com.example.trekking_app.service.user;
 
 import com.example.trekking_app.dto.admin.AccountStatusResetRequest;
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.route.RouteResponse;
 import com.example.trekking_app.dto.user.UserDetails;
+import com.example.trekking_app.entity.Image;
 import com.example.trekking_app.entity.Token;
+import com.example.trekking_app.entity.TrackPoint;
 import com.example.trekking_app.entity.User;
 import com.example.trekking_app.exception.auth.EmailNotVerifiedException;
 import com.example.trekking_app.exception.auth.UserNotFoundException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
 import com.example.trekking_app.exception.user.DeleteUserFailedException;
+import com.example.trekking_app.mapper.RouteMapper;
 import com.example.trekking_app.mapper.UserMapper;
+import com.example.trekking_app.model.EntityType;
 import com.example.trekking_app.model.Role;
+import com.example.trekking_app.repository.RouteRepository;
 import com.example.trekking_app.repository.TokenRepository;
 import com.example.trekking_app.repository.UserRepository;
+import com.example.trekking_app.service.route.RouteService;
 import lombok.NonNull;
+import org.locationtech.jts.geom.Point;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -29,12 +38,17 @@ public class AdminService {
     private final UserRepository userRepo;
     private final TokenRepository tokenRepo;
     private final UserMapper userMapper;
+    private final RouteRepository routeRepo;
+    private final RouteMapper routeMapper;
 
-    public AdminService(UserRepository userRepo, TokenRepository tokenRepo)
+
+    public AdminService(UserRepository userRepo, TokenRepository tokenRepo , RouteRepository routeRepo)
     {
         this.userRepo = userRepo;
         this.tokenRepo = tokenRepo;
         this.userMapper = new UserMapper();
+        this.routeMapper = new RouteMapper();
+        this.routeRepo = routeRepo;
     }
    @Transactional
     public ApiResponse<Page<UserDetails>> getUsers(@NonNull Role role ,Integer page , Integer size)
@@ -102,4 +116,6 @@ public class AdminService {
 
         return new ApiResponse<>(null,message,200);
     }
+
+
 }

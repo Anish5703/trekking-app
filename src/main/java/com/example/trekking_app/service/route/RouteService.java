@@ -331,6 +331,7 @@ public class RouteService {
         return new ApiResponse<>(foundRoutes,"recently added",200);
     }
 
+    @Transactional
     public ApiResponse<Void> updateRoutePublishStatus(@NonNull Integer routeId,@NonNull Boolean publish)
     {
         Route route = routeRepo.findById(routeId).orElseThrow(
@@ -344,6 +345,27 @@ public class RouteService {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Transactional
+    public ApiResponse<Page<RouteDetails>> getAdminCreatedRoutes(@NonNull Integer userId, @NonNull Integer page, @NonNull Integer size)
+    {
+        if(userId < 0) throw new IllegalArgumentException("User id cannot be number less than 1");
+        User user = userRepo.findById(userId).orElseThrow(
+                () -> new ResourceNotFoundException("user","id",userId)
+        );
+        if(!user.getRole().equals(Role.ADMIN)) throw new IllegalArgumentException("user has no admin role");
+
+        Pageable pageable = PageRequest.of(page,size);
+        Page<RouteDetails> routes = routeRepo.findAllByUserId(userId,pageable).map(route ->
+        {
+            List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()).stream().map(Image::getUrl).toList();
+            TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+            Point endCoords = tp2!=null ? tp2.getGeom() : null;
+            return routeMapper.toRouteDetails(route,endCoords,imageUrls);
+        });
+        String message = routes.isEmpty() ? "no routes found" : "routes fetched";
+        return new ApiResponse<>(routes, message, 200);
     }
 }
 
