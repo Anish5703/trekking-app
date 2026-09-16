@@ -68,8 +68,11 @@ public class RouteMapper {
                  .endLatitude(endLat)
                  .totalDistanceInKm(route.getDistanceInKm())
                  .imageUrls(imageUrls)
-                 .timeStamp(route.getTimeStamp())
+                 .createdAt(route.getTimeStamp())
                  .isPublished(route.getIsPublished())
+                 .verificationStatus(route.getVerificationStatus())
+                 .verifiedBy(route.getVerifiedBy() == null ? null : route.getVerifiedBy().getEmail())
+                 .verificationRemarks(route.getVerificationRemarks())
                  .build();
 
     }
@@ -96,6 +99,9 @@ public class RouteMapper {
                  .endLatitude(endLat)
                  .imageUrls(imageUrls)
                 .isPublished(route.getIsPublished())
+                .verificationStatus(route.getVerificationStatus())
+                .verifiedBy(route.getVerifiedBy() == null ? null : route.getVerifiedBy().getEmail())
+                .verificationRemarks(route.getVerificationRemarks())
                  .build();
 
 

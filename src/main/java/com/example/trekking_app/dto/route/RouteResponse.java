@@ -1,13 +1,11 @@
 package com.example.trekking_app.dto.route;
 
 import com.example.trekking_app.model.DifficultyLevel;
-import com.example.trekking_app.model.TrackPointStatus;
+import com.example.trekking_app.model.VerificationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.locationtech.jts.geom.LineString;
-import org.locationtech.jts.geom.Point;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,7 +23,8 @@ public class RouteResponse {
     private String description;
     private DifficultyLevel difficultyLevel;
     private Integer estimatedDays;
-    private LocalDateTime timeStamp;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private Double maxElevation;
     private Double minElevation;
     private Double totalDistanceInKm;
@@ -35,5 +34,8 @@ public class RouteResponse {
     private Double endLatitude;
     private List<String> imageUrls;
     private Boolean isPublished;
+    private VerificationStatus verificationStatus;
+    private String verifiedBy;
+    private String verificationRemarks;
 
 }

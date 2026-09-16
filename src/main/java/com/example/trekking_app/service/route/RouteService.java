@@ -9,12 +9,14 @@ import com.example.trekking_app.exception.auth.UserNotFoundException;
 import com.example.trekking_app.exception.resource.NoResourceFoundException;
 import com.example.trekking_app.exception.resource.ResourceDeletionFailedException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
+import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
 import com.example.trekking_app.exception.route.CreateRouteFailedException;
 import com.example.trekking_app.mapper.GeoJsonMapper;
 import com.example.trekking_app.mapper.RouteMapper;
 import com.example.trekking_app.model.EntityType;
 import com.example.trekking_app.model.Role;
 import com.example.trekking_app.model.RouteStatus;
+import com.example.trekking_app.model.VerificationStatus;
 import com.example.trekking_app.repository.*;
 import com.example.trekking_app.service.image.CloudinaryService;
 import com.example.trekking_app.service.image.ImageService;
@@ -337,6 +339,8 @@ public class RouteService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
+        if(route.getVerificationStatus()==null || !route.getVerificationStatus().equals(VerificationStatus.VERIFIED))
+            throw new ResourceUpdateFailedException("Verify route before publishing");
         route.setIsPublished(publish);
         try{
            routeRepo.save(route);
@@ -366,6 +370,34 @@ public class RouteService {
         });
         String message = routes.isEmpty() ? "no routes found" : "routes fetched";
         return new ApiResponse<>(routes, message, 200);
+    }
+
+    public ApiResponse<Void> updateRouteVerificationStatus(@NonNull Integer routeId ,@NonNull RouteVerificationRequest req, @NonNull Integer userId)
+    {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route","id",routeId)
+        );
+        User user = userRepo.findById(userId).orElseThrow(
+                () -> new ResourceNotFoundException("user","id",userId)
+        );
+        route.setVerificationStatus(req.getVerificationStatus());
+        route.setVerificationRemarks(req.getVerificationRemarks());
+
+        boolean isVerified = req.getVerificationStatus().equals(VerificationStatus.VERIFIED);
+        if(isVerified)
+           route.setVerifiedBy(user);
+        else
+            route.setVerifiedBy(null);
+        try{
+            routeRepo.save(route);
+            String message = isVerified ? "route verified " : "route unverified";
+            return new ApiResponse<>(null,message,200);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+
+
     }
 }
 

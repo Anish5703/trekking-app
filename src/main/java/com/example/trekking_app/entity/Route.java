@@ -2,6 +2,7 @@ package com.example.trekking_app.entity;
 
 import com.example.trekking_app.model.DifficultyLevel;
 import com.example.trekking_app.model.RouteStatus;
+import com.example.trekking_app.model.VerificationStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -63,6 +64,19 @@ public class Route extends BaseEntity{
     @Column(name="is_published")
     private Boolean isPublished;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "verification_status", length = 20)
+    @Builder.Default
+    private VerificationStatus verificationStatus = VerificationStatus.UNVERIFIED;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "verified_by")
+    private User verifiedBy;
+
+    @Size(max = 2000)
+    @Column(name = "verification_remarks", length = 2000)
+    private String verificationRemarks;
+
     @Column
     @Builder.Default
     private Double distanceInKm=0.0;
@@ -110,6 +124,15 @@ public class Route extends BaseEntity{
 public Boolean getIsPublished()
 {
     return isPublished==null || isPublished==true ? true : false;
+}
+
+public VerificationStatus getVerificationStatus()
+{
+    if(verificationStatus==null)
+        return VerificationStatus.UNVERIFIED;
+    else
+       return verificationStatus;
+
 }
 
 }

@@ -4,7 +4,9 @@ import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.RouteDetails;
 import com.example.trekking_app.dto.route.RouteRequest;
 import com.example.trekking_app.dto.route.RouteResponse;
+import com.example.trekking_app.dto.route.RouteVerificationRequest;
 import com.example.trekking_app.model.UserPrincipal;
+import com.example.trekking_app.model.VerificationStatus;
 import com.example.trekking_app.service.route.RouteService;
 import jakarta.validation.Valid;
 import lombok.NonNull;
@@ -70,6 +72,15 @@ public class AdminRouteController {
     {
         ApiResponse<Void>  response = routeService.updateRoutePublishStatus(routeId,publish);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
+    @PutMapping("/{routeId}/verfication")
+    public ResponseEntity<ApiResponse<Void>> handleUpdateRouteVerificationStatus(@PathVariable Integer routeId
+                                                                                 ,@RequestBody RouteVerificationRequest req,
+                                                                                 @AuthenticationPrincipal UserPrincipal user)
+    {
+        ApiResponse<Void> response = routeService.updateRouteVerificationStatus(routeId,req,user.getId());
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+
     }
 
     @GetMapping("/user/{userId}")
