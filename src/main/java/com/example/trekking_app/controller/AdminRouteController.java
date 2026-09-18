@@ -1,5 +1,6 @@
 package com.example.trekking_app.controller;
 
+import com.cloudinary.Api;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.RouteDetails;
 import com.example.trekking_app.dto.route.RouteRequest;
@@ -22,7 +23,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/route")
-@PreAuthorize("hasRole('ADMIN')")
 public class AdminRouteController {
 
     private final RouteService routeService;
@@ -33,7 +33,7 @@ public class AdminRouteController {
 
     }
 
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<RouteResponse>> handleCreateRoute(@Valid @RequestBody RouteRequest routeRequest,
                                                                         @AuthenticationPrincipal UserPrincipal user)
@@ -42,6 +42,7 @@ public class AdminRouteController {
         return ResponseEntity.status(201).headers(buildRequestHeaders()).body(response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<ApiResponse<RouteResponse>> handleGetRoute(@NonNull @RequestParam  Integer routeId,
                                                                      @AuthenticationPrincipal UserPrincipal user)
@@ -50,6 +51,7 @@ public class AdminRouteController {
         return  ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{routeId}")
     public ResponseEntity<ApiResponse<RouteResponse>> handleUpdateRoute(@NonNull @PathVariable Integer routeId ,
                                                                         @NonNull @RequestBody RouteRequest routeRequest,
@@ -59,7 +61,7 @@ public class AdminRouteController {
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
-
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{routeId}")
     public ResponseEntity<ApiResponse<Void>> handleDeleteRoute(@NonNull @PathVariable Integer routeId)
     {
@@ -67,12 +69,23 @@ public class AdminRouteController {
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
+    @PreAuthorize("hasRole('SUPERADMIN')")
     @PutMapping("/{routeId}/publish")
     public ResponseEntity<ApiResponse<Void>> handleUpdateRoutePublishStatus(@PathVariable Integer routeId,@RequestParam(defaultValue = "true") Boolean publish)
     {
         ApiResponse<Void>  response = routeService.updateRoutePublishStatus(routeId,publish);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
+
+    @PreAuthorize("hasRole('SUPERADMIN')")
+    @PutMapping("/{routeId}/lock")
+    public ResponseEntity<ApiResponse<Void>> handleUpdateRouteLockStatus(@PathVariable Integer routeId,@RequestParam(defaultValue = "true") Boolean lock)
+    {
+        ApiResponse<Void>  response = routeService.updateRouteLockStatus(routeId,lock);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{routeId}/verfication")
     public ResponseEntity<ApiResponse<Void>> handleUpdateRouteVerificationStatus(@PathVariable Integer routeId
                                                                                  ,@RequestBody RouteVerificationRequest req,
@@ -83,6 +96,7 @@ public class AdminRouteController {
 
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/user/{userId}")
     public ResponseEntity<ApiResponse<Page<RouteDetails>>> handleGetAdminCreatedRoutes(@PathVariable @NonNull Integer userId ,
                                                                                        @RequestParam @NonNull Integer page ,
@@ -91,6 +105,8 @@ public class AdminRouteController {
         ApiResponse<Page<RouteDetails>> response = routeService.getAdminCreatedRoutes(userId,page,size);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
+
+
 
     private HttpHeaders buildRequestHeaders() {
         HttpHeaders headers = new HttpHeaders();

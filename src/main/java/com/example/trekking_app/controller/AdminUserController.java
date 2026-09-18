@@ -22,13 +22,13 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/user")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasRole('SUPERADMIN')")
 @RequiredArgsConstructor
 public class AdminUserController {
 
     private final AdminService adminService;
 
-
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/list")
     public ResponseEntity<ApiResponse<Page<UserDetails>>> handleGetUserList(@RequestParam @NonNull Role role,
                                                                             @RequestParam @NonNull Integer page ,

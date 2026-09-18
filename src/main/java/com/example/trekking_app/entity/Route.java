@@ -64,6 +64,10 @@ public class Route extends BaseEntity{
     @Column(name="is_published")
     private Boolean isPublished;
 
+    @Column(name="is_locked")
+    @Builder.Default
+    private Boolean isLocked=false;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "verification_status", length = 20)
     @Builder.Default
@@ -125,6 +129,7 @@ public Boolean getIsPublished()
 {
     return isPublished==null || isPublished==true ? true : false;
 }
+public Boolean getIsLocked(){return isLocked==null || isLocked==false ? false : true;}
 
 public VerificationStatus getVerificationStatus()
 {

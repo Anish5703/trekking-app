@@ -151,6 +151,7 @@ public class TrackPointService {
                                                             @NonNull TrackPointRequest trackPointRequest) {
         Route route = routeRepo.findById(routeId)
                 .orElseThrow(() -> new ResourceNotFoundException("route", "id", routeId));
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
         TrackPoint trackPoint = trackPointRepo.findByIdAndRoute_Id(trackPointId, routeId)
                 .orElseThrow(() -> new ResourceNotFoundException("trackpoint", "id", trackPointId));
 
@@ -246,6 +247,7 @@ public class TrackPointService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
         TrackPoint trackPoint = trackPointRepo.findById(trackPointId).orElseThrow(
                 () -> new ResourceNotFoundException("trackpoint","id",trackPointId)
         );
@@ -267,6 +269,7 @@ public class TrackPointService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
         if(req.getTrackPointIds().isEmpty()) throw new ResourceDeletionFailedException("no trackpoints selected for deletion");
         List<TrackPoint> tps = new ArrayList<>();
         for (Integer trackPointId : req.getTrackPointIds())
@@ -299,6 +302,8 @@ public class TrackPointService {
 
         Route route = routeRepo.findById(routeId)
                 .orElseThrow(() -> new ResourceNotFoundException("route", "id", routeId));
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
+
 
         GpxSegment gpxSegment;
         int newLocalSequence;
@@ -406,6 +411,8 @@ public class TrackPointService {
     public ApiResponse<Void> fillGaps(@NonNull Integer routeId, @NonNull FillGapsRequest request) {
         Route route = routeRepo.findById(routeId)
                 .orElseThrow(() -> new ResourceNotFoundException("route", "id", routeId));
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
+
 
         double threshold = request.getThresholdMeters() != null ? request.getThresholdMeters() : 200.0;
         List<GapPreviewDto> gaps = detectGaps(routeId, threshold);

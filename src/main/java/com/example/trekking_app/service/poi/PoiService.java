@@ -48,6 +48,8 @@ public class PoiService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
+
         POI poi = poiMapper.toEntity(poiRequest,route);
         POI newPoi = poiRepo.save(poi);
         PoiResponse poiResponse = poiMapper.toPoiResponse(newPoi,null);
@@ -61,6 +63,8 @@ public class PoiService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
+
         POI poi = poiRepo.findByIdAndRouteId(poiId,routeId).orElseThrow(
                 () -> new ResourceNotFoundException("poi","route id and poi id",String.format("%d and %d respectively",routeId,poiId))
         );
@@ -84,7 +88,12 @@ public class PoiService {
     @Transactional
     public ApiResponse<Void> deletePoi(@NonNull Integer routeId,@NonNull Integer poiId)
     {
-        POI poi = poiRepo.findByIdAndRouteId(poiId,routeId).orElseThrow(
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route","id",routeId)
+        );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
+
+        POI poi = poiRepo.findByIdAndRouteId(poiId,route.getId()).orElseThrow(
                 () -> new ResourceNotFoundException("poi","route id and poi id",String.format("%d and %d respectively",routeId,poiId))
         );
         try

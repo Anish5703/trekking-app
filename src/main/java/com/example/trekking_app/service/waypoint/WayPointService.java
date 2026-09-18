@@ -7,6 +7,7 @@ import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.WayPoint;
 import com.example.trekking_app.exception.resource.ResourceDeletionFailedException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
+import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
 import com.example.trekking_app.mapper.WayPointMapper;
 import com.example.trekking_app.model.WayPointStatus;
 import com.example.trekking_app.repository.RouteRepository;
@@ -81,6 +82,8 @@ public class WayPointService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
+
         try {
             WayPoint wayPoint = wayPointRepo.findById(wayPointId).orElseThrow(
                     () -> new ResourceNotFoundException("waypoint","id",wayPointId)
@@ -101,6 +104,8 @@ public class WayPointService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
+
         WayPoint wayPoint = wayPointRepo.findByIdAndRoute_Id(wayPointId,route.getId()).orElseThrow(
                 () -> new ResourceNotFoundException("waypoint","route id and waypoint id",String.format("%s and %s respectively",routeId,wayPointId))
         );

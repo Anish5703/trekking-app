@@ -44,6 +44,8 @@ public class GpxIngestionService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
+
         int nextOrder =  gpxSegmentRepo.findTopByRoute_IdAndSegmentStatusOrderByOrderIndexDesc(routeId, segmentStatus)
                 .map(GpxSegment::getOrderIndex)
                 .orElse(0) + 1;
@@ -121,6 +123,8 @@ public class GpxIngestionService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
+
         List<GpxSegment> gpxSegments = gpxSegmentRepo.findByRouteAndSegmentStatus(route,segmentStatus).orElseThrow(
                 () -> new ResourceNotFoundException("gpx segments","route id",routeId)
         );
@@ -142,6 +146,8 @@ public class GpxIngestionService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
+
         GpxSegment gpxSegment = gpxSegmentRepo.findByIdAndRoute_Id(gpxSegmentId,route.getId()).orElseThrow(
                 () -> new ResourceNotFoundException("gpx segment","id",gpxSegmentId)
         );

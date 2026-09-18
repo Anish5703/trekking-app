@@ -3,15 +3,20 @@ package com.example.trekking_app.config;
 
 import com.example.trekking_app.service.user.MyUserDetailsService;
 import jakarta.servlet.http.HttpServletResponse;
+import org.aopalliance.intercept.MethodInvocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.authorization.AuthorizationManagerFactory;
+import org.springframework.security.authorization.DefaultAuthorizationManagerFactory;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -163,6 +168,21 @@ public class SecurityConfig {
         FilterRegistrationBean<JwtFilter> registration = new FilterRegistrationBean<>(filter);
         registration.setEnabled(false);
         return registration;
+    }
+
+    @Bean
+    static RoleHierarchy roleHierarchy() {
+        return RoleHierarchyImpl.withDefaultRolePrefix()
+                .role("SUPERADMIN").implies("ADMIN")
+                .role("ADMIN").implies("USER")
+                .build();
+    }
+
+    @Bean
+    static AuthorizationManagerFactory<MethodInvocation> authorizationManagerFactory(RoleHierarchy roleHierarchy) {
+        DefaultAuthorizationManagerFactory<MethodInvocation> factory = new DefaultAuthorizationManagerFactory<>();
+        factory.setRoleHierarchy(roleHierarchy);
+        return factory;
     }
 
 }

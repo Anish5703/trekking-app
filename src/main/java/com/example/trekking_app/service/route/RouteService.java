@@ -174,6 +174,7 @@ public class RouteService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
         Destination destination = destinationRepo.findById(routeRequest.getDestinationId()).orElseThrow(
                 () -> new ResourceNotFoundException("destination","id",routeRequest.getDestinationId())
         );
@@ -197,6 +198,7 @@ public class RouteService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
         if(!(route.getRouteStatus() ==null))
         {
             if (route.getRouteStatus().equals(RouteStatus.MERGING))
@@ -352,6 +354,22 @@ public class RouteService {
     }
 
     @Transactional
+    public ApiResponse<Void> updateRouteLockStatus(Integer routeId, Boolean lock)
+    {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route","id",routeId)
+        );
+        route.setIsLocked(lock);
+        try{
+            routeRepo.save(route);
+            String message = lock ? "route locked " : "route unlocked";
+            return new ApiResponse<>(null,message,200);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Transactional
     public ApiResponse<Page<RouteDetails>> getAdminCreatedRoutes(@NonNull Integer userId, @NonNull Integer page, @NonNull Integer size)
     {
         if(userId < 0) throw new IllegalArgumentException("User id cannot be number less than 1");
@@ -399,5 +417,7 @@ public class RouteService {
 
 
     }
+
+
 }
 

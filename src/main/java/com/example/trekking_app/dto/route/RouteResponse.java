@@ -34,6 +34,7 @@ public class RouteResponse {
     private Double endLatitude;
     private List<String> imageUrls;
     private Boolean isPublished;
+    private Boolean isLocked;
     private VerificationStatus verificationStatus;
     private String verifiedBy;
     private String verificationRemarks;

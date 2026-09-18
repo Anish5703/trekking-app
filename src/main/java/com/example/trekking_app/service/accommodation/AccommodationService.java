@@ -99,6 +99,8 @@ public class AccommodationService
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
+
         Accommodation acc = accommodationRepo.findById(accommodationId).orElseThrow(
                 () -> new ResourceNotFoundException("accommodation","id",accommodationId)
         );
@@ -122,6 +124,8 @@ public class AccommodationService
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
+
         Accommodation acc = accommodationRepo.findById(accommodationId).orElseThrow(
                 () -> new ResourceNotFoundException("accommodation","id",accommodationId)
         );

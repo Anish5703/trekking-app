@@ -6,6 +6,7 @@ import com.example.trekking_app.dto.poi.XlsxImportResponse;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 
+import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
 import com.example.trekking_app.repository.RouteRepository;
 
 import lombok.NonNull;
@@ -31,6 +32,8 @@ public class XlsxIngestionService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
+
         ParseOutput parserOutput = parser.parse(file, route);
         CompletableFuture<Integer> poiCount = computeService.saveAllPOI(parserOutput.pois());
         CompletableFuture<Integer> accommodationCount = computeService.saveAllAccommodation(parserOutput.accommodations());
@@ -53,6 +56,7 @@ public class XlsxIngestionService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
+        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
 
         CompletableFuture<Integer> poiDeleted = computeService.deleteAllPOI(route);
         CompletableFuture<Integer> accommodationDeleted = computeService.deleteAllAccommodation(route);
