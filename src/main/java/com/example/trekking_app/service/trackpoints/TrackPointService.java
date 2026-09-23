@@ -534,4 +534,17 @@ public class TrackPointService {
         return originalHash == null ? null
                 : DigestUtils.sha256Hex(originalHash + ":" + orderIndex).substring(0, 40);
     }
+
+    @Transactional(readOnly = true)
+    public ApiResponse<Integer> getLastPrecedingTrackpointId(@NonNull Integer routeId)
+    {
+        if(routeId<1) throw new IllegalArgumentException("Id's cannot be lesser than 1");
+        Route route = routeRepo.findById(routeId)
+                .orElseThrow(() -> new ResourceNotFoundException("route", "id", routeId));
+        boolean isTpsExists = trackPointRepo.existsByRoute_Id(route.getId());
+        if(!isTpsExists) throw new ResourceNotFoundException("no trackpoints available in this route");
+        TrackPoint lastTrackpoint = trackPointRepo.findTopByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId());
+        return new ApiResponse<>(lastTrackpoint.getId(),"last trackpoint id fetched",200);
+
+    }
 }

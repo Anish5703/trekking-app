@@ -11,10 +11,8 @@ import com.example.trekking_app.service.trackpoints.TrackPointService;
 import jakarta.validation.Valid;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -141,6 +139,13 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
             @PathVariable Integer routeId,
             @Valid @RequestBody FillGapsRequest request) {
         ApiResponse<Void> response = trackPointService.fillGaps(routeId, request);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
+
+    @GetMapping("/lastPrecedingId")
+    public ResponseEntity<ApiResponse<Integer>> handleGetLastTrackpointId(@PathVariable Integer routeId)
+    {
+        ApiResponse<Integer> response = trackPointService.getLastPrecedingTrackpointId(routeId);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 }

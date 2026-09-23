@@ -164,5 +164,6 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
             Integer gpxSegmentId, Integer localSequence);
 
     Optional<TrackPoint> findByRoute_IdAndId(@NonNull Integer routeId, @NonNull Integer trackpointId);
-}
 
+    TrackPoint findTopByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(@NonNull Integer routeId);
+}

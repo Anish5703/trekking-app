@@ -86,7 +86,7 @@ public class AdminRouteController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{routeId}/verfication")
+    @PutMapping("/{routeId}/verify")
     public ResponseEntity<ApiResponse<Void>> handleUpdateRouteVerificationStatus(@PathVariable Integer routeId
                                                                                  ,@RequestBody RouteVerificationRequest req,
                                                                                  @AuthenticationPrincipal UserPrincipal user)

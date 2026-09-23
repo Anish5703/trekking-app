@@ -3,8 +3,10 @@ package com.example.trekking_app.service.route;
 import com.example.trekking_app.dto.destination.DestinationRequest;
 import com.example.trekking_app.dto.destination.DestinationResponse;
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.route.RouteDetails;
 import com.example.trekking_app.entity.Destination;
 import com.example.trekking_app.entity.Image;
+import com.example.trekking_app.entity.TrackPoint;
 import com.example.trekking_app.exception.resource.*;
 import com.example.trekking_app.mapper.DestinationMapper;
 import com.example.trekking_app.model.EntityType;
@@ -15,6 +17,10 @@ import com.example.trekking_app.service.image.ImageService;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.locationtech.jts.geom.Point;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -133,5 +139,13 @@ public class DestinationService {
         List<String> imagesUrl = imageRepo.findByEntityTypeAndEntityId(EntityType.DESTINATION,destination.getId()).stream().map(Image::getUrl).toList();
         DestinationResponse dstResponse = destinationMapper.toResponse(destination,imagesUrl);
         return new ApiResponse<>(dstResponse,"destination fetched",200);
+    }
+
+    public ApiResponse<Page<DestinationResponse>> searchDestinationByKeyword(@NonNull String keyword, @NonNull Integer page, @NonNull Integer size)
+    {
+        Pageable pageable = PageRequest.of(page,size);
+        Page<DestinationResponse> foundDestination = destinationRepo.searchByKeyword(keyword,pageable).map(destinationMapper::toResponse);
+        if(foundDestination.isEmpty()) throw new ResourceNotFoundException("destination","keyword",keyword);
+        return new ApiResponse<>(foundDestination,"searched results",200);
     }
 }

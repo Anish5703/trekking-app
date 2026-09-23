@@ -2,13 +2,13 @@ package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.destination.DestinationResponse;
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.route.RouteDetails;
 import com.example.trekking_app.service.route.DestinationService;
+import lombok.NonNull;
 import org.apache.coyote.Response;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -33,6 +33,15 @@ public class DestinationController {
     public ResponseEntity<ApiResponse<DestinationResponse>> handleGetDestination(@PathVariable Integer destinationId)
     {
         ApiResponse<DestinationResponse> response = destinationService.getDestination(destinationId);
+        return ResponseEntity.status(200).body(response);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<Page<DestinationResponse>>> handleSearchDestinationByKeyword(@RequestParam @NonNull String keyword,
+                                                                                       @RequestParam @NonNull Integer page,
+                                                                                       @RequestParam @NonNull Integer size)
+    {
+        ApiResponse<Page<DestinationResponse>> response = destinationService.searchDestinationByKeyword(keyword,page,size);
         return ResponseEntity.status(200).body(response);
     }
 
