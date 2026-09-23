@@ -408,7 +408,7 @@ public class TrackPointService {
 
     @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
     @Transactional
-    public ApiResponse<Void> fillGaps(@NonNull Integer routeId, @NonNull FillGapsRequest request) {
+    public ApiResponse<Void> fillGaps(@NonNull Integer routeId, @NonNull FillGapsRequest request, @NonNull GraphHopperProfile profile) {
         Route route = routeRepo.findById(routeId)
                 .orElseThrow(() -> new ResourceNotFoundException("route", "id", routeId));
         if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
@@ -426,7 +426,7 @@ public class TrackPointService {
 
         int filledCount = 0;
         for (GapPreviewDto gap : gaps) { // already ascending sequence order
-            filledCount += fillSingleGap(route, gap);
+            filledCount += fillSingleGap(route, gap , profile);
         }
 
         trackPointRepo.updateGlobalSequences(routeId);
@@ -437,12 +437,12 @@ public class TrackPointService {
     }
 
     @Transactional
-    private int fillSingleGap(Route route, GapPreviewDto gap) {
+    private int fillSingleGap(Route route, GapPreviewDto gap , @NonNull GraphHopperProfile profile) {
         TrackPoint precedingTp = trackPointRepo.findById(gap.getPrecedingTpId())
                 .orElseThrow(() -> new ResourceNotFoundException("trackpoint", "id", gap.getPrecedingTpId()));
 
         GeoJsonFeature bridge = geoJsonMapper.trailGapRoutingService.findBridgePath(
-                gap.getFrom(), gap.getTo(), "gap-" + gap.getPrecedingTpId());
+                gap.getFrom(), gap.getTo(), "gap-" + gap.getPrecedingTpId() , profile);
         if (bridge == null) {
             log.warn("no bridge path found for gap after tp {}", gap.getPrecedingTpId());
             return 0;

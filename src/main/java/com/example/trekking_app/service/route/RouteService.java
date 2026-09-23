@@ -1,6 +1,5 @@
 package com.example.trekking_app.service.route;
 
-import ch.qos.logback.core.joran.conditional.IfAction;
 import com.example.trekking_app.dto.geoJson.GeoJsonFeatureCollection;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.*;
@@ -13,12 +12,8 @@ import com.example.trekking_app.exception.resource.ResourceUpdateFailedException
 import com.example.trekking_app.exception.route.CreateRouteFailedException;
 import com.example.trekking_app.mapper.GeoJsonMapper;
 import com.example.trekking_app.mapper.RouteMapper;
-import com.example.trekking_app.model.EntityType;
-import com.example.trekking_app.model.Role;
-import com.example.trekking_app.model.RouteStatus;
-import com.example.trekking_app.model.VerificationStatus;
+import com.example.trekking_app.model.*;
 import com.example.trekking_app.repository.*;
-import com.example.trekking_app.service.image.CloudinaryService;
 import com.example.trekking_app.service.image.ImageService;
 import jakarta.annotation.Nonnull;
 import lombok.NonNull;
@@ -139,7 +134,7 @@ public class RouteService {
 
     @Cacheable(value="route-geoJson",key ="#routeId + ':' + #tolerance" )
     @Transactional(readOnly = true)
-    public GeoJsonFeatureCollection getRouteGeoJson(@NonNull Integer routeId,@Nonnull Double tolerance,@NonNull Integer userId) {
+    public GeoJsonFeatureCollection getRouteGeoJson(@NonNull Integer routeId, @Nonnull Double tolerance, @NonNull Integer userId , @NonNull GraphHopperProfile profile) {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
@@ -161,7 +156,7 @@ public class RouteService {
                     throw new IllegalStateException("Unexpected route status: " + route.getRouteStatus());
         }
         try {
-            return geoJsonMapper.toGeoJson(route,tolerance);
+            return geoJsonMapper.toGeoJson(route,tolerance,profile);
 
         } catch (Exception e) {
             log.error("failed to convert route path to geo json : {}", e.getLocalizedMessage());

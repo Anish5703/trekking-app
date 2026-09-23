@@ -9,7 +9,7 @@ import com.example.trekking_app.entity.Accommodation;
 import com.example.trekking_app.entity.POI;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrailSegment;
-import com.example.trekking_app.model.POIType;
+import com.example.trekking_app.model.GraphHopperProfile;
 import com.example.trekking_app.service.graphHopper.TrailGapRoutingService;
 import com.example.trekking_app.service.overpass.ExternalPoiService;
 import lombok.NonNull;
@@ -41,7 +41,7 @@ public class GeoJsonMapper {
     private final GeometryFactory GF = new GeometryFactory(new PrecisionModel(),4326);
 
 
-    public GeoJsonFeatureCollection toGeoJson(@NonNull Route route, @NonNull Double tolerance) {
+    public GeoJsonFeatureCollection toGeoJson(@NonNull Route route, @NonNull Double tolerance , @NonNull GraphHopperProfile profile) {
         List<GeoJsonFeature> features = new ArrayList<>();
         List<GeoJsonGap> gaps = new ArrayList<>();
 
@@ -50,7 +50,7 @@ public class GeoJsonMapper {
         for (int i = 0; i < gaps.size(); i++) {
             GeoJsonGap gap = gaps.get(i);
             GeoJsonFeature bridge = trailGapRoutingService.findBridgePath(
-                    gap.getFrom(), gap.getTo(), "bridge:" + i
+                    gap.getFrom(), gap.getTo(), "bridge:" + i , profile
             );
             if (bridge != null) {
                 bridges.add(bridge);

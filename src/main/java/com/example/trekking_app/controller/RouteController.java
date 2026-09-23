@@ -2,6 +2,7 @@ package com.example.trekking_app.controller;
 import com.example.trekking_app.dto.geoJson.GeoJsonFeatureCollection;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.*;
+import com.example.trekking_app.model.GraphHopperProfile;
 import com.example.trekking_app.model.UserPrincipal;
 import com.example.trekking_app.service.route.RouteService;
 import lombok.NonNull;
@@ -48,11 +49,12 @@ public class RouteController {
 
     @GetMapping("/{routeId}/geoJson")
     public ResponseEntity<GeoJsonFeatureCollection> handleGetRouteGeoJson(@NonNull @PathVariable Integer routeId,
-                                                                       @RequestParam (defaultValue = "0.00001")Double tolerance,
-                                                                          @AuthenticationPrincipal UserPrincipal user)
+                                                                          @RequestParam (defaultValue = "0.00001")Double tolerance,
+                                                                          @AuthenticationPrincipal UserPrincipal user,
+                                                                          @RequestParam (defaultValue = "foot" ) GraphHopperProfile graphHopperProfile)
     {
         Instant startTime = Instant.now();
-        GeoJsonFeatureCollection response = routeService.getRouteGeoJson(routeId,tolerance, user.getId());
+        GeoJsonFeatureCollection response = routeService.getRouteGeoJson(routeId,tolerance, user.getId(),graphHopperProfile);
         routeService.updateRecentlyViewedStatus(user.getId(),routeId);
         log.info("Fetched route geJson in {} ms", Duration.between(startTime,Instant.now()).toMillis());
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);

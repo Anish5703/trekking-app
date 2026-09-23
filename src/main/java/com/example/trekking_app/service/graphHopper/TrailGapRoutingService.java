@@ -1,6 +1,7 @@
 package com.example.trekking_app.service.graphHopper;
 import com.example.trekking_app.dto.geoJson.GeoJsonFeature;
 import com.example.trekking_app.dto.geoJson.GeoJsonGeometry;
+import com.example.trekking_app.model.GraphHopperProfile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -9,7 +10,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-import java.io.Console;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,6 +22,7 @@ public class TrailGapRoutingService {
 
     private final RestClient restClient = RestClient.create();
     private final ObjectMapper mapper = new ObjectMapper();
+    private final GraphHopperProfileService graphHopperProfileService;
 
     @Value("${graphhopper.base-url}")
     private  String GRAPHHOPPER_BASE_URL;
@@ -31,14 +32,19 @@ public class TrailGapRoutingService {
      * Finds an OSM-based path connecting two gap endpoints.
      * from/to are [lon, lat] pairs, matching your GeoJsonGap format.
      */
-    public GeoJsonFeature findBridgePath(List<Double> from, List<Double> to, String bridgeId) {
+    public GeoJsonFeature findBridgePath(List<Double> from, List<Double> to, String bridgeId, GraphHopperProfile profile) {
         log.info("GRAPHHOPPER_BASE_URL='{}'", GRAPHHOPPER_BASE_URL);
+
+        List<String> availableProfiles = graphHopperProfileService.getAvailableProfiles();
+        if(!availableProfiles.contains(profile.toString())) throw new IllegalArgumentException("selected profile is not available : "+profile);
+
+
         String url = String.format(
                 "%s/route?point=%f,%f&point=%f,%f&profile=%s&points_encoded=false",
                 GRAPHHOPPER_BASE_URL,
                 from.get(1), from.get(0),   // GraphHopper wants lat,lon
                 to.get(1), to.get(0),
-                PROFILE
+                profile
         );
         log.info("searching trail using graph hopper from {} , {} to  {} , {}",from.get(0), from.get(1),
                 to.get(0), to.get(1));

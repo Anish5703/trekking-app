@@ -7,6 +7,7 @@ import com.example.trekking_app.dto.trackpoint.TrackPointCreateRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointRequest;
 import com.example.trekking_app.dto.trackpoint.TrackPointResponse;
 import com.example.trekking_app.dto.trackpoint.TrackPointBatchRequest;
+import com.example.trekking_app.model.GraphHopperProfile;
 import com.example.trekking_app.service.trackpoints.TrackPointService;
 import jakarta.validation.Valid;
 import lombok.NonNull;
@@ -137,8 +138,9 @@ public ResponseEntity<ApiResponse<Page<TrackPointResponse>>> handleGetAlTrackPoi
     @PostMapping("/gaps/fill")
     public ResponseEntity<ApiResponse<Void>> handleFillGaps(
             @PathVariable Integer routeId,
+            @RequestParam(defaultValue = "foot") GraphHopperProfile profile,
             @Valid @RequestBody FillGapsRequest request) {
-        ApiResponse<Void> response = trackPointService.fillGaps(routeId, request);
+        ApiResponse<Void> response = trackPointService.fillGaps(routeId, request , profile);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
