@@ -41,11 +41,11 @@ public class GeoJsonMapper {
     private final GeometryFactory GF = new GeometryFactory(new PrecisionModel(),4326);
 
 
-    public GeoJsonFeatureCollection toGeoJson(@NonNull Route route, @NonNull Double tolerance , @NonNull GraphHopperProfile profile) {
+    public GeoJsonFeatureCollection toGeoJson(@NonNull Route route, @NonNull Double tolerance , Double thresholdMeters, @NonNull GraphHopperProfile profile) {
         List<GeoJsonFeature> features = new ArrayList<>();
         List<GeoJsonGap> gaps = new ArrayList<>();
 
-        features.addAll(buildRouteFeatures(route, tolerance, gaps));
+        features.addAll(buildRouteFeatures(route, tolerance, thresholdMeters , gaps));
         List<GeoJsonFeature> bridges = new ArrayList<>();
         for (int i = 0; i < gaps.size(); i++) {
             GeoJsonGap gap = gaps.get(i);
@@ -59,7 +59,7 @@ public class GeoJsonMapper {
         features.addAll(bridges);
         if (route.getTrailSegments() != null) {
             route.getTrailSegments().forEach(segment -> {
-                List<GeoJsonFeature> segFeatures = buildTrailSegmentFeatures(segment, tolerance, gaps);
+                List<GeoJsonFeature> segFeatures = buildTrailSegmentFeatures(segment, tolerance, thresholdMeters ,gaps);
                 if (segFeatures != null) features.addAll(segFeatures);
             });
         }
@@ -84,18 +84,19 @@ public class GeoJsonMapper {
                 .build();
     }
 
-    public List<GeoJsonFeature> buildRouteFeatures(@NonNull Route route, @NonNull Double tolerance,
+    public List<GeoJsonFeature> buildRouteFeatures(@NonNull Route route, @NonNull Double tolerance, Double thresholdMeters,
                                                    List<GeoJsonGap> gapsOut) {
         LineString geom = route.getPath();
         if (geom == null) return List.of();
 
+        if(thresholdMeters==null || thresholdMeters < 1) thresholdMeters = GAP_THRESHOLD_METERS;
         /* older logic
         Geometry simplifiedGeom = TopologyPreservingSimplifier.simplify(geom, tolerance);
         List<Segment> segments = splitByGap(simplifiedGeom.getCoordinates(), GAP_THRESHOLD_METERS, gapsOut);
          */
 
         // 1. Split on RAW coordinates first — gap detection must never see simplified data
-        List<Segment> rawSegments = splitByGap(geom.getCoordinates(), GAP_THRESHOLD_METERS, gapsOut);
+        List<Segment> rawSegments = splitByGap(geom.getCoordinates(), thresholdMeters, gapsOut);
         // 2. Simplify each segment independently, preserving its endpoints
         List<Segment> segments = simplifySegments(rawSegments, tolerance);
 
@@ -108,10 +109,11 @@ public class GeoJsonMapper {
         return buildFeaturesFromSegments(segments, ROUTE_ID_PREFIX + route.getId(), properties);
     }
 
-    public List<GeoJsonFeature> buildTrailSegmentFeatures(@NonNull TrailSegment segment, @NonNull Double tolerance,
+    public List<GeoJsonFeature> buildTrailSegmentFeatures(@NonNull TrailSegment segment, @NonNull Double tolerance, Double thresholdMeters,
                                                           List<GeoJsonGap> gapsOut) {
         LineString geom = segment.getPath();
         if (geom == null) return List.of();
+        if(thresholdMeters==null || thresholdMeters < 1) thresholdMeters = GAP_THRESHOLD_METERS;
 
 
         /* older logic
@@ -120,7 +122,7 @@ public class GeoJsonMapper {
          */
 
         // 1. Split on RAW coordinates first — gap detection must never see simplified data
-        List<Segment> rawSegments = splitByGap(geom.getCoordinates(), GAP_THRESHOLD_METERS, gapsOut);
+        List<Segment> rawSegments = splitByGap(geom.getCoordinates(), thresholdMeters, gapsOut);
         // 2. Simplify each segment independently, preserving its endpoints
         List<Segment> segments = simplifySegments(rawSegments, tolerance);
 

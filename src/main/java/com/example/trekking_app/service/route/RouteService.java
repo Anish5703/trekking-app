@@ -134,7 +134,7 @@ public class RouteService {
 
     @Cacheable(value="route-geoJson",key ="#routeId + ':' + #tolerance" )
     @Transactional(readOnly = true)
-    public GeoJsonFeatureCollection getRouteGeoJson(@NonNull Integer routeId, @Nonnull Double tolerance, @NonNull Integer userId , @NonNull GraphHopperProfile profile) {
+    public GeoJsonFeatureCollection getRouteGeoJson(@NonNull Integer routeId, @Nonnull Double tolerance, Double thresholdMeters ,@NonNull Integer userId , @NonNull GraphHopperProfile profile) {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
@@ -156,7 +156,7 @@ public class RouteService {
                     throw new IllegalStateException("Unexpected route status: " + route.getRouteStatus());
         }
         try {
-            return geoJsonMapper.toGeoJson(route,tolerance,profile);
+            return geoJsonMapper.toGeoJson(route,tolerance,thresholdMeters,profile);
 
         } catch (Exception e) {
             log.error("failed to convert route path to geo json : {}", e.getLocalizedMessage());

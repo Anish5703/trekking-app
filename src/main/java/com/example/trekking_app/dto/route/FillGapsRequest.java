@@ -9,6 +9,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FillGapsRequest {
-    private List<Integer> precedingTpIds; // null/empty = fill all detected gaps
-    private Double thresholdMeters;       // optional, default 200
+    private List<Integer> precedingTpIds;
+    @Builder.Default// null/empty = fill all detected gaps
+    private Double thresholdMeters = 200.0;       // optional, default 200
 }
