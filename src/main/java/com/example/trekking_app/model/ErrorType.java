@@ -64,6 +64,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public enum ErrorType {
     /* General Errors */
     ILLEGAL_ARGUMENTS,
+    UNEXPECTED_RESPONSE,
     ALREADY_VERIFIED,
     NOT_VERIFIED,
 

@@ -14,6 +14,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -176,7 +177,10 @@ public class GpxIngestionService {
         }
     }
 
-    @CacheEvict(value = "route-geoJson",key = "#routeId")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "route-geoJson", allEntries = true),
+            @CacheEvict(cacheNames = "route-contour", key = "#routeId")
+    })
     public ApiResponse<Void> remergeGpxSegment(Integer routeId,@NonNull GpxSegmentStatus segmentStatus)
     {
 

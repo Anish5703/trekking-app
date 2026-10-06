@@ -3,6 +3,7 @@ package com.example.trekking_app.exception;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.global.ErrorResponse;
 import com.example.trekking_app.exception.auth.*;
+import com.example.trekking_app.exception.contour.ElevationUnavailableException;
 import com.example.trekking_app.exception.resource.*;
 import com.example.trekking_app.exception.route.CreateRouteFailedException;
 import com.example.trekking_app.exception.route.FileParsingFailedException;
@@ -24,6 +25,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.net.UnknownHostException;
 import java.util.NoSuchElementException;
@@ -257,6 +259,22 @@ public class GlobalExceptionHandler {
     {
         log.error(ex.getMessage());
         ErrorResponse data = new ErrorResponse(ErrorType.ILLEGAL_ARGUMENTS,ex.getMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        return ResponseEntity.status(400).body(response);
+    }
+    @ExceptionHandler({IllegalStateException.class, RestClientResponseException.class})
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleIllegalStateException(Exception ex)
+    {
+        log.error(ex.getMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.UNEXPECTED_RESPONSE,ex.getMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
+        return ResponseEntity.status(400).body(response);
+    }
+    @ExceptionHandler(ElevationUnavailableException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleElevationUnavailableException(ElevationUnavailableException ex)
+    {
+        log.error(ex.getMessage());
+        ErrorResponse data = new ErrorResponse(ErrorType.RESOURCE_NOT_FOUND,ex.getMessage());
         ApiResponse<ErrorResponse> response = new ApiResponse<>(data,ex.getLocalizedMessage(),400);
         return ResponseEntity.status(400).body(response);
     }

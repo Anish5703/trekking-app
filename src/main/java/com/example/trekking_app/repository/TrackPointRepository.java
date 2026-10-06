@@ -1,5 +1,6 @@
 package com.example.trekking_app.repository;
 
+import com.example.trekking_app.dto.contour.PointData;
 import com.example.trekking_app.entity.Route;
 import com.example.trekking_app.entity.TrackPoint;
 import com.example.trekking_app.model.TrackPointStatus;
@@ -166,4 +167,13 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
     Optional<TrackPoint> findByRoute_IdAndId(@NonNull Integer routeId, @NonNull Integer trackpointId);
 
     TrackPoint findTopByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(@NonNull Integer routeId);
+
+    @Query("""
+       select new com.example.trekking_app.dto.contour.PointData(t.id, t.latitude, t.longitude, t.elevation)
+       from TrackPoint t
+       where t.route.id = :routeId
+         and (t.status is null or t.status <> com.example.trekking_app.model.TrackPointStatus.SOFT_DELETED)
+       order by t.globalSequence asc, t.id asc
+       """)
+    List<PointData> findPointDataByRouteId(@Param("routeId") Integer routeId);
 }

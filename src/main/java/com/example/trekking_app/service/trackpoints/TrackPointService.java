@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.locationtech.jts.geom.*;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -406,7 +407,10 @@ public class TrackPointService {
         return gaps;
     }
 
-    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "route-geoJson", allEntries = true),
+            @CacheEvict(cacheNames = "route-contour", key = "#routeId")
+    })
     @Transactional
     public ApiResponse<Void> fillGaps(@NonNull Integer routeId, @NonNull FillGapsRequest request, @NonNull GraphHopperProfile profile) {
         Route route = routeRepo.findById(routeId)

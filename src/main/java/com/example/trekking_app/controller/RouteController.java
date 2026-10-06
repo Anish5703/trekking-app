@@ -1,11 +1,14 @@
 package com.example.trekking_app.controller;
+import com.example.trekking_app.dto.contour.ContourResponse;
 import com.example.trekking_app.dto.geoJson.GeoJsonFeatureCollection;
 import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.route.*;
 import com.example.trekking_app.model.GraphHopperProfile;
 import com.example.trekking_app.model.UserPrincipal;
+import com.example.trekking_app.service.contour.ElevationProfileService;
 import com.example.trekking_app.service.route.RouteService;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
@@ -21,14 +24,13 @@ import java.util.UUID;
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/route")
+@RequiredArgsConstructor
 public class RouteController {
 
     private final RouteService routeService;
+    private final ElevationProfileService profileService;
 
-    public RouteController(RouteService routeService)
-    {
-        this.routeService = routeService;
-    }
+
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<RouteDetails>>> handleGetAllDestinationRoutes(@NonNull @RequestParam Integer destinationId)
@@ -58,6 +60,14 @@ public class RouteController {
         GeoJsonFeatureCollection response = routeService.getRouteGeoJson(routeId,tolerance,thresholdMeters, user.getId(),graphHopperProfile);
         routeService.updateRecentlyViewedStatus(user.getId(),routeId);
         log.info("Fetched route geJson in {} ms", Duration.between(startTime,Instant.now()).toMillis());
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
+    @GetMapping("/{routeId}/contour")
+    public ResponseEntity<ApiResponse<ContourResponse>> handleGetRouteContour(@NonNull @PathVariable Integer routeId)
+    {
+        Instant startTime = Instant.now();
+        ApiResponse<ContourResponse> response = profileService.getContour(routeId);
+        log.info("Fetched route contour in {} ms", Duration.between(startTime,Instant.now()).toMillis());
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
