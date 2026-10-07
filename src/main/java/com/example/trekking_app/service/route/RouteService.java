@@ -132,7 +132,7 @@ public class RouteService {
         }
     }
 
-    @Cacheable(value="route-geoJson",key ="#routeId + ':' + #tolerance" )
+    @Cacheable(value="route-geoJson",key ="#routeId" )
     @Transactional(readOnly = true)
     public GeoJsonFeatureCollection getRouteGeoJson(@NonNull Integer routeId, @Nonnull Double tolerance, Double thresholdMeters ,@NonNull Integer userId , @NonNull GraphHopperProfile profile) {
         Route route = routeRepo.findById(routeId).orElseThrow(

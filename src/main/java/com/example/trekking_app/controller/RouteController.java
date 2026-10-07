@@ -63,10 +63,13 @@ public class RouteController {
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
     @GetMapping("/{routeId}/contour")
-    public ResponseEntity<ApiResponse<ContourResponse>> handleGetRouteContour(@NonNull @PathVariable Integer routeId)
+    public ResponseEntity<ApiResponse<ContourResponse>> handleGetRouteContour(@NonNull @PathVariable Integer routeId,
+                                                                              @RequestParam (defaultValue = "0.5")Double tolerance)
     {
         Instant startTime = Instant.now();
-        ApiResponse<ContourResponse> response = profileService.getContour(routeId);
+        // clamp to 0..1000 m and snap to 0.5 m steps: bounds the number of cache keys per route
+        double tol = Math.round(Math.min(Math.max(tolerance, 0), 1000) * 2) / 2.0;
+        ApiResponse<ContourResponse> response = profileService.getContour(routeId,tol);
         log.info("Fetched route contour in {} ms", Duration.between(startTime,Instant.now()).toMillis());
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }

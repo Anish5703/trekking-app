@@ -1,9 +1,11 @@
 package com.example.trekking_app.controller;
 
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.poi.PoiRequest;
 import com.example.trekking_app.dto.poi.PoiResponse;
 import com.example.trekking_app.dto.route.NearbyRequest;
 import com.example.trekking_app.service.poi.PoiService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpHeaders;
@@ -18,6 +20,14 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PoiController {
     private final PoiService poiService;
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<PoiResponse>> handleCreatePoi(@PathVariable Integer routeId,
+                                                                    @Valid @RequestBody PoiRequest poiRequest)
+    {
+        ApiResponse<PoiResponse> response = poiService.createPoi(routeId,poiRequest);
+        return ResponseEntity.status(201).headers(buildRequestHeaders()).body(response);
+    }
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<PoiResponse>>> handleGetAllPoi(@PathVariable Integer routeId,

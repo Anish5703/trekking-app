@@ -39,7 +39,7 @@ public class GpxIngestionService {
     private final GpxMergeService gpxMergeService;
     private final GpxSegmentMapper gpxSegmentMapper = new GpxSegmentMapper();
 
-    @CacheEvict(value = "route-geoJson" , key = "#routeId" , allEntries = true)
+    @CacheEvict(value = "route-geoJson" , key = "#routeId")
     @Transactional
     public ApiResponse<List<GpxImportResponse>> uploadGpxFiles(@NonNull Integer routeId , List<MultipartFile> files ,@NonNull GpxSegmentStatus segmentStatus) throws IOException {
         Route route = routeRepo.findById(routeId).orElseThrow(
@@ -178,7 +178,7 @@ public class GpxIngestionService {
     }
 
     @Caching(evict = {
-            @CacheEvict(cacheNames = "route-geoJson", allEntries = true),
+            @CacheEvict(cacheNames = "route-geoJson", key="#routeId"),
             @CacheEvict(cacheNames = "route-contour", key = "#routeId")
     })
     public ApiResponse<Void> remergeGpxSegment(Integer routeId,@NonNull GpxSegmentStatus segmentStatus)

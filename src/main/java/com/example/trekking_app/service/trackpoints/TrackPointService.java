@@ -145,7 +145,7 @@ public class TrackPointService {
 
     }
 
-    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
+    @CacheEvict(value = "route-geoJson" ,key="#routeId")
     @Transactional
     public ApiResponse<TrackPointResponse> updateTrackPoint(@NonNull Integer routeId,
                                                             @NonNull Integer trackPointId,
@@ -408,7 +408,7 @@ public class TrackPointService {
     }
 
     @Caching(evict = {
-            @CacheEvict(cacheNames = "route-geoJson", allEntries = true),
+            @CacheEvict(cacheNames = "route-geoJson", key = "#routeId"),
             @CacheEvict(cacheNames = "route-contour", key = "#routeId")
     })
     @Transactional

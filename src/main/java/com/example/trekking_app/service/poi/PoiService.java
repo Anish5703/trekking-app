@@ -41,21 +41,21 @@ public class PoiService {
     private final ImageService imageService;
     private final PoiMapper poiMapper = new PoiMapper();
 
-    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
+    @CacheEvict(value = "route-geoJson" ,key="#routeId")
     @Transactional
     public ApiResponse<PoiResponse> createPoi(@NonNull Integer routeId, @NonNull PoiRequest poiRequest)
     {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route", "id", routeId)
         );
-        if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
+       // if(route.getIsLocked()==true) throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
 
         POI poi = poiMapper.toEntity(poiRequest,route);
         POI newPoi = poiRepo.save(poi);
         PoiResponse poiResponse = poiMapper.toPoiResponse(newPoi,null);
         return new ApiResponse<>(poiResponse,"new poi created",201);
     }
-    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
+    @CacheEvict(value = "route-geoJson" ,key="#routeId")
     @Transactional
     public ApiResponse<PoiResponse> updatePoi(@NonNull Integer routeId,@NonNull Integer poiId,@NonNull PoiRequest poiRequest)
 
@@ -84,7 +84,7 @@ public class PoiService {
         }
 
     }
-    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
+    @CacheEvict(value = "route-geoJson" ,key="#routeId")
     @Transactional
     public ApiResponse<Void> deletePoi(@NonNull Integer routeId,@NonNull Integer poiId)
     {

@@ -35,10 +35,12 @@ public class ElevationProfileService {
     }
 
     /** Cached per route. Incomplete responses (elevation service down) are not cached. */
-   @Cacheable(cacheNames = "route-contour", key = "#routeId", unless = "!#result.data.elevationComplete")
-    public ApiResponse<ContourResponse> getContour(int routeId) {
-        Route route = routeRepo.findById(routeId)
-                .orElseThrow(() -> new ResourceNotFoundException("route", "id", routeId));
+    @Cacheable(cacheNames = "route-contour", key = "#routeId",
+            unless = "!#result.data.elevationComplete")
+    public ApiResponse<ContourResponse> getContour(Integer routeId, double tolerance)
+    {
+        if (!routeRepo.existsById(routeId))
+            throw new ResourceNotFoundException("route", "id", routeId);
 
         List<PointData> pts = store.load(routeId);
 
@@ -46,35 +48,35 @@ public class ElevationProfileService {
         if (pts.stream().anyMatch(PointData::needsElevation)) {
             try {
                 populateService.populate(routeId);
-                pts = store.load(routeId);                         // reload with saved elevations
+                pts = store.load(routeId);
             } catch (ElevationUnavailableException ex) {
                 log.warn("Elevation populate failed for route {}: {}", routeId, ex.getMessage());
-                // continue with what we have; response is flagged elevationComplete=false
             }
         }
 
         List<Double> ele = new ArrayList<>(pts.size());
-        List<ContourResponse.Point> out = new ArrayList<>(pts.size());
+        List<ContourResponse.Point> full = new ArrayList<>(pts.size());
         boolean complete = true;
         for (PointData p : pts) {
             Double e = p.hasElevation() ? p.getElevation() : null;
             if (e == null) complete = false;
             ele.add(e);
-            out.add(ContourResponse.Point.builder()
-                    .lat(p.getLat())
-                    .lon(p.getLon())
-                    .elevation(e)
-                    .build());
+            full.add(ContourResponse.Point.builder().lat(p.getLat()).lon(p.getLon()).elevation(e).build());
         }
 
-        ContourResponse response =  ContourResponse.builder()
+        // stats on FULL resolution, then simplify only what we send
+        ContourResponse.Stats stats = ElevationStatsCalculator.compute(ele, noiseThreshold);
+        List<ContourResponse.Point> simplified = ContourSimplifier.simplify(full, tolerance);
+
+        ContourResponse response = ContourResponse.builder()
                 .routeId(routeId)
-                .pointCount(pts.size())
+                .originalPointCount(pts.size())
+                .pointCount(simplified.size())
                 .elevationComplete(complete)
-                .stats(ElevationStatsCalculator.compute(ele, noiseThreshold))
-                .points(out)
+                .stats(stats)
+                .points(simplified)
                 .build();
 
-        return new ApiResponse<>(response,"contour data fetched",200);
+        return new ApiResponse<>(response, "contour data fetched", 200);
     }
 }
