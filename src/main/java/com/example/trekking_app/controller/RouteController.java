@@ -2,11 +2,14 @@ package com.example.trekking_app.controller;
 import com.example.trekking_app.dto.contour.ContourResponse;
 import com.example.trekking_app.dto.geoJson.GeoJsonFeatureCollection;
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.polyline.PolylineFeatureCollectionResponse;
 import com.example.trekking_app.dto.route.*;
 import com.example.trekking_app.model.GraphHopperProfile;
 import com.example.trekking_app.model.UserPrincipal;
 import com.example.trekking_app.service.contour.ElevationProfileService;
+import com.example.trekking_app.service.route.PolylineEncodingService;
 import com.example.trekking_app.service.route.RouteService;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +32,7 @@ public class RouteController {
 
     private final RouteService routeService;
     private final ElevationProfileService profileService;
+    private final PolylineEncodingService polylineEncodingService;
 
 
 
@@ -126,6 +130,30 @@ public class RouteController {
     {
         ApiResponse<Page<RouteDetails>> response = routeService.searchRoutesByKeyword(keyword,page,size);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
+
+    @GetMapping("{routeId}/polyline")
+    public ResponseEntity<PolylineFeatureCollectionResponse> handleGetRoutePolyline(@NonNull @PathVariable Integer routeId,
+                                                                                    @RequestParam (defaultValue = "0.00001")Double tolerance,
+                                                                                    @RequestParam(defaultValue = "200.0")Double thresholdMeters,
+                                                                                    @AuthenticationPrincipal UserPrincipal user,
+                                                                                    @RequestParam (defaultValue = "foot" ) GraphHopperProfile graphHopperProfile)
+    {
+        Instant startTime = Instant.now();
+        GeoJsonFeatureCollection geoJson = routeService.getRouteGeoJson(routeId,tolerance,thresholdMeters, user.getId(),graphHopperProfile);
+        PolylineFeatureCollectionResponse response = polylineEncodingService.encodeFeatureCollection(geoJson);
+
+        routeService.updateRecentlyViewedStatus(user.getId(), routeId);
+
+        log.info(
+                "Fetched encoded route polyline for route {} in {} ms",
+                routeId,
+                Duration.between(startTime, Instant.now()).toMillis()
+        );
+
+        return ResponseEntity.status(200)
+                .headers(buildRequestHeaders())
+                .body(response);
     }
     private HttpHeaders buildRequestHeaders() {
         HttpHeaders headers = new HttpHeaders();
