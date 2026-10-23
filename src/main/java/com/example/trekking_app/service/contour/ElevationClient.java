@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +42,15 @@ public class ElevationClient {
             String locations = chunk.stream()
                     .map(p -> String.format(Locale.ROOT, "%.6f,%.6f", p.lat(), p.lon()))
                     .collect(Collectors.joining("|"));
+            log.debug(
+                    "Requesting elevations: dataset={}, batchSize={}, " +
+                            "chunkSize={}, offset={}",
+                    props.dataset(),
+                    props.batchSize(),
+                    chunk.size(),
+                    i
+            );
+
             Res res;
                try {
                    res = rest.post()
@@ -48,10 +58,22 @@ public class ElevationClient {
                            .body(new Req(locations, "bilinear"))
                            .retrieve()                       // 4xx/5xx -> RestClientResponseException
                            .body(Res.class);
-               } catch (Exception e) {
-                   log.error("Failed to connect to OpenTopoData : {}",e.getMessage());
-                   throw new ElevationUnavailableException(e.getMessage(),e.getCause());
-               }
+               } catch (RestClientResponseException ex) {
+                   log.error(
+                           "OpenTopoData HTTP failure: status={}, " +
+                                   "contentType={}, responseBody={}",
+                           ex.getStatusCode(),
+                           ex.getResponseHeaders() != null
+                                   ? ex.getResponseHeaders().getContentType()
+                                   : null,
+                           ex.getResponseBodyAsString(),
+                           ex
+                   );
+                   throw new ElevationUnavailableException(
+                           "OpenTopoData returned HTTP "
+                                   + ex.getStatusCode(),
+                           ex
+                   );               }
                 if (res == null || res.results() == null || res.results().size() != chunk.size())
                     throw new IllegalStateException("Unexpected elevation response");
                 res.results().forEach(r -> out.add(r.elevation()));
