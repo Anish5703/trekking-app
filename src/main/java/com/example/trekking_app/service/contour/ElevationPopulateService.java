@@ -8,9 +8,11 @@ import com.example.trekking_app.exception.contour.ElevationUnavailableException;
 import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.exception.resource.ResourceUpdateFailedException;
 import com.example.trekking_app.repository.RouteRepository;
+import com.example.trekking_app.repository.TrackPointRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 
 import java.util.*;
@@ -24,11 +26,13 @@ public class ElevationPopulateService {
     private final RouteRepository routeRepo;
     private final TrackPointStore store;
     private final ElevationClient elevationClient;
+    private final TrackPointRepository tpRepo;
 
-    ElevationPopulateService(RouteRepository routeRepo, TrackPointStore store, ElevationClient elevationClient) {
+    ElevationPopulateService(RouteRepository routeRepo, TrackPointStore store, ElevationClient elevationClient,TrackPointRepository tpRepo) {
         this.routeRepo = routeRepo;
         this.store = store;
         this.elevationClient = elevationClient;
+        this.tpRepo = tpRepo;
     }
 
     /**
@@ -84,7 +88,7 @@ public class ElevationPopulateService {
             store.saveElevations(toSave);
             fetched = toSave.size();
         }
-
+        updateRouteElevationBounds(routeId);
         PopulateElevationResponse response = PopulateElevationResponse.builder()
                 .routeId(routeId)
                 .pointCount(pts.size())
@@ -93,5 +97,17 @@ public class ElevationPopulateService {
                 .stillMissing(missingBefore - fetched)
                 .build();
         return new ApiResponse<>(response,"elevation populated",200);
+    }
+
+    @Transactional
+    void updateRouteElevationBounds(Integer routeId) {
+        Route route = routeRepo.findById(routeId)
+                .orElseThrow(() -> new ResourceNotFoundException("route", "id", routeId));
+        Optional<Double> min = tpRepo.findMinElevation(routeId);
+        Optional<Double> max = tpRepo.findMaxElevation(routeId);
+        if (min.isEmpty() || max.isEmpty()) return;          // no elevation data: leave the route unchanged
+        route.setMinElevation(min.get());
+        route.setMaxElevation(max.get());
+        routeRepo.save(route);
     }
 }
