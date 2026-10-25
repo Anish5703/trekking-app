@@ -26,10 +26,12 @@ public class RouteMapper {
 
     public Route updateEntityFromRequest(RouteRequest routeRequest , Route route ,User user , Destination destination)
     {
+
+
         route.setName(routeRequest.getName());
         route.setDestination(destination);
-        route.setDescription(routeRequest.getDescription());
-        route.setDifficultyLevel(routeRequest.getDifficultyLevel());
+        route.setDescription(routeRequest.getDescription()==null ? route.getDescription() : routeRequest.getDescription());
+        route.setDifficultyLevel(routeRequest.getDifficultyLevel()==null ? route.getDifficultyLevel() : routeRequest.getDifficultyLevel());
         route.setUser(user);
         route.setEstimatedDays(routeRequest.getEstimatedDays());
         route.setRecordedAt(routeRequest.getRecordedAt());
