@@ -25,6 +25,7 @@ public class RouteResponse {
     private Integer estimatedDays;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime recordedAt;
     private Double maxElevation;
     private Double minElevation;
     private Double totalDistanceInKm;

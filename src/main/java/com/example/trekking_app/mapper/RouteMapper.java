@@ -32,6 +32,7 @@ public class RouteMapper {
         route.setDifficultyLevel(routeRequest.getDifficultyLevel());
         route.setUser(user);
         route.setEstimatedDays(routeRequest.getEstimatedDays());
+        route.setRecordedAt(routeRequest.getRecordedAt());
         return route;
     }
 
@@ -69,6 +70,8 @@ public class RouteMapper {
                  .totalDistanceInKm(route.getDistanceInKm())
                  .imageUrls(imageUrls)
                  .createdAt(route.getTimeStamp())
+                 .updatedAt(route.getUpdatedAt())
+                 .recordedAt(route.getRecordedAt())
                  .isPublished(route.getIsPublished())
                  .isLocked(route.getIsLocked())
                  .verificationStatus(route.getVerificationStatus())

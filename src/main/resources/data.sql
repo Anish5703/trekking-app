@@ -38,3 +38,6 @@ UPDATE users
 SET role = 'SUPERADMIN'
 WHERE email = 'admin@admin.com'
   AND role = 'ADMIN';
+
+
+ALTER TABLE routes DROP CONSTRAINT IF EXISTS routes_difficulty_level_check;

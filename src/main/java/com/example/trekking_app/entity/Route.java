@@ -1,5 +1,7 @@
 package com.example.trekking_app.entity;
 
+import com.example.trekking_app.dto.grade.GradeResult;
+import com.example.trekking_app.dto.grade.TerrainProfile;
 import com.example.trekking_app.model.DifficultyLevel;
 import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.model.VerificationStatus;
@@ -7,7 +9,11 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.locationtech.jts.geom.LineString;
+
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -124,12 +130,33 @@ public class Route extends BaseEntity{
    @OneToMany(mappedBy = "route" , cascade = CascadeType.ALL , orphanRemoval = true )
    private List<OfflineRegion> offlineRegions = new ArrayList<>();
 
+    @Column(name = "elevation_gain_m")
+    private Double elevationGainM;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "terrain", columnDefinition = "jsonb")
+    @Builder.Default
+    private TerrainProfile terrain = new TerrainProfile();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "difficulty_result", columnDefinition = "jsonb")
+    private GradeResult difficultyResult;
+
+    @Column(name="recorded_at")
+    private LocalDateTime recordedAt;
 
 public Boolean getIsPublished()
 {
     return isPublished==null || isPublished==true ? true : false;
 }
 public Boolean getIsLocked(){return isLocked==null || isLocked==false ? false : true;}
+
+    public Double getElevationGainM()
+    {
+        if(elevationGainM==null)
+        return 0.0 ;
+    else return elevationGainM;
+    }
 
 public VerificationStatus getVerificationStatus()
 {

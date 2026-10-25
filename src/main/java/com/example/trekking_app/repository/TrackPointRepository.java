@@ -123,28 +123,19 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
     """, nativeQuery = true)
      void updateGlobalSequences(@Param("routeId") Integer routeId);
 
-     // In repository
-     @Query("""
-    SELECT MIN(tp.elevation)
-    FROM TrackPoint tp
-    JOIN tp.gpxSegment gs
-           WHERE tp.route.id = :routeId
-      AND gs.segmentStatus = 'TRACKPOINT'
-      AND tp.isDeleted = false
-      AND tp.elevation IS NOT NULL
-   """)
-     Optional<Double> findMinElevation(@Param("routeId") Integer routeId);
+    @Query("""
+       select min(t.elevation) from TrackPoint t
+       where t.route.id = :routeId and t.elevation is not null and t.elevation <> 0
+         and (t.status is null or t.status <> com.example.trekking_app.model.TrackPointStatus.SOFT_DELETED)
+       """)
+    Optional<Double> findMinElevation(@Param("routeId") Integer routeId);
 
-     @Query("""
-    SELECT MAX(tp.elevation)
-    FROM TrackPoint tp
-    JOIN tp.gpxSegment gs
-    WHERE tp.route.id = :routeId
-      AND gs.segmentStatus = 'TRACKPOINT'
-      AND tp.isDeleted = false
-      AND tp.elevation IS NOT NULL
-    """)
-     Optional<Double> findMaxElevation(@Param("routeId") Integer routeId);
+    @Query("""
+       select max(t.elevation) from TrackPoint t
+       where t.route.id = :routeId and t.elevation is not null and t.elevation <> 0
+         and (t.status is null or t.status <> com.example.trekking_app.model.TrackPointStatus.SOFT_DELETED)
+       """)
+    Optional<Double> findMaxElevation(@Param("routeId") Integer routeId);
 
     Optional<TrackPoint> findFirstByLatitudeAndLongitude(Double latitude, Double longitude);
 
@@ -176,4 +167,14 @@ public interface TrackPointRepository extends JpaRepository<TrackPoint,Integer> 
        order by t.globalSequence asc, t.id asc
        """)
     List<PointData> findPointDataByRouteId(@Param("routeId") Integer routeId);
+
+    @Query("""
+    select t.elevation from TrackPoint t
+    where t.route.id = :routeId
+      and (t.status is null or t.status <> com.example.trekking_app.model.TrackPointStatus.SOFT_DELETED)
+    order by t.globalSequence
+    """)
+    List<Double> findActiveElevations(@Param("routeId") Integer routeId);
+
+
 }

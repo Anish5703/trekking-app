@@ -65,5 +65,12 @@ long count();
 
     Page<Route> findAllByUserId(Integer userId , Pageable pageable);
 
+    @Query("select r.id from Route r")
+    List<Integer> findAllIds();
+
+    @Query("select r.id from Route r where r.difficultyResult is null")
+    List<Integer> findUngradedIds();
+
+    long countByDifficultyResultIsNull();
 }
 

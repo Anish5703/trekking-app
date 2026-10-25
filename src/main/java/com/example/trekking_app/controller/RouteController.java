@@ -2,14 +2,17 @@ package com.example.trekking_app.controller;
 import com.example.trekking_app.dto.contour.ContourResponse;
 import com.example.trekking_app.dto.geoJson.GeoJsonFeatureCollection;
 import com.example.trekking_app.dto.global.ApiResponse;
+import com.example.trekking_app.dto.grade.GradeResult;
 import com.example.trekking_app.dto.polyline.PolylineFeatureCollectionResponse;
 import com.example.trekking_app.dto.route.*;
 import com.example.trekking_app.model.GraphHopperProfile;
 import com.example.trekking_app.model.UserPrincipal;
 import com.example.trekking_app.service.contour.ElevationProfileService;
 import com.example.trekking_app.service.route.PolylineEncodingService;
+import com.example.trekking_app.service.route.RouteGradeUpdater;
 import com.example.trekking_app.service.route.RouteService;
 import com.fasterxml.jackson.databind.JsonNode;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +36,7 @@ public class RouteController {
     private final RouteService routeService;
     private final ElevationProfileService profileService;
     private final PolylineEncodingService polylineEncodingService;
+    private final RouteGradeUpdater gradeUpdater;
 
 
 
@@ -154,6 +158,13 @@ public class RouteController {
         return ResponseEntity.status(200)
                 .headers(buildRequestHeaders())
                 .body(response);
+    }
+
+    @GetMapping("/{routeId}/grade")
+    @Operation(summary = "Get the stored grade of a route. 404 if the route is missing or not graded yet.")
+    public ResponseEntity<ApiResponse<GradeResult>> handleGetRouteGrade(@PathVariable Integer routeId) {
+        ApiResponse<GradeResult> response = gradeUpdater.getGrade(routeId);
+        return ResponseEntity.status(response.getStatus()).headers(buildRequestHeaders()).body(response);
     }
     private HttpHeaders buildRequestHeaders() {
         HttpHeaders headers = new HttpHeaders();
