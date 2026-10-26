@@ -33,4 +33,6 @@ public interface GpxSegmentRepository extends JpaRepository<GpxSegment,Integer> 
     void shiftOrderIndexAfter(@Param("routeId") Integer routeId,
                               @Param("afterIndex") int afterIndex,
                               @Param("amount") int amount);
+
+    List<GpxSegment> findAllByRoute_Id(@NonNull Integer routeId);
 }

@@ -20,7 +20,11 @@ public class RouteDetails {
     private String createdBy;
     private int destinationId;
     private DifficultyLevel difficultyLevel;
-    private Integer estimatedDays;
+    //private Integer estimatedDays;
+    private List<Integer> approxDays;
+    private List<Integer> approxHours;
+    private List<String> importantKeywords;
+    private List<String> includedRegions;
     private Double maxElevation;
     private Double endLongitude;
     private Double endLatitude;

@@ -19,7 +19,11 @@ public class RouteMapper {
                 .description(routeRequest.getDescription())
                 .difficultyLevel(routeRequest.getDifficultyLevel())
                 .user(user)
-                .estimatedDays(routeRequest.getEstimatedDays())
+            //    .estimatedDays(routeRequest.getEstimatedDays())
+                .approxDays(routeRequest.getApproxDays())
+                .approxHours(routeRequest.getApproxHours())
+                .importantKeywords(routeRequest.getImportantKeywords())
+                .includedRegions(routeRequest.getIncludedRegions())
                 .build();
 
     }
@@ -33,7 +37,11 @@ public class RouteMapper {
         route.setDescription(routeRequest.getDescription()==null ? route.getDescription() : routeRequest.getDescription());
         route.setDifficultyLevel(routeRequest.getDifficultyLevel()==null ? route.getDifficultyLevel() : routeRequest.getDifficultyLevel());
         route.setUser(user);
-        route.setEstimatedDays(routeRequest.getEstimatedDays());
+        //route.setEstimatedDays(routeRequest.getEstimatedDays());
+         route.setApproxDays(routeRequest.getApproxDays());
+            route.setApproxHours(routeRequest.getApproxHours());
+            route.setImportantKeywords(routeRequest.getImportantKeywords());
+            route.setIncludedRegions(routeRequest.getIncludedRegions());
         route.setRecordedAt(routeRequest.getRecordedAt());
         return route;
     }
@@ -62,7 +70,11 @@ public class RouteMapper {
                  .destinationId(route.getDestination().getId())
                  .description(route.getDescription())
                  .difficultyLevel(route.getDifficultyLevel())
-                 .estimatedDays(route.getEstimatedDays())
+                // .estimatedDays(route.getEstimatedDays())
+                 .approxDays(route.getApproxDays())
+                 .approxHours(route.getApproxHours())
+                 .importantKeywords(route.getImportantKeywords())
+                 .includedRegions(route.getIncludedRegions())
                  .maxElevation(route.getMaxElevation())
                  .minElevation(route.getMinElevation())
                  .startLongitude(startLong)
@@ -97,7 +109,11 @@ public class RouteMapper {
                  .name(route.getName())
                 .createdBy(route.getUser().getEmail())
                  .destinationId(route.getDestination().getId())
-                 .estimatedDays(route.getEstimatedDays())
+                 //.estimatedDays(route.getEstimatedDays())
+                .approxDays(route.getApproxDays())
+                .approxHours(route.getApproxHours())
+                .importantKeywords(route.getImportantKeywords())
+                .includedRegions(route.getIncludedRegions())
                  .difficultyLevel(route.getDifficultyLevel())
                  .maxElevation(route.getMaxElevation())
                  .totalDistanceInKm(route.getDistanceInKm())

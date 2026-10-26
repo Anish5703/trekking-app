@@ -23,13 +23,14 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/route/{routeId}/gpx")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasRole('SUPERADMIN')")
 @RequiredArgsConstructor
 public class AdminGpxController {
 
     private final GpxIngestionService orchestrator;
     private final GpxExportService gpxExportService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<ApiResponse<List<GpxSegmentResponse>>> handleGetAllGpxSegments(@PathVariable Integer routeId,
                                                                                         @NonNull @RequestParam GpxSegmentStatus segmentStatus)
@@ -38,6 +39,7 @@ public class AdminGpxController {
         return  ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{gpxSegmentId}")
     public ResponseEntity<ApiResponse<GpxSegmentResponse>> handleGetGpxSegment(@PathVariable Integer routeId ,
                                                                                 @PathVariable Integer gpxSegmentId)
@@ -46,6 +48,7 @@ public class AdminGpxController {
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping(value = "/upload" , consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<List<GpxImportResponse>>> handleUploadGpx(@PathVariable Integer routeId ,
                                                                          @RequestPart("files")List<MultipartFile> files,
@@ -56,6 +59,7 @@ public class AdminGpxController {
 
     }
 
+
     @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> handleDeleteGpxSegment(@NonNull @RequestParam Integer gpxSegmentId ,
                                                                     @PathVariable Integer routeId,
@@ -64,7 +68,15 @@ public class AdminGpxController {
         ApiResponse<Void> response = orchestrator.deleteGpxSegment(gpxSegmentId,routeId,segmentStatus);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
+    @DeleteMapping("/all")
+    public ResponseEntity<ApiResponse<Void>> handleDeleteAllGpx(@PathVariable Integer routeId,
+                                                                @NonNull @RequestParam GpxSegmentStatus segmentStatus)
+    {
+        ApiResponse<Void> response = orchestrator.deleteAllGpxSegment(routeId,segmentStatus);
+        return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
+    }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/reorder")
     public ResponseEntity<ApiResponse<Void>> handleReorderGpxSegment(@RequestBody GpxSegmentOrderRequest orderRequest,
                                                                       @PathVariable Integer routeId,
@@ -74,6 +86,7 @@ public class AdminGpxController {
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/remerge")
     public ResponseEntity<ApiResponse<Void>> handleRemergeGpxSegment(@PathVariable Integer routeId,
                                                                      @NonNull @RequestParam GpxSegmentStatus segmentStatus)
@@ -81,7 +94,6 @@ public class AdminGpxController {
         ApiResponse<Void> response = orchestrator.remergeGpxSegment(routeId,segmentStatus);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
-
 
     @GetMapping("/download")
     public ResponseEntity<byte[]> handleDownloadGpx(@PathVariable Integer routeId) {

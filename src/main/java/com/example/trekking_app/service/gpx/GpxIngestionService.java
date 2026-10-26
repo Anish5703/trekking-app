@@ -176,6 +176,52 @@ public class GpxIngestionService {
             throw new ResourceDeletionFailedException("gpx segment","id",gpxSegmentId);
         }
     }
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "route-geoJson", key="#routeId"),
+            @CacheEvict(cacheNames = "route-contour", key = "#routeId")
+    })
+    @Transactional
+    public ApiResponse<Void> deleteAllGpxSegment(@NonNull Integer routeId,
+                                                 @NonNull GpxSegmentStatus segmentStatus)
+    {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route", "id", routeId)
+        );
+        if (Boolean.TRUE.equals(route.getIsLocked()))
+            throw new ResourceUpdateFailedException("route is locked by SUPERADMIN ! No update allowed");
+
+        List<GpxSegment> segments = gpxSegmentRepo.findAllByRoute_Id(route.getId());
+        if (segments.isEmpty())
+            throw new ResourceNotFoundException("gpx segment", "routeId", routeId);
+
+        try {
+            for (GpxSegment segment : segments) {
+                int segId = segment.getId();
+                if (segmentStatus.equals(GpxSegmentStatus.TRACKPOINT)) {
+                    trackPointRepo.deleteAllByGpxSegment_Id(segId);
+                } else {
+                    trailSegmentRepo.deleteByGpxSegment_Id(segId);
+                    poiRepo.deleteAllByWayPoint_GpxSegment_Id(segId);
+                    accommodationRepo.deleteByWayPoint_GpxSegment_Id(segId);
+                    wayPointRepo.deleteAllByGpxSegment_Id(segId);
+                }
+            }
+            gpxSegmentRepo.deleteAll(segments);
+
+            if (segmentStatus.equals(GpxSegmentStatus.TRACKPOINT))
+                gpxMergeService.mergeTrackPoints(route.getId());
+            else if (segmentStatus.equals(GpxSegmentStatus.WAYPOINT))
+                gpxMergeService.mergeWayPoints(route.getId());
+
+            String message = segmentStatus.equals(GpxSegmentStatus.TRACKPOINT)
+                    ? "all gpx segments deleted for trackpoints"
+                    : "all gpx segments deleted for waypoints";
+
+            return new ApiResponse<>(null, message, 200);
+        } catch (Exception e) {
+            throw new ResourceDeletionFailedException("gpx segment", "routeId", routeId);
+        }
+    }
 
     @Caching(evict = {
             @CacheEvict(cacheNames = "route-geoJson", key="#routeId"),

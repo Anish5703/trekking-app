@@ -67,6 +67,15 @@ public class Route extends BaseEntity{
     @Column(name="estimated_days")
     private Integer estimatedDays;
 
+    @Column(name = "approx_days")
+    private List<Integer> approxDays;
+    @Column(name = "approx_hours")
+    private List<Integer> approxHours;
+    @Column(name = "important_keywords")
+    private List<String> importantKeywords;
+    @Column(name = "included_regions")
+    private List<String> includedRegions;
+
     @Column(name="is_published")
     private Boolean isPublished;
 

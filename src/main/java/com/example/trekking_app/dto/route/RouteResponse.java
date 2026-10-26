@@ -22,7 +22,11 @@ public class RouteResponse {
     private int destinationId;
     private String description;
     private DifficultyLevel difficultyLevel;
-    private Integer estimatedDays;
+   // private Integer estimatedDays;
+   private List<Integer> approxDays;
+    private List<Integer> approxHours;
+    private List<String> importantKeywords;
+    private List<String> includedRegions;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime recordedAt;

@@ -6,6 +6,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -15,7 +16,10 @@ public class GpxMergeService {
 
    private final GpxMergeHelper mergeHelper;
 
-    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "route-geoJson", key="#routeId"),
+            @CacheEvict(cacheNames = "route-contour", key = "#routeId")
+    })
     public void mergeTrackPoints(@NonNull Integer routeId){
     mergeHelper.updateRouteStatus(routeId, RouteStatus.MERGING);
     try {
@@ -27,8 +31,11 @@ public class GpxMergeService {
         throw new ResourceMergeFailedException("trackpoints", "route id", routeId);
     }
 }
-    @CacheEvict(value = "route-geoJson" ,key="#routeId" , allEntries = true)
-public void mergeWayPoints(@NonNull Integer routeId)
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "route-geoJson", key="#routeId"),
+            @CacheEvict(cacheNames = "route-contour", key = "#routeId")
+    })
+    public void mergeWayPoints(@NonNull Integer routeId)
 {
     try{
         mergeHelper.assignWayPointGlobalSequences(routeId);

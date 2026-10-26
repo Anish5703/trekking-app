@@ -1,6 +1,7 @@
 package com.example.trekking_app.dto.route;
 
 import com.example.trekking_app.model.DifficultyLevel;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -10,6 +11,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -31,8 +33,12 @@ public class RouteRequest {
     @NotNull(message = "route difficulty level required")
     private DifficultyLevel difficultyLevel;
 
-    @NotNull(message = "route estimated days required")
-    private Integer estimatedDays;
+//    @NotNull(message = "route estimated days required")
+//    private Integer estimatedDays;
+    private List<Integer> approxDays;
+    private List<Integer> approxHours;
+    private List<String> importantKeywords;
+    private List<String> includedRegions;
 
     private LocalDateTime recordedAt;
 
