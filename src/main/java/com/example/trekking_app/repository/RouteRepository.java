@@ -57,11 +57,46 @@ long count();
             @Param("radiusMeters") double radiusMeters,
             @Param("limit") int limit
     );
+
+    @Query(value = """
+    SELECT
+        r.id,
+        r.name,
+        r.description,
+        r.difficulty_level,
+        r.distance_in_km,
+        r.estimated_days,
+        r.route_status,
+        d.name AS destination_name,
+        ST_Distance(
+            r.path::geography,
+            ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography
+        ) AS distance_meters
+    FROM routes r
+        JOIN destinations d ON d.id = r.destination_id
+    WHERE ST_DWithin(
+        r.path::geography,
+        ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography,
+        :radiusMeters
+    )
+    AND r.route_status = 'MERGED'
+    AND r.is_published = true
+    ORDER BY distance_meters ASC
+    LIMIT :limit
+    """, nativeQuery = true)
+    List<NearbyRouteProjection> findPublishedRoutes(
+            @Param("lon") double longitude,
+            @Param("lat") double latitude,
+            @Param("radiusMeters") double radiusMeters,
+            @Param("limit") int limit
+    );
+
     @Query("SELECT r FROM Route r JOIN r.destination d WHERE LOWER(r.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(d.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<Route> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
 
     Page<Route> findAllByOrderByTimeStampDesc(Pageable pageable);
+    Page<Route> findAllByIsPublishedTrueOrderByTimeStampDesc(Pageable pageable);
 
     Page<Route> findAllByUserId(Integer userId , Pageable pageable);
 

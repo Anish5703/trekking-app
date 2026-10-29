@@ -14,6 +14,9 @@ public interface RecentlyViewedRepository extends JpaRepository<RecentlyViewed,I
     Page<RecentlyViewed> findByUser_IdOrderByUpdatedAtDesc(int userId, Pageable pageable);
     @Query("SELECT rv.route FROM RecentlyViewed rv GROUP BY rv.route ORDER BY SUM(rv.counter) DESC")
     Page<Route> findMostPopularRoutes(Pageable pageable);
+    @Query("SELECT rv.route FROM RecentlyViewed rv GROUP BY rv.route ORDER BY SUM(rv.counter) DESC")
+    Page<Route> findMostPopularPublishedRoutes(Pageable pageable);
+
 
     Optional<RecentlyViewed> findByUser_IdAndRoute_Id(int userId, int route_id);
 }

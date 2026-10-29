@@ -10,5 +10,5 @@ public record ElevationProperties(
         String baseUrl,
         @DefaultValue("") String apiKey,
         @DefaultValue("srtm30m") String dataset,
-        @DefaultValue("100") int batchSize,
-        @DefaultValue("20s") Duration timeout) {}
+        @DefaultValue("50") int batchSize,
+        @DefaultValue("30s") Duration timeout) {}

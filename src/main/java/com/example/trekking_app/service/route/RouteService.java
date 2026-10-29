@@ -227,11 +227,21 @@ public class RouteService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<List<RouteDetails>> getNearbyRoutes(NearbyRequest routeRequest)
+    public ApiResponse<List<RouteDetails>> getNearbyRoutes(NearbyRequest routeRequest,int userId) {
+        User user = userRepo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("user", "id", userId));
+        List<NearbyRouteProjection> nearbyRoutes = null;
+        if (!user.getRole().equals(Role.CUSTOMER))
+        {
+             nearbyRoutes = routeRepo.findNearbyRoutes(routeRequest.getLatitude(),
+                    routeRequest.getLongitude(),
+                    routeRequest.getRadiusMeters(), routeRequest.getLimit());
+    }
+    else
     {
-        List<NearbyRouteProjection> nearbyRoutes = routeRepo.findNearbyRoutes(routeRequest.getLatitude(),
+        nearbyRoutes = routeRepo.findPublishedRoutes(routeRequest.getLatitude(),
                 routeRequest.getLongitude(),
-                routeRequest.getRadiusMeters(),routeRequest.getLimit());
+                routeRequest.getRadiusMeters(), routeRequest.getLimit());
+    }
         if(nearbyRoutes.isEmpty()) throw new NoResourceFoundException("nearby routes");
         List<Route> routes = nearbyRoutes.stream()
                 .map(proj -> routeRepo.findById(proj.getId())
@@ -266,16 +276,31 @@ public class RouteService {
         return new ApiResponse<>(recentlyViewedRoutes,"recently viewed routes fetched",200);
     }
 
-    public ApiResponse<Page<RouteDetails>> getPopularRoutes(@NonNull Integer page, @NonNull Integer size)
+    public ApiResponse<Page<RouteDetails>> getPopularRoutes(@NonNull Integer page, @NonNull Integer size,int userId)
     {
+        User user = userRepo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("user","id",userId));
         Pageable pageable = PageRequest.of(page,size);
-        Page<RouteDetails> popularRoutes = recentlyViewedRepo.findMostPopularRoutes(pageable).map(route ->
-        {
-            List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()).stream().map(Image::getUrl).toList();
-            TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
-            Point endCoords = tp2!=null ? tp2.getGeom() : null;
-            return routeMapper.toRouteDetails(route,endCoords,imageUrls);
-        });
+        Page<RouteDetails> popularRoutes = null;
+        if(!user.getRole().equals(Role.CUSTOMER)) {
+             popularRoutes = recentlyViewedRepo.findMostPopularRoutes(pageable)
+                    .map(route ->
+                    {
+                        List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE, route.getId()).stream().map(Image::getUrl).toList();
+                        TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+                        Point endCoords = tp2 != null ? tp2.getGeom() : null;
+                        return routeMapper.toRouteDetails(route, endCoords, imageUrls);
+                    });
+        }
+        else {
+            popularRoutes = recentlyViewedRepo.findMostPopularPublishedRoutes(pageable)
+                    .map(route ->
+                    {
+                        List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE, route.getId()).stream().map(Image::getUrl).toList();
+                        TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+                        Point endCoords = tp2 != null ? tp2.getGeom() : null;
+                        return routeMapper.toRouteDetails(route, endCoords, imageUrls);
+                    });
+        }
         if(popularRoutes.isEmpty()) throw new NoResourceFoundException("popular routes");
         return new ApiResponse<>(popularRoutes,"popular routes fetched",200);
 
@@ -316,16 +341,32 @@ public class RouteService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<Page<RouteDetails>> getRecentlyAddedRoutes(@NonNull Integer page, @NonNull Integer size)
+    public ApiResponse<Page<RouteDetails>> getRecentlyAddedRoutes(@NonNull Integer page, @NonNull Integer size,int userId)
     {
+        User user = userRepo.findById(userId).orElseThrow(
+                () -> new ResourceNotFoundException("user","id",userId)
+        );
         Pageable pageable = PageRequest.of(page,size);
-        Page<RouteDetails> foundRoutes = routeRepo.findAllByOrderByTimeStampDesc(pageable).map(route ->
+        Page<RouteDetails> foundRoutes = null ;
+        if(!user.getRole().equals(Role.CUSTOMER)) {
+          foundRoutes =   routeRepo.findAllByOrderByTimeStampDesc(pageable).map(route ->
+            {
+                List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE, route.getId()).stream().map(Image::getUrl).toList();
+                TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+                Point endCoords = tp2 != null ? tp2.getGeom() : null;
+                return routeMapper.toRouteDetails(route, endCoords, imageUrls);
+            });
+        }
+        else
         {
-            List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()).stream().map(Image::getUrl).toList();
-            TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
-            Point endCoords = tp2!=null ? tp2.getGeom() : null;
-            return routeMapper.toRouteDetails(route,endCoords,imageUrls);
-        });
+           foundRoutes = routeRepo.findAllByIsPublishedTrueOrderByTimeStampDesc(pageable).map(route ->
+            {
+                List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE, route.getId()).stream().map(Image::getUrl).toList();
+                TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+                Point endCoords = tp2 != null ? tp2.getGeom() : null;
+                return routeMapper.toRouteDetails(route, endCoords, imageUrls);
+            });
+        }
         if(foundRoutes.isEmpty()) throw new NoResourceFoundException("recently added");
         return new ApiResponse<>(foundRoutes,"recently added",200);
     }
@@ -338,6 +379,8 @@ public class RouteService {
         );
         if(route.getVerificationStatus()==null || !route.getVerificationStatus().equals(VerificationStatus.VERIFIED))
             throw new ResourceUpdateFailedException("Verify route before publishing");
+
+        validateRouteBeforePublishing(route);
         route.setIsPublished(publish);
         try{
            routeRepo.save(route);
@@ -346,6 +389,37 @@ public class RouteService {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+    public void validateRouteBeforePublishing(Route route)
+    {
+        if (route.getName() == null || route.getName().isBlank()) {
+            throw new ResourceUpdateFailedException("Route name is required before publishing");
+        }
+
+        if (route.getDestination() == null) {
+            throw new ResourceUpdateFailedException("Destination is required before publishing");
+        }
+
+        if (route.getUser() == null) {
+            throw new ResourceUpdateFailedException("Route owner is required before publishing");
+        }
+
+        if (route.getPath() == null || route.getPath().isEmpty()) {
+            throw new ResourceUpdateFailedException("Route path is required before publishing");
+        }
+
+        if (route.getMaxElevation() == null) {
+            throw new ResourceUpdateFailedException("Maximum elevation is required before publishing");
+        }
+
+        if (route.getMinElevation() == null) {
+            throw new ResourceUpdateFailedException("Minimum elevation is required before publishing");
+        }
+
+        if ((route.getApproxDays() == null || route.getApproxDays().contains(0)) && (route.getApproxHours() == null || route.getApproxHours().contains(0) ) ) {
+            throw new ResourceUpdateFailedException(" Either days or hours at least one must be defined before publishing");
+        }
+
     }
 
     @Transactional

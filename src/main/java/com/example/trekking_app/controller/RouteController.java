@@ -5,8 +5,16 @@ import com.example.trekking_app.dto.global.ApiResponse;
 import com.example.trekking_app.dto.grade.GradeResult;
 import com.example.trekking_app.dto.polyline.PolylineFeatureCollectionResponse;
 import com.example.trekking_app.dto.route.*;
+import com.example.trekking_app.entity.Route;
+import com.example.trekking_app.entity.User;
+import com.example.trekking_app.exception.auth.UserNotFoundException;
+import com.example.trekking_app.exception.resource.NoResourceFoundException;
+import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.model.GraphHopperProfile;
+import com.example.trekking_app.model.Role;
 import com.example.trekking_app.model.UserPrincipal;
+import com.example.trekking_app.repository.RouteRepository;
+import com.example.trekking_app.repository.UserRepository;
 import com.example.trekking_app.service.contour.ElevationProfileService;
 import com.example.trekking_app.service.route.PolylineEncodingService;
 import com.example.trekking_app.service.route.RouteGradeUpdater;
@@ -37,6 +45,8 @@ public class RouteController {
     private final ElevationProfileService profileService;
     private final PolylineEncodingService polylineEncodingService;
     private final RouteGradeUpdater gradeUpdater;
+    private final RouteRepository routeRepo;
+    private final UserRepository userRepo;
 
 
 
@@ -65,6 +75,8 @@ public class RouteController {
                                                                           @RequestParam (defaultValue = "foot" ) GraphHopperProfile graphHopperProfile)
     {
         Instant startTime = Instant.now();
+        int userId = user.getId();
+        filterUnpublishedRoute(userId,routeId);
         GeoJsonFeatureCollection response = routeService.getRouteGeoJson(routeId,tolerance,thresholdMeters, user.getId(),graphHopperProfile);
         routeService.updateRecentlyViewedStatus(user.getId(),routeId);
         log.info("Fetched route geJson in {} ms", Duration.between(startTime,Instant.now()).toMillis());
@@ -72,9 +84,11 @@ public class RouteController {
     }
     @GetMapping("/{routeId}/contour")
     public ResponseEntity<ApiResponse<ContourResponse>> handleGetRouteContour(@NonNull @PathVariable Integer routeId,
-                                                                              @RequestParam (defaultValue = "0.5")Double tolerance)
+                                                                              @RequestParam (defaultValue = "0.5")Double tolerance,@AuthenticationPrincipal UserPrincipal user)
     {
         Instant startTime = Instant.now();
+        int userId = user.getId();
+        filterUnpublishedRoute(userId,routeId);
         // clamp to 0..1000 m and snap to 0.5 m steps: bounds the number of cache keys per route
         double tol = Math.round(Math.min(Math.max(tolerance, 0), 1000) * 2) / 2.0;
         ApiResponse<ContourResponse> response = profileService.getContour(routeId,tol);
@@ -93,12 +107,13 @@ public class RouteController {
     public ResponseEntity<ApiResponse<List<RouteDetails>>> handleGetNearbyRoutes(@RequestParam Double longitude ,
                                                                                         @RequestParam Double latitude,
                                                                                         @RequestParam Double radiusMeters,
-                                                                                        @RequestParam Integer limit)
+                                                                                        @RequestParam Integer limit,
+                                                                                 @AuthenticationPrincipal UserPrincipal user)
     {
         NearbyRequest request = NearbyRequest.builder().
                 longitude(longitude).latitude(latitude).radiusMeters(radiusMeters).limit(limit).
                 build();
-        ApiResponse<List<RouteDetails>> response = routeService.getNearbyRoutes(request);
+        ApiResponse<List<RouteDetails>> response = routeService.getNearbyRoutes(request,user.getId());
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
@@ -113,17 +128,20 @@ public class RouteController {
     }
     @GetMapping("/popular")
     public ResponseEntity<ApiResponse<Page<RouteDetails>>> handleGetPopularRoutes(@RequestParam @NonNull Integer page,
-                                                                                  @RequestParam @NonNull Integer size)
+                                                                                  @RequestParam @NonNull Integer size,
+                                                                                  @AuthenticationPrincipal UserPrincipal user)
     {
-        ApiResponse<Page<RouteDetails>> response = routeService.getPopularRoutes(page,size);
+        ApiResponse<Page<RouteDetails>> response = routeService.getPopularRoutes(page,size,user.getId());
+
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
     @GetMapping("/recentlyAdded")
     public ResponseEntity<ApiResponse<Page<RouteDetails>>> handleGetRecentlyAddedRoutes(@RequestParam @NonNull Integer page,
-                                                                                        @RequestParam @NonNull Integer size)
+                                                                                        @RequestParam @NonNull Integer size,
+                                                                                        @AuthenticationPrincipal UserPrincipal user)
     {
-        ApiResponse<Page<RouteDetails>> response = routeService.getRecentlyAddedRoutes(page,size);
+        ApiResponse<Page<RouteDetails>> response = routeService.getRecentlyAddedRoutes(page,size,user.getId());
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
@@ -144,6 +162,8 @@ public class RouteController {
                                                                                     @RequestParam (defaultValue = "foot" ) GraphHopperProfile graphHopperProfile)
     {
         Instant startTime = Instant.now();
+        int userId = user.getId();
+        filterUnpublishedRoute(userId,routeId);
         GeoJsonFeatureCollection geoJson = routeService.getRouteGeoJson(routeId,tolerance,thresholdMeters, user.getId(),graphHopperProfile);
         PolylineFeatureCollectionResponse response = polylineEncodingService.encodeFeatureCollection(geoJson);
 
@@ -170,5 +190,16 @@ public class RouteController {
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-Request-Id", UUID.randomUUID().toString());
         return headers;
+    }
+
+    //helper method to filter unpublishedRoute
+    private void filterUnpublishedRoute(Integer userId , Integer routeId)
+    {
+        Route route = routeRepo.findById(routeId).orElseThrow(
+                () -> new ResourceNotFoundException("route", "id", routeId)
+        );
+        User user = userRepo.findById(userId).orElseThrow(() -> new UserNotFoundException("user not found with id "+userId));
+        if(!route.getIsPublished())
+            if(user.getRole().equals(Role.CUSTOMER)) throw new NoResourceFoundException("route is not published yet");
     }
 }

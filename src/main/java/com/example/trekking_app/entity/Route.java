@@ -77,7 +77,8 @@ public class Route extends BaseEntity{
     private List<String> includedRegions;
 
     @Column(name="is_published")
-    private Boolean isPublished;
+    @Builder.Default
+    private Boolean isPublished = false;
 
     @Column(name="is_locked")
     @Builder.Default
