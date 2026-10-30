@@ -94,6 +94,19 @@ long count();
     @Query("SELECT r FROM Route r JOIN r.destination d WHERE LOWER(r.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(d.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<Route> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
+    @Query("""
+    SELECT r FROM Route r
+    JOIN r.destination d
+    WHERE r.isPublished = true
+    AND (
+        LOWER(r.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        OR LOWER(d.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    )
+    """)
+    Page<Route> searchPublishedByKeyword(
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
 
     Page<Route> findAllByOrderByTimeStampDesc(Pageable pageable);
     Page<Route> findAllByIsPublishedTrueOrderByTimeStampDesc(Pageable pageable);

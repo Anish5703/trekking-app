@@ -18,4 +18,6 @@ public interface DestinationRepository extends JpaRepository<Destination , Integ
             "OR LOWER(d.district) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "OR LOWER(d.region) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<Destination> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+
+
 }

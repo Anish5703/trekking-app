@@ -51,9 +51,13 @@ public class RouteController {
 
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<RouteDetails>>> handleGetAllDestinationRoutes(@NonNull @RequestParam Integer destinationId)
+    public ResponseEntity<ApiResponse<List<RouteDetails>>> handleGetAllDestinationRoutes(@NonNull @RequestParam Integer destinationId,
+                                                                                         @AuthenticationPrincipal UserPrincipal user)
     {
-        ApiResponse<List<RouteDetails>> response = routeService.getAllDestinationRoutes(destinationId);
+        int userId = 0;
+        if (user!=null)
+            userId = user.getId();
+        ApiResponse<List<RouteDetails>> response = routeService.getAllDestinationRoutes(destinationId,userId);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
@@ -97,9 +101,13 @@ public class RouteController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<ApiResponse<Page<RouteDetails>>> handleGetAllRoutes(@NonNull Integer page ,@NonNull Integer size)
+    public ResponseEntity<ApiResponse<Page<RouteDetails>>> handleGetAllRoutes(@NonNull Integer page ,@NonNull Integer size,
+                                                                              @AuthenticationPrincipal UserPrincipal user)
     {
-        ApiResponse<Page<RouteDetails>> response = routeService.getAllRoutes(page,size);
+        int userId = 0;
+        if (user!=null)
+            userId = user.getId();
+        ApiResponse<Page<RouteDetails>> response = routeService.getAllRoutes(page,size,userId);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 
@@ -131,7 +139,10 @@ public class RouteController {
                                                                                   @RequestParam @NonNull Integer size,
                                                                                   @AuthenticationPrincipal UserPrincipal user)
     {
-        ApiResponse<Page<RouteDetails>> response = routeService.getPopularRoutes(page,size,user.getId());
+        int userId = 0;
+        if (user!=null)
+            userId = user.getId();
+        ApiResponse<Page<RouteDetails>> response = routeService.getPopularRoutes(page,size,userId);
 
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
@@ -148,9 +159,12 @@ public class RouteController {
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<Page<RouteDetails>>> handleSearchRoutesByKeyword(@RequestParam @NonNull String keyword,
                                                                                       @RequestParam @NonNull Integer page,
-                                                                                      @RequestParam @NonNull Integer size)
+                                                                                      @RequestParam @NonNull Integer size,
+                                                                                       @AuthenticationPrincipal UserPrincipal user)
     {
-        ApiResponse<Page<RouteDetails>> response = routeService.searchRoutesByKeyword(keyword,page,size);
+        int userId = 0;
+        if(user!=null) userId = user.getId();
+        ApiResponse<Page<RouteDetails>> response = routeService.searchRoutesByKeyword(keyword,page,size,userId);
         return ResponseEntity.status(200).headers(buildRequestHeaders()).body(response);
     }
 

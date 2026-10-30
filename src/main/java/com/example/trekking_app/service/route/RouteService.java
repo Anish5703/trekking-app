@@ -75,16 +75,24 @@ public class RouteService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<List<RouteDetails>> getAllDestinationRoutes(Integer destinationId) {
+    public ApiResponse<List<RouteDetails>> getAllDestinationRoutes(Integer destinationId,Integer userId) {
         if (destinationId < 1) throw new IllegalArgumentException("invalid destination id");
 
         Destination destination = destinationRepo.findById(destinationId).orElseThrow(
                 () -> new ResourceNotFoundException("destination", "id", destinationId)
         );
+        User user = new User();
+        if(userId!=null && userId>0)
+            user = userRepo.findById(userId).orElse(new User());
+        boolean isAdmin = user.getRole()!=null && (user.getRole().equals(Role.ADMIN) || user.getRole().equals(Role.SUPERADMIN));
+
         List<Route> routeList = routeRepo.findAllByDestination_Id(destination.getId()).orElseThrow(
                 () -> new NoResourceFoundException("routes")
         );
         List<RouteDetails> routeResponseList = new ArrayList<>();
+        if(!isAdmin)
+            routeList = routeList.stream().filter(Route::getIsPublished).toList();
+
         routeList.forEach(
                 route ->
                 {
@@ -98,10 +106,22 @@ public class RouteService {
     }
 
     @Transactional(readOnly = true)
-    public ApiResponse<Page<RouteDetails>> getAllRoutes(Integer page, Integer size) {
+    public ApiResponse<Page<RouteDetails>> getAllRoutes(Integer page, Integer size, Integer userId) {
+
         Pageable pageable = PageRequest.of(page, size);
         if (routeRepo.count() < 1) throw new NoResourceFoundException("routes");
-        Page<RouteDetails> routeDetails = routeRepo.findAll(pageable).map(route ->
+        User user = new User();
+        if(userId!=null && userId>0)
+            user = userRepo.findById(userId).orElse(new User());
+        boolean isAdmin = user.getRole()!=null && (user.getRole().equals(Role.ADMIN) || user.getRole().equals(Role.SUPERADMIN));
+        Page<Route> routes = null;
+
+        if(isAdmin)
+            routes = routeRepo.findAll(pageable);
+        else
+            routes = routeRepo.findAllByIsPublishedTrueOrderByTimeStampDesc(pageable);
+
+        Page<RouteDetails> routeDetails = routes.map(route ->
         {
             List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()).stream().map(Image::getUrl).toList();
             TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
@@ -276,31 +296,27 @@ public class RouteService {
         return new ApiResponse<>(recentlyViewedRoutes,"recently viewed routes fetched",200);
     }
 
-    public ApiResponse<Page<RouteDetails>> getPopularRoutes(@NonNull Integer page, @NonNull Integer size,int userId)
+    public ApiResponse<Page<RouteDetails>> getPopularRoutes(@NonNull Integer page, @NonNull Integer size,Integer userId)
     {
-        User user = userRepo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("user","id",userId));
+        User user = new User();
+        if(userId!=null && userId>0)
+            user = userRepo.findById(userId).orElse(new User());
+        boolean isAdmin = user.getRole()!=null && (user.getRole().equals(Role.ADMIN) || user.getRole().equals(Role.SUPERADMIN));
         Pageable pageable = PageRequest.of(page,size);
+        Page<Route> routes = null;
+        if(isAdmin)
+            routes = recentlyViewedRepo.findMostPopularRoutes(pageable);
+        else
+            routes = recentlyViewedRepo.findMostPopularPublishedRoutes(pageable);
+
         Page<RouteDetails> popularRoutes = null;
-        if(!user.getRole().equals(Role.CUSTOMER)) {
-             popularRoutes = recentlyViewedRepo.findMostPopularRoutes(pageable)
-                    .map(route ->
+             popularRoutes = routes.map(route ->
                     {
                         List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE, route.getId()).stream().map(Image::getUrl).toList();
                         TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
                         Point endCoords = tp2 != null ? tp2.getGeom() : null;
                         return routeMapper.toRouteDetails(route, endCoords, imageUrls);
                     });
-        }
-        else {
-            popularRoutes = recentlyViewedRepo.findMostPopularPublishedRoutes(pageable)
-                    .map(route ->
-                    {
-                        List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE, route.getId()).stream().map(Image::getUrl).toList();
-                        TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
-                        Point endCoords = tp2 != null ? tp2.getGeom() : null;
-                        return routeMapper.toRouteDetails(route, endCoords, imageUrls);
-                    });
-        }
         if(popularRoutes.isEmpty()) throw new NoResourceFoundException("popular routes");
         return new ApiResponse<>(popularRoutes,"popular routes fetched",200);
 
@@ -326,16 +342,33 @@ public class RouteService {
         log.info("updated recently view data");
     }
 
-    public ApiResponse<Page<RouteDetails>> searchRoutesByKeyword(@NonNull String keyword, @NonNull Integer page, @NonNull Integer size)
+    public ApiResponse<Page<RouteDetails>> searchRoutesByKeyword(@NonNull String keyword, @NonNull Integer page, @NonNull Integer size,Integer userId)
     {
+        User user = new User();
+        if(userId!=null && userId>0)
+            user = userRepo.findById(userId).orElse(new User());
         Pageable pageable = PageRequest.of(page,size);
-        Page<RouteDetails> foundRoutes = routeRepo.searchByKeyword(keyword,pageable).map(route ->
+        Page<RouteDetails> foundRoutes = null;
+        if(user.getRole()!=null && (user.getRole().equals(Role.ADMIN)||user.getRole().equals(Role.SUPERADMIN))) {
+             foundRoutes = routeRepo.searchByKeyword(keyword, pageable).map(route ->
+            {
+                List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE, route.getId()).stream().map(Image::getUrl).toList();
+                TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+                Point endCoords = tp2 != null ? tp2.getGeom() : null;
+                return routeMapper.toRouteDetails(route, endCoords, imageUrls);
+            });
+        }
+        else
         {
-            List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()).stream().map(Image::getUrl).toList();
-            TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
-            Point endCoords = tp2!=null ? tp2.getGeom() : null;
-            return routeMapper.toRouteDetails(route,endCoords,imageUrls);
-        });
+            foundRoutes = routeRepo.searchPublishedByKeyword(keyword, pageable).map(route ->
+            {
+                List<String> imageUrls = imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE, route.getId()).stream().map(Image::getUrl).toList();
+                TrackPoint tp2 = trackPointRepo.findFirstByRoute_IdAndIsDeletedFalseOrderByGlobalSequenceDesc(route.getId()).orElse(null);
+                Point endCoords = tp2 != null ? tp2.getGeom() : null;
+                return routeMapper.toRouteDetails(route, endCoords, imageUrls);
+            });
+        }
+
         if(foundRoutes.isEmpty()) throw new ResourceNotFoundException("route","keyword",keyword);
         return new ApiResponse<>(foundRoutes,"searched results",200);
     }

@@ -7,11 +7,14 @@ import com.example.trekking_app.dto.route.RouteDetails;
 import com.example.trekking_app.entity.Destination;
 import com.example.trekking_app.entity.Image;
 import com.example.trekking_app.entity.TrackPoint;
+import com.example.trekking_app.entity.User;
 import com.example.trekking_app.exception.resource.*;
 import com.example.trekking_app.mapper.DestinationMapper;
 import com.example.trekking_app.model.EntityType;
+import com.example.trekking_app.model.Role;
 import com.example.trekking_app.repository.DestinationRepository;
 import com.example.trekking_app.repository.ImageRepository;
+import com.example.trekking_app.repository.UserRepository;
 import com.example.trekking_app.service.image.CloudinaryService;
 import com.example.trekking_app.service.image.ImageService;
 import lombok.NonNull;
@@ -143,8 +146,9 @@ public class DestinationService {
 
     public ApiResponse<Page<DestinationResponse>> searchDestinationByKeyword(@NonNull String keyword, @NonNull Integer page, @NonNull Integer size)
     {
+
         Pageable pageable = PageRequest.of(page,size);
-        Page<DestinationResponse> foundDestination = destinationRepo.searchByKeyword(keyword,pageable).map(destinationMapper::toResponse);
+        Page<DestinationResponse> foundDestination =destinationRepo.searchByKeyword(keyword,pageable).map(destinationMapper::toResponse);
         if(foundDestination.isEmpty()) throw new ResourceNotFoundException("destination","keyword",keyword);
         return new ApiResponse<>(foundDestination,"searched results",200);
     }

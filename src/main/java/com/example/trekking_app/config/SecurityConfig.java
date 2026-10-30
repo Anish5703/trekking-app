@@ -136,6 +136,13 @@ public class SecurityConfig {
           "/api/v1/auth/refresh/access-token",
           "/api/v1/auth/forgot-password/**",
 
+          "/api/v1/route/all",
+          "/api/v1/route",
+          "/api/v1/route/popular",
+          "/api/v1/route/search",
+          "/api/v1/destination",
+          "/api/v1/destination/search",
+
           "/api/v1/oauth/**",
           "/oauth2/authorization/**",
           "/login/oauth2/**",
