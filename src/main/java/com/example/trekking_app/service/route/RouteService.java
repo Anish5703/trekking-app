@@ -377,10 +377,11 @@ public class RouteService {
         Route route = routeRepo.findById(routeId).orElseThrow(
                 () -> new ResourceNotFoundException("route","id",routeId)
         );
-        if(route.getVerificationStatus()==null || !route.getVerificationStatus().equals(VerificationStatus.VERIFIED))
-            throw new ResourceUpdateFailedException("Verify route before publishing");
+      /*  if(route.getVerificationStatus()==null || !route.getVerificationStatus().equals(VerificationStatus.VERIFIED))
+            throw new ResourceUpdateFailedException("Verify route before publishing");   */
 
-        validateRouteBeforePublishing(route);
+        if(publish) validateRouteBeforePublishing(route);
+
         route.setIsPublished(publish);
         try{
            routeRepo.save(route);
@@ -419,6 +420,8 @@ public class RouteService {
         if ((route.getApproxDays() == null || route.getApproxDays().contains(0)) && (route.getApproxHours() == null || route.getApproxHours().contains(0) ) ) {
             throw new ResourceUpdateFailedException(" Either days or hours at least one must be defined before publishing");
         }
+        if(imageRepo.findByEntityTypeAndEntityId(EntityType.ROUTE,route.getId()).isEmpty())
+            throw new ResourceUpdateFailedException("Route Image required before publishing");
 
     }
 

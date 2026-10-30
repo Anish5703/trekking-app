@@ -5,37 +5,33 @@ import com.example.trekking_app.entity.User;
 import com.example.trekking_app.mapper.TokenMapper;
 import com.example.trekking_app.model.ClientType;
 import com.example.trekking_app.repository.TokenRepository;
-import com.sendgrid.Method;
-import com.sendgrid.Request;
-import com.sendgrid.Response;
-import com.sendgrid.SendGrid;
-import com.sendgrid.helpers.mail.Mail;
-import com.sendgrid.helpers.mail.objects.Content;
-import com.sendgrid.helpers.mail.objects.Email;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailSendException;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Slf4j
 @Service
 public class MailService {
-//private final JavaMailSender mailSender;
-private final SendGrid sendGrid;
-private final TokenRepository tokenRepo;
-private final TokenMapper tokenMapper = new TokenMapper();
 
-@Value("${dev.signup.confirmation.url}")
-private String devSignupConfirmationUrl;
+    private final JavaMailSender mailSender;
+    private final TokenRepository tokenRepo;
+    private final TokenMapper tokenMapper = new TokenMapper();
 
-@Value("${dev.reset.forgot-password.confirmation.url}")
-private String devForgotPasswordResetConfirmationUrl;
+    @Value("${dev.signup.confirmation.url}")
+    private String devSignupConfirmationUrl;
+
+    @Value("${dev.reset.forgot-password.confirmation.url}")
+    private String devForgotPasswordResetConfirmationUrl;
 
     @Value("${mobile.signup.confirmation.url}")
     private String mobileSignupConfirmationUrl;
@@ -49,80 +45,120 @@ private String devForgotPasswordResetConfirmationUrl;
     @Value("${web.reset.forgot-password.confirmation.url}")
     private String webForgotPasswordResetConfirmationUrl;
 
-
     @Value("${app.mail.from}")
-private String fromEmail;
+    private String fromEmail;
 
-public MailService(TokenRepository tokenRepo,@Value("${sendgrid.api.key}") String apiKey)
-{
-    this.tokenRepo = tokenRepo;
-    this.sendGrid = new SendGrid(apiKey);
-}
-
-@Async("mailTaskExecutor")
-public void sendSignupConfirmationMail(@NonNull User user, ClientType clientType) {
-    try
-{
-    String tokenName = generateToken();
-    Token token =tokenMapper.toEntity(tokenName,user, LocalDateTime.now().plusDays(1));
-    Token savedToken = tokenRepo.save(token);
-
-    String subject = "Signup Confirmation Mail";
-    String confirmationLink = getSignupVerificationUrl(clientType)+savedToken.getTokenName();
-    String htmlContent = buildSignupConfirmationEmail(user.getName(),confirmationLink);
-
-    /*
-    MimeMessage message = mailSender.createMimeMessage();
-    MimeMessageHelper helper = new MimeMessageHelper(message, true);
-    helper.addTo(user.getEmail());
-    helper.setFrom(fromEmail);
-    helper.setSubject(subject);
-    helper.setText(htmlContent,true);
-    mailSender.send(message);
-     */
-
-    sendMail(user.getEmail(), subject,htmlContent);
-
-    log.info("Signup confirmation mail send to {}",user.getEmail());
-}
-    catch(Exception ex)
-    {
-        log.error("Failed to send Mail ; {} -> {}", ex.getClass(),ex.getLocalizedMessage());
-        throw new MailSendException("Failed to send signup confirmation mail");
-    }
-}
-@Async("mailTaskExecutor")
-public void sendForgotPasswordResetMail(@NonNull User user,@NonNull ClientType clientType)
-{
-    try {
-        String tokenName = generateToken();
-        Token token = tokenMapper.toEntity(tokenName, user, LocalDateTime.now().plusMinutes(5));
-        Token savedToken = tokenRepo.save(token);
-
-        String subject = "Password Reset Mail";
-        String confirmationLink = getResetForgotPasswordUrl(clientType) + savedToken.getTokenName();
-        String htmlContent = buildResetForgotPasswordConfirmationEmail(user.getName(), confirmationLink);
-        /*
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true);
-        helper.addTo(user.getEmail());
-        helper.setFrom(fromEmail);
-        helper.setSubject(subject);
-        helper.setText(htmlContent, true);
-        mailSender.send(message);
-
-         */
-        sendMail(user.getEmail(), subject,htmlContent);
-        log.info("Password reset mail send to {}",user.getEmail());
-    }
-    catch (Exception ex)
-    {
-        log.error("Failed to send Mail ; {} -> {}", ex.getClass(),ex.getLocalizedMessage());
-        throw new MailSendException("Failed to send password reset confirmation mail");
+    public MailService(
+            TokenRepository tokenRepo,
+            JavaMailSender mailSender
+    ) {
+        this.tokenRepo = tokenRepo;
+        this.mailSender = mailSender;
     }
 
-}
-    public String buildSignupConfirmationEmail(String username, String confirmationLink) {
+    @Async("mailTaskExecutor")
+    public void sendSignupConfirmationMail(
+            @NonNull User user,
+            ClientType clientType
+    ) {
+        try {
+            String tokenName = generateToken();
+
+            Token token = tokenMapper.toEntity(
+                    tokenName,
+                    user,
+                    LocalDateTime.now().plusDays(1)
+            );
+
+            Token savedToken = tokenRepo.save(token);
+
+            String subject = "Signup Confirmation Mail";
+
+            String confirmationLink =
+                    getSignupVerificationUrl(clientType)
+                            + savedToken.getTokenName();
+
+            String htmlContent = buildSignupConfirmationEmail(
+                    user.getName(),
+                    confirmationLink
+            );
+
+            sendMail(user.getEmail(), subject, htmlContent);
+
+            log.info(
+                    "Signup confirmation mail sent to {}",
+                    user.getEmail()
+            );
+
+        } catch (Exception ex) {
+            log.error(
+                    "Failed to send signup confirmation mail: {} - {}",
+                    ex.getClass().getSimpleName(),
+                    ex.getMessage(),
+                    ex
+            );
+
+            throw new MailSendException(
+                    "Failed to send signup confirmation mail",
+                    ex
+            );
+        }
+    }
+
+    @Async("mailTaskExecutor")
+    public void sendForgotPasswordResetMail(
+            @NonNull User user,
+            @NonNull ClientType clientType
+    ) {
+        try {
+            String tokenName = generateToken();
+
+            Token token = tokenMapper.toEntity(
+                    tokenName,
+                    user,
+                    LocalDateTime.now().plusMinutes(5)
+            );
+
+            Token savedToken = tokenRepo.save(token);
+
+            String subject = "Password Reset Mail";
+
+            String confirmationLink =
+                    getResetForgotPasswordUrl(clientType)
+                            + savedToken.getTokenName();
+
+            String htmlContent =
+                    buildResetForgotPasswordConfirmationEmail(
+                            user.getName(),
+                            confirmationLink
+                    );
+
+            sendMail(user.getEmail(), subject, htmlContent);
+
+            log.info(
+                    "Password reset mail sent to {}",
+                    user.getEmail()
+            );
+
+        } catch (Exception ex) {
+            log.error(
+                    "Failed to send password reset mail: {} - {}",
+                    ex.getClass().getSimpleName(),
+                    ex.getMessage(),
+                    ex
+            );
+
+            throw new MailSendException(
+                    "Failed to send password reset confirmation mail",
+                    ex
+            );
+        }
+    }
+
+    public String buildSignupConfirmationEmail(
+            String username,
+            String confirmationLink
+    ) {
         return String.format("""
         <!DOCTYPE html>
         <html lang="en">
@@ -136,7 +172,7 @@ public void sendForgotPasswordResetMail(@NonNull User user,@NonNull ClientType c
                 <tr>
                     <td align="center">
                         <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:8px; overflow:hidden;">
-    
+
                             <!-- Header -->
                             <tr>
                                 <td style="background-color:#28a745; padding: 24px 40px;">
@@ -200,10 +236,13 @@ public void sendForgotPasswordResetMail(@NonNull User user,@NonNull ClientType c
             </table>
         </body>
         </html>
-    """, username, confirmationLink, confirmationLink, confirmationLink);
+        """, username, confirmationLink, confirmationLink, confirmationLink);
     }
 
-    public String buildResetForgotPasswordConfirmationEmail(String username, String resetLink) {
+    public String buildResetForgotPasswordConfirmationEmail(
+            String username,
+            String resetLink
+    ) {
         return String.format("""
         <!DOCTYPE html>
         <html lang="en">
@@ -293,75 +332,81 @@ public void sendForgotPasswordResetMail(@NonNull User user,@NonNull ClientType c
             </table>
         </body>
         </html>
-    """, username, resetLink, resetLink, resetLink);
+        """, username, resetLink, resetLink, resetLink);
     }
 
-    private void sendMail(String toEmail, String subject, String htmlContent) throws IOException {
-        Email from = new Email(fromEmail);
-        Email to = new Email(toEmail);
+    private void sendMail(
+            String toEmail,
+            String subject,
+            String htmlContent
+    ) throws MessagingException {
 
-        Content content = new Content("text/html", htmlContent);
-        Mail mail = new Mail(from, subject, to, content);
-        mail.setReplyTo(new Email(fromEmail));
+        MimeMessage message = mailSender.createMimeMessage();
 
-        Request request = new Request();
-        request.setMethod(Method.POST);
-        request.setEndpoint("mail/send");
-        request.setBody(mail.build());
+        MimeMessageHelper helper =
+                new MimeMessageHelper(message, true, "UTF-8");
 
-        Response response = sendGrid.api(request);
-
-        if (response.getStatusCode() >= 400) {
-            log.error("SendGrid error: {} - {}", response.getStatusCode(), response.getBody());
-            throw new IOException("SendGrid rejected the request: " + response.getStatusCode());
+        helper.setFrom(fromEmail);
+        helper.setTo(toEmail);
+        helper.setSubject(subject);
+        helper.setText(htmlContent, true);
+        helper.setReplyTo(fromEmail);
+        try {
+            mailSender.send(message);
+        }
+        catch (Exception e)
+        {
+            log.info("Failed to send mail : {}",e.getMessage());
+            throw new MailSendException(e.getMessage());
         }
     }
 
+    // Method to generate confirmation URL excluding token
+    public String getSignupVerificationUrl(ClientType clientType) {
 
-    //Method to generate confirmation URL excluding token
-    public String getSignupVerificationUrl(ClientType clientType)
-    {
         String redirectUrl;
-        switch (clientType)
-        {
+
+        switch (clientType) {
             case MOBILE -> redirectUrl = mobileSignupConfirmationUrl;
             case WEB -> redirectUrl = webSignupConfirmationUrl;
             case DEV -> redirectUrl = devSignupConfirmationUrl;
             default -> redirectUrl = devSignupConfirmationUrl;
         }
 
-        if(redirectUrl.equals("undefined"))
+        if (redirectUrl.equals("undefined")) {
             redirectUrl = devSignupConfirmationUrl;
+        }
 
         return redirectUrl;
     }
 
-    public String getResetForgotPasswordUrl(ClientType clientType)
-    {
+    public String getResetForgotPasswordUrl(ClientType clientType) {
+
         String redirectUrl;
-        switch (clientType)
-        {
+
+        switch (clientType) {
             case MOBILE -> redirectUrl = mobileForgotPasswordResetConfirmationUrl;
             case WEB -> redirectUrl = webForgotPasswordResetConfirmationUrl;
             case DEV -> redirectUrl = devForgotPasswordResetConfirmationUrl;
-
             default -> redirectUrl = devForgotPasswordResetConfirmationUrl;
         }
-        if(redirectUrl.equals("undefined")) redirectUrl = devForgotPasswordResetConfirmationUrl;
+
+        if (redirectUrl.equals("undefined")) {
+            redirectUrl = devForgotPasswordResetConfirmationUrl;
+        }
 
         return redirectUrl;
     }
 
-    //Method to generate random token
-    public String generateToken()
-    {
+    // Method to generate random token
+    public String generateToken() {
+
         String token = UUID.randomUUID().toString();
-        while(tokenRepo.findByTokenName(token).isPresent())
-        {
+
+        while (tokenRepo.findByTokenName(token).isPresent()) {
             token = UUID.randomUUID().toString();
         }
+
         return token;
     }
-
-
 }
