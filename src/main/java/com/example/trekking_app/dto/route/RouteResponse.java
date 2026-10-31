@@ -1,6 +1,7 @@
 package com.example.trekking_app.dto.route;
 
 import com.example.trekking_app.model.DifficultyLevel;
+import com.example.trekking_app.model.RouteCategory;
 import com.example.trekking_app.model.VerificationStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +21,7 @@ public class RouteResponse {
     private String name;
     private String createdBy;
     private int destinationId;
+    private RouteCategory category;
     private String description;
     private DifficultyLevel difficultyLevel;
    // private Integer estimatedDays;

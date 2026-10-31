@@ -10,9 +10,11 @@ import com.example.trekking_app.exception.route.FileParsingFailedException;
 import com.example.trekking_app.exception.route.RouteNotFoundException;
 import com.example.trekking_app.exception.user.DeleteUserFailedException;
 import com.example.trekking_app.model.ErrorType;
+import com.example.trekking_app.service.GeoOfflineException;
 import io.jsonwebtoken.*;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.QueryTimeoutException;
 import org.hibernate.tool.schema.spi.CommandAcceptanceException;
 import org.springframework.core.convert.ConversionException;
 import org.springframework.core.convert.ConversionFailedException;
@@ -322,6 +324,14 @@ public class GlobalExceptionHandler {
         ApiResponse<ErrorResponse> response = new ApiResponse<>(data,"Database error",500);
         return ResponseEntity.status(500).body(response);
     }
+    @ExceptionHandler(QueryTimeoutException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleQueryTimeoutException(QueryTimeoutException ex)
+    {
+        log.error("{} ",ex.getMessage() , ex);
+        ErrorResponse data = new ErrorResponse(ErrorType.DATABASE_FAILURE, ex.getLocalizedMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,"Query time out",500);
+        return ResponseEntity.status(500).body(response);
+    }
 
     @ExceptionHandler({ConversionFailedException.class, ConversionException.class})
     public ResponseEntity<ApiResponse<ErrorResponse>> handleDataConversionException(Exception ex)
@@ -355,6 +365,15 @@ public class GlobalExceptionHandler {
         res.setHeader("Retry-After", String.valueOf(ex.getRetryAfter()));
         ErrorResponse data = new ErrorResponse(ErrorType.ACCOUNT_LOCKED, ex.getMessage());
         return ResponseEntity.status(429).body(new ApiResponse<>(data, ex.getMessage(), 429));
+    }
+
+    @ExceptionHandler(GeoOfflineException.class)
+    public ResponseEntity<ApiResponse<ErrorResponse>> handleGeoOfflineException(GeoOfflineException ex)
+    {
+        log.error(ex.getCode(),ex.getMessage(),ex.getDetailMessageArguments());
+        ErrorResponse data = new ErrorResponse(ErrorType.UNEXPECTED_RESPONSE, ex.getLocalizedMessage());
+        ApiResponse<ErrorResponse> response = new ApiResponse<>(data,"Failed to process GeoOffline package",400);
+        return ResponseEntity.status(400).body(response);
     }
 
 }

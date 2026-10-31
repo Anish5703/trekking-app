@@ -3,6 +3,7 @@ package com.example.trekking_app.entity;
 import com.example.trekking_app.dto.grade.GradeResult;
 import com.example.trekking_app.dto.grade.TerrainProfile;
 import com.example.trekking_app.model.DifficultyLevel;
+import com.example.trekking_app.model.RouteCategory;
 import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.model.VerificationStatus;
 import jakarta.persistence.*;
@@ -52,6 +53,9 @@ public class Route extends BaseEntity{
 
     @Size(max = 20000, message = "Description must not exceed 20000 characters")
     private String description;
+
+    @Column(name="category")
+    private RouteCategory category;
 
     @Column(name = "path",columnDefinition = "geometry(LineString, 4326)")
     private LineString path;
@@ -157,7 +161,7 @@ public class Route extends BaseEntity{
 
 public Boolean getIsPublished()
 {
-    return isPublished==null || isPublished==true ? true : false;
+    return isPublished==null || isPublished==false ? false : true;
 }
 public Boolean getIsLocked(){return isLocked==null || isLocked==false ? false : true;}
 

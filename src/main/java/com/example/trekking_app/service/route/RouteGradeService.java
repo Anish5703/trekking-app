@@ -2,9 +2,14 @@ package com.example.trekking_app.service.route;
 
 import com.example.trekking_app.config.GradeRules;
 import com.example.trekking_app.dto.grade.*;
+import com.example.trekking_app.entity.Route;
+import com.example.trekking_app.exception.resource.ResourceNotFoundException;
 import com.example.trekking_app.model.*;
+import com.example.trekking_app.repository.RouteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.*;
 
 @Service
@@ -12,8 +17,11 @@ import java.util.*;
 public class RouteGradeService {
 
     private final GradeRules rules;
+    private final RouteRepository routeRepo;
 
-    public GradeResult grade(RouteInput r) {
+    @Transactional
+    public GradeResult grade(RouteInput r)
+    {
         List<String> reasons = new ArrayList<>(), warnings = new ArrayList<>();
         List<GradeResult.Floor> floors = new ArrayList<>();
 
@@ -98,4 +106,13 @@ public class RouteGradeService {
 
     private static GradeResult.Floor floor(DifficultyLevel g, String why) { return new GradeResult.Floor(g, why); }
     private static String fmt(double d) { return d == Math.rint(d) ? String.valueOf((long) d) : String.valueOf(d); }
+
+    @Transactional
+    public void saveRouteCategory(int routeId,RouteCategory category)
+    {
+        Route route = routeRepo.findById(routeId).orElseThrow(() -> new ResourceNotFoundException("route","id","routeId"));
+        route.setCategory(category);
+        routeRepo.save(route);
+    }
 }
+

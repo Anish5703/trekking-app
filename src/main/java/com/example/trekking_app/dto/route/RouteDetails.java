@@ -1,6 +1,7 @@
 package com.example.trekking_app.dto.route;
 
 import com.example.trekking_app.model.DifficultyLevel;
+import com.example.trekking_app.model.RouteCategory;
 import com.example.trekking_app.model.RouteStatus;
 import com.example.trekking_app.model.VerificationStatus;
 import lombok.AllArgsConstructor;
@@ -19,6 +20,7 @@ public class RouteDetails {
     private String name;
     private String createdBy;
     private int destinationId;
+    private RouteCategory category;
     private DifficultyLevel difficultyLevel;
     //private Integer estimatedDays;
     private List<Integer> approxDays;
