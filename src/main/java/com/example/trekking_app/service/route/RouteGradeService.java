@@ -107,12 +107,5 @@ public class RouteGradeService {
     private static GradeResult.Floor floor(DifficultyLevel g, String why) { return new GradeResult.Floor(g, why); }
     private static String fmt(double d) { return d == Math.rint(d) ? String.valueOf((long) d) : String.valueOf(d); }
 
-    @Transactional
-    public void saveRouteCategory(int routeId,RouteCategory category)
-    {
-        Route route = routeRepo.findById(routeId).orElseThrow(() -> new ResourceNotFoundException("route","id","routeId"));
-        route.setCategory(category);
-        routeRepo.save(route);
-    }
 }
 

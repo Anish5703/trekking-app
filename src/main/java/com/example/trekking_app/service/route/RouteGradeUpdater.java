@@ -105,10 +105,13 @@ public class RouteGradeUpdater {
         return missing;
     }
 
+    @Transactional
     private GradeResult apply(Route r) {
         GradeResult g = gradeService.grade(buildInput(r));
         r.setDifficultyLevel(g.grade());
         r.setDifficultyResult(g);
+        r.setCategory(g.category());
+        routeRepo.save(r);
         return g;
     }
 
